@@ -12,10 +12,23 @@ import { authMiddleware } from '../middleware/auth'
 
 const SEND_LIMIT_PER_HOUR = 3
 
+// Type-safe JSON body reader. Returns Partial<T> on parse failure rather
+// than letting Hono's c.req.json throw — which would surface as a 500 via
+// onError, when 400 is the right status for a malformed body. Partial<T>
+// (T already optional-fielded) keeps narrowing usable downstream.
+async function readJson<T extends object>(req: { json(): Promise<unknown> }): Promise<Partial<T>> {
+  try {
+    const v = await req.json()
+    return (v && typeof v === 'object' ? v : {}) as Partial<T>
+  } catch {
+    return {}
+  }
+}
+
 export const auth = new Hono<AppContext>()
 
 auth.post('/otp/send', async (c) => {
-  const body = await c.req.json<{ phone?: string }>().catch(() => ({}))
+  const body = await readJson<{ phone?: string }>(c.req)
   const phone = body.phone ? normalizePhoneE164(body.phone) : null
   if (!phone) return c.json({ error: 'invalid phone' }, 400)
 
@@ -44,7 +57,7 @@ auth.post('/otp/send', async (c) => {
 })
 
 auth.post('/otp/verify', async (c) => {
-  const body = await c.req.json<{ phone?: string; code?: string }>().catch(() => ({}))
+  const body = await readJson<{ phone?: string; code?: string }>(c.req)
   const phone = body.phone ? normalizePhoneE164(body.phone) : null
   if (!phone || !body.code) return c.json({ error: 'phone and code required' }, 400)
 
@@ -67,7 +80,7 @@ auth.post('/otp/verify', async (c) => {
 })
 
 auth.post('/signup', async (c) => {
-  const body = await c.req.json<{ email?: string; password?: string; display_name?: string }>().catch(() => ({}))
+  const body = await readJson<{ email?: string; password?: string; display_name?: string }>(c.req)
   const email = body.email ? normalizeEmail(body.email) : null
   if (!email) return c.json({ error: 'invalid email' }, 400)
   if (!body.password || body.password.length < 8) return c.json({ error: 'password too short' }, 400)
@@ -87,7 +100,7 @@ auth.post('/signup', async (c) => {
 })
 
 auth.post('/login', async (c) => {
-  const body = await c.req.json<{ email?: string; password?: string }>().catch(() => ({}))
+  const body = await readJson<{ email?: string; password?: string }>(c.req)
   const email = body.email ? normalizeEmail(body.email) : null
   // Always burn ~600k iterations even on miss to avoid timing-based user
   // enumeration. The 401 reason is uniformly 'invalid credentials'.
@@ -112,7 +125,7 @@ auth.post('/login', async (c) => {
 })
 
 auth.post('/refresh', async (c) => {
-  const body = await c.req.json<{ refresh?: string }>().catch(() => ({}))
+  const body = await readJson<{ refresh?: string }>(c.req)
   if (!body.refresh) return c.json({ error: 'refresh required' }, 400)
 
   let claims
@@ -150,7 +163,7 @@ const SETTINGS_FIELDS = [
 ] as const
 
 auth.put('/settings', authMiddleware, async (c) => {
-  const body = await c.req.json<Record<string, unknown>>().catch(() => ({} as Record<string, unknown>))
+  const body = await readJson<Record<string, unknown>>(c.req)
   const sets: string[] = []
   const vals: unknown[] = []
   for (const f of SETTINGS_FIELDS) {
@@ -167,7 +180,7 @@ auth.put('/settings', authMiddleware, async (c) => {
 })
 
 auth.put('/password', authMiddleware, async (c) => {
-  const body = await c.req.json<{ current?: string; next?: string }>().catch(() => ({}))
+  const body = await readJson<{ current?: string; next?: string }>(c.req)
   if (!body.current || !body.next || body.next.length < 8) return c.json({ error: 'invalid request' }, 400)
   const user = await getUserById(c.env.DB, c.get('userId')!)
   if (!user || !user.password_hash) return c.json({ error: 'no password set' }, 400)
