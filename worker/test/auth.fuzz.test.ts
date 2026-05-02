@@ -66,14 +66,21 @@ describe('fuzz — non-string body fields produce clean 4xx (no 500s)', () => {
     }
   })
 
-  it('/login rejects non-string email or password (uniform 401)', async () => {
+  it('/login rejects non-string email or password (clean 4xx)', async () => {
+    // Status range covers both 401 (uniform-credentials response) and 429
+    // (rate limit kicks in after 10 — fuzzedFields has 6 each direction so
+    // the 12 total can trip Phase 8's 10/min limit). The "uniform 401"
+    // property is asserted in auth.login.test.ts where the request count
+    // stays under the limit.
     for (const email of fuzzedFields) {
       const res = await post('/api/auth/login', { email, password: 'long-password-123' })
-      expect(res.status).toBe(401)
+      expect(res.status).toBeGreaterThanOrEqual(400)
+      expect(res.status).toBeLessThan(500)
     }
     for (const password of fuzzedFields) {
       const res = await post('/api/auth/login', { email: 'real@x.com', password })
-      expect(res.status).toBe(401)
+      expect(res.status).toBeGreaterThanOrEqual(400)
+      expect(res.status).toBeLessThan(500)
     }
   })
 

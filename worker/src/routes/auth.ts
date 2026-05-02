@@ -8,6 +8,7 @@ import { startSession, endSession, rotateRefresh, bumpPasswordVersion } from '..
 import { hashPassword, verifyPassword } from '../lib/password'
 import { verifyRefresh } from '../lib/jwt'
 import { authMiddleware } from '../middleware/auth'
+import { rateLimit } from '../middleware/rate-limit'
 
 const SEND_LIMIT_PER_HOUR = 3
 
@@ -41,6 +42,14 @@ function isUniqueViolation(e: unknown, column?: string): boolean {
 }
 
 export const auth = new Hono<AppContext>()
+
+// Per-IP rate limits. /otp/send already has a per-phone 3/hr quota; this is
+// the IP-level brake on top. /login is the credential-stuffing surface — the
+// 600k PBKDF2 cost is friction, but a rate limit ends the attack instead of
+// just slowing it.
+auth.use('/otp/*', rateLimit({ requests: 10, windowSec: 60, keyPrefix: 'auth-otp' }))
+auth.use('/login',  rateLimit({ requests: 10, windowSec: 60, keyPrefix: 'auth-login' }))
+auth.use('/signup', rateLimit({ requests: 10, windowSec: 60, keyPrefix: 'auth-signup' }))
 
 auth.post('/otp/send', async (c) => {
   const body = await readJson<{ phone?: string }>(c.req)
