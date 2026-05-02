@@ -4,8 +4,11 @@ compatibility_date = "2026-05-02"
 compatibility_flags = ["nodejs_compat"]
 account_id = "ea2eb3a9813660dfca2a60e594858538"
 
-[ai]
-binding = "AI"
+# AI binding deferred to Phase 9 — miniflare can't emulate it locally.
+# Re-enable when wiring up /api/ai/* routes; tests will need a separate strategy
+# (e.g. real-account remote tests, or a mock wrapper around env.AI).
+# [ai]
+# binding = "AI"
 
 [[d1_databases]]
 binding = "DB"

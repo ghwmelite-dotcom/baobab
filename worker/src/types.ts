@@ -1,7 +1,8 @@
 import type { D1Database, KVNamespace, R2Bucket, DurableObjectNamespace, Ai } from '@cloudflare/workers-types'
 
 export interface Env {
-  AI: Ai
+  // AI: deferred to Phase 9. See note in wrangler.toml.
+  AI?: Ai
   DB: D1Database
   SESSIONS: KVNamespace
   PAGE_CACHE: KVNamespace
