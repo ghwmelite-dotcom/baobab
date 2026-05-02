@@ -1,0 +1,43 @@
+import type { D1Database, KVNamespace, R2Bucket, DurableObjectNamespace, Ai } from '@cloudflare/workers-types'
+
+export interface Env {
+  AI: Ai
+  DB: D1Database
+  SESSIONS: KVNamespace
+  PAGE_CACHE: KVNamespace
+  RATE_LIMITS: KVNamespace
+  OFFLINE_INDEX: KVNamespace
+  OTP: KVNamespace
+  ASSETS: R2Bucket
+  OFFLINE: R2Bucket
+  READER_QUEUE: DurableObjectNamespace
+
+  // vars
+  ENVIRONMENT: string
+  APP_NAME: string
+  APP_VERSION: string
+  CORS_ORIGIN: string
+  DEFAULT_MODEL: string
+  LOWBW_MODEL: string
+  SUMMARIZE_MODEL: string
+  CODE_MODEL: string
+  TRANSLATE_MODEL: string
+  EMBEDDING_MODEL: string
+
+  // secrets (set via wrangler secret put)
+  AUTH_SECRET: string
+  ENCRYPTION_KEY: string
+  ADMIN_API_KEY: string
+  OTP_AFRICASTALKING_KEY?: string
+  OTP_AFRICASTALKING_USERNAME?: string
+  OTP_TWILIO_SID?: string
+  OTP_TWILIO_TOKEN?: string
+  OTP_TWILIO_FROM?: string
+  OTP_TERMII_KEY?: string
+  OTP_TERMII_FROM?: string
+}
+
+export type AppContext = {
+  Bindings: Env
+  Variables: { userId?: string; userEmail?: string }
+}

@@ -1,0 +1,62 @@
+name = "baobab-api"
+main = "src/index.ts"
+compatibility_date = "2026-05-02"
+compatibility_flags = ["nodejs_compat"]
+account_id = "ea2eb3a9813660dfca2a60e594858538"
+
+[ai]
+binding = "AI"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "baobab-db"
+database_id = "PASTE_AFTER_D1_CREATE"
+
+[[kv_namespaces]]
+binding = "SESSIONS"
+id = "PASTE_AFTER_KV_CREATE"
+
+[[kv_namespaces]]
+binding = "PAGE_CACHE"
+id = "PASTE_AFTER_KV_CREATE"
+
+[[kv_namespaces]]
+binding = "RATE_LIMITS"
+id = "PASTE_AFTER_KV_CREATE"
+
+[[kv_namespaces]]
+binding = "OFFLINE_INDEX"
+id = "PASTE_AFTER_KV_CREATE"
+
+[[kv_namespaces]]
+binding = "OTP"
+id = "PASTE_AFTER_KV_CREATE"
+
+[[r2_buckets]]
+binding = "ASSETS"
+bucket_name = "baobab-assets"
+
+[[r2_buckets]]
+binding = "OFFLINE"
+bucket_name = "baobab-offline"
+
+[[durable_objects.bindings]]
+name = "READER_QUEUE"
+class_name = "ReaderQueue"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["ReaderQueue"]
+
+[vars]
+ENVIRONMENT = "development"
+APP_NAME = "Baobab"
+APP_VERSION = "0.0.1"
+CORS_ORIGIN = "http://localhost:5173,http://localhost:8080"
+DEFAULT_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+LOWBW_MODEL = "@cf/meta/llama-3.1-8b-instruct"
+SUMMARIZE_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+CODE_MODEL = "@cf/deepseek-ai/deepseek-r1-distill-qwen-32b"
+TRANSLATE_MODEL = "@cf/meta/m2m100-1.2b"
+TRANSLATE_MODEL_M2M = "@cf/meta/m2m100-1.2b"
+EMBEDDING_MODEL = "@cf/baai/bge-large-en-v1.5"
