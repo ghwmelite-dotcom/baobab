@@ -3,9 +3,15 @@ import { env } from 'cloudflare:test'
 import { newId, getUserById, insertUser } from '../src/lib/db'
 
 describe('db helpers', () => {
-  it('newId returns a 26-char ULID', () => {
+  it('newId returns a 21-char URL-safe id', () => {
     const id = newId()
-    expect(id).toHaveLength(26)
+    expect(id).toMatch(/^[A-Za-z0-9_-]{21}$/)
+  })
+
+  it('newId is collision-free across 10k samples', () => {
+    const ids = new Set<string>()
+    for (let i = 0; i < 10_000; i++) ids.add(newId())
+    expect(ids.size).toBe(10_000)
   })
 
   it('insertUser + getUserById roundtrip', async () => {

@@ -1,22 +1,11 @@
 import type { D1Database } from '@cloudflare/workers-types'
+import { nanoid } from 'nanoid'
 
-const ULID_ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ'
-
+// 21-char URL-safe (A-Z a-z 0-9 _ -) = 126 bits entropy. Time-sortability
+// is intentionally NOT a property — pagination indexes order by timestamp
+// columns (saved_at, last_visited_at, position) rather than by id.
 export function newId(): string {
-  const time = Date.now()
-  let timeStr = ''
-  let t = time
-  for (let i = 0; i < 10; i++) {
-    timeStr = ULID_ALPHABET[t % 32] + timeStr
-    t = Math.floor(t / 32)
-  }
-  let randStr = ''
-  const bytes = new Uint8Array(16)
-  crypto.getRandomValues(bytes)
-  for (let i = 0; i < 16; i++) {
-    randStr += ULID_ALPHABET[bytes[i]! % 32]
-  }
-  return timeStr + randStr
+  return nanoid()
 }
 
 export interface UserRow {
