@@ -1,10 +1,10 @@
 import { applyD1Migrations, env } from 'cloudflare:test'
 import type { D1Migration } from '@cloudflare/workers-types'
 import { beforeAll } from 'vitest'
+import type { Env } from '../src/types'
 
 declare module 'cloudflare:test' {
-  interface ProvidedEnv {
-    DB: D1Database
+  interface ProvidedEnv extends Env {
     TEST_MIGRATIONS: D1Migration[]
   }
 }
