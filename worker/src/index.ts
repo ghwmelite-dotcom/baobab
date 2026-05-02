@@ -4,6 +4,7 @@ import { secureHeaders } from 'hono/secure-headers'
 import type { AppContext } from './types'
 import { requestId } from './middleware/request-id'
 import { residency } from './middleware/residency'
+import { auth } from './routes/auth'
 
 export { ReaderQueue } from './durable-objects/reader-queue'
 
@@ -36,6 +37,7 @@ app.use('*', secureHeaders())
 app.use('*', residency)
 
 app.get('/', (c) => c.json({ name: c.env.APP_NAME, version: c.env.APP_VERSION }))
+app.route('/api/auth', auth)
 
 app.onError((err, c) => {
   const reqId = c.get('reqId')

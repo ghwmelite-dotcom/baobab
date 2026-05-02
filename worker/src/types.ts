@@ -47,5 +47,7 @@ export type AppContext = {
     reqId?: string
     userId?: string
     userEmail?: string
+    // jti is set by authMiddleware; logout reads it to revoke the active session.
+    jti?: string
   }
 }

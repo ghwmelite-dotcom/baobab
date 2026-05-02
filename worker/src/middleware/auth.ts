@@ -31,5 +31,6 @@ export const authMiddleware: MiddlewareHandler<AppContext> = async (c, next) => 
   if (!session) return c.json({ error: 'session revoked' }, 401)
 
   c.set('userId', claims.sub)
+  c.set('jti', claims.jti)
   await next()
 }
