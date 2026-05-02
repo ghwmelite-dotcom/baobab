@@ -16,8 +16,22 @@ describe('db helpers', () => {
 
   it('insertUser + getUserById roundtrip', async () => {
     const id = newId()
-    await insertUser(env.DB, { id, email: 'a@b.com', display_name: 'A' })
+    await insertUser(env.DB, { id, email: 'roundtrip@example.com', display_name: 'A' })
     const u = await getUserById(env.DB, id)
-    expect(u?.email).toBe('a@b.com')
+    expect(u?.email).toBe('roundtrip@example.com')
+  })
+
+  it('insertUser throws on duplicate email (UNIQUE constraint)', async () => {
+    await insertUser(env.DB, { id: newId(), email: 'dup@example.com' })
+    await expect(
+      insertUser(env.DB, { id: newId(), email: 'dup@example.com' })
+    ).rejects.toThrow()
+  })
+
+  it('insertUser throws on duplicate phone (UNIQUE constraint)', async () => {
+    await insertUser(env.DB, { id: newId(), phone: '+233241000001' })
+    await expect(
+      insertUser(env.DB, { id: newId(), phone: '+233241000001' })
+    ).rejects.toThrow()
   })
 })
