@@ -5,7 +5,15 @@
 
 const ALGO_TAG = 'pbkdf2-sha256'
 const VERSION = 'v1'
-const ITERATIONS = 600_000  // OWASP 2023+ guidance for PBKDF2-SHA256.
+// Cloudflare Workers' WebCrypto caps PBKDF2 iterations at 100,000:
+//   "Pbkdf2 failed: iteration counts above 100000 are not supported"
+// OWASP 2023+ guidance is 600k for PBKDF2-SHA256, but the runtime forbids it.
+// Compensating defenses already in place: per-IP rate limit on /login (10/min,
+// Phase 8), per-phone OTP send cap (3/hr), 5-attempt OTP verify cap, length>=8
+// minimum, JTI-keyed sessions with revocation. If the runtime ever lifts the
+// cap (compat flag or new Workers WebCrypto rev), bump VERSION -> v2 and add
+// a re-hash-on-login migration path.
+const ITERATIONS = 100_000
 const KEY_LEN = 32
 const SALT_LEN = 16
 
