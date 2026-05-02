@@ -1,11 +1,24 @@
-const ITERATIONS = 100_000
+// Stored format: pbkdf2-sha256$v1$<iterations>$<base64 salt>$<base64 hash>
+// The v1 prefix is a migration anchor — if iterations bump or algorithm
+// changes (e.g. argon2id when Workers gains native support), bump to v2 and
+// teach verifyPassword to handle both, then re-hash on next successful login.
+
+const ALGO_TAG = 'pbkdf2-sha256'
+const VERSION = 'v1'
+const ITERATIONS = 600_000  // OWASP 2023+ guidance for PBKDF2-SHA256.
 const KEY_LEN = 32
 const SALT_LEN = 16
 
 const enc = new TextEncoder()
 
+// Loop instead of spread: spread converts a Uint8Array to function args, which
+// V8 caps around 65,536 — fine for current 32-byte hashes but poisonous if
+// reused for larger buffers (R2 keys, article hashes, etc).
 function bufToB64(buf: ArrayBuffer): string {
-  return btoa(String.fromCharCode(...new Uint8Array(buf)))
+  const bytes = new Uint8Array(buf)
+  let s = ''
+  for (let i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]!)
+  return btoa(s)
 }
 
 function b64ToBuf(s: string): ArrayBuffer {
@@ -21,15 +34,18 @@ export async function hashPassword(plain: string): Promise<string> {
     key,
     KEY_LEN * 8
   )
-  return `pbkdf2$${ITERATIONS}$${bufToB64(salt.buffer)}$${bufToB64(bits)}`
+  return `${ALGO_TAG}$${VERSION}$${ITERATIONS}$${bufToB64(salt.buffer)}$${bufToB64(bits)}`
 }
 
 export async function verifyPassword(plain: string, stored: string): Promise<boolean> {
-  const parts = stored.split('$')
-  if (parts.length !== 4 || parts[0] !== 'pbkdf2') return false
-  const iters = Number(parts[1])
-  const salt = new Uint8Array(b64ToBuf(parts[2]!))
-  const expected = b64ToBuf(parts[3]!)
+  const [algo, version, itersStr, saltB64, hashB64] = stored.split('$')
+  if (algo !== ALGO_TAG || version !== VERSION || !itersStr || !saltB64 || !hashB64) return false
+
+  const iters = Number(itersStr)
+  if (!Number.isInteger(iters) || iters < 1) return false
+
+  const salt = new Uint8Array(b64ToBuf(saltB64))
+  const expected = b64ToBuf(hashB64)
   const key = await crypto.subtle.importKey('raw', enc.encode(plain), 'PBKDF2', false, ['deriveBits'])
   const bits = await crypto.subtle.deriveBits(
     { name: 'PBKDF2', salt, iterations: iters, hash: 'SHA-256' },
