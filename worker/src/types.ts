@@ -40,5 +40,12 @@ export interface Env {
 
 export type AppContext = {
   Bindings: Env
-  Variables: { userId?: string; userEmail?: string }
+  Variables: {
+    // reqId is set by the requestId middleware (registered first in index.ts).
+    // Optional in the type so non-route code paths typecheck, but in any
+    // request-scoped handler this is reliably populated.
+    reqId?: string
+    userId?: string
+    userEmail?: string
+  }
 }
