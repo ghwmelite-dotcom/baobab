@@ -14,6 +14,7 @@ account_id = "f4f236a6cd8fbddf397c6e9de17d8113"
 binding = "DB"
 database_name = "baobab-db"
 database_id = "a32067a4-238c-48f0-ba85-e691cd9ac8fd"
+migrations_dir = "db/migrations"
 
 [[kv_namespaces]]
 binding = "SESSIONS"
