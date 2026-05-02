@@ -13,35 +13,37 @@ account_id = "f4f236a6cd8fbddf397c6e9de17d8113"
 [[d1_databases]]
 binding = "DB"
 database_name = "baobab-db"
-database_id = "PASTE_AFTER_D1_CREATE"
+database_id = "a32067a4-238c-48f0-ba85-e691cd9ac8fd"
 
 [[kv_namespaces]]
 binding = "SESSIONS"
-id = "PASTE_AFTER_KV_CREATE"
+id = "31a996a5bc6142d0889425907771424e"
 
 [[kv_namespaces]]
 binding = "PAGE_CACHE"
-id = "PASTE_AFTER_KV_CREATE"
+id = "23c86a3a82e742dabab89694f8528fdc"
 
 [[kv_namespaces]]
 binding = "RATE_LIMITS"
-id = "PASTE_AFTER_KV_CREATE"
+id = "a26136c4fdf1494db92e400498fdd7ea"
 
 [[kv_namespaces]]
 binding = "OFFLINE_INDEX"
-id = "PASTE_AFTER_KV_CREATE"
+id = "2e010b42abbe4707a84b18bab26d69f1"
 
 [[kv_namespaces]]
 binding = "OTP"
-id = "PASTE_AFTER_KV_CREATE"
+id = "08f9fc65b5254b81a99d3294b9b0a1d7"
 
 [[r2_buckets]]
 binding = "ASSETS"
 bucket_name = "baobab-assets"
+jurisdiction = "eu"
 
 [[r2_buckets]]
 binding = "OFFLINE"
 bucket_name = "baobab-offline"
+jurisdiction = "eu"
 
 [[durable_objects.bindings]]
 name = "READER_QUEUE"
