@@ -2,6 +2,8 @@ import { Hono } from 'hono'
 import type { AppContext } from './types'
 import { residency } from './middleware/residency'
 
+export { ReaderQueue } from './durable-objects/reader-queue'
+
 const app = new Hono<AppContext>()
 
 app.use('*', residency)
