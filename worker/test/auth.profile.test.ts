@@ -119,4 +119,29 @@ describe('PUT /api/auth/password', () => {
     })
     expect(res.status).toBe(400)
   })
+
+  it('invalidates other active sessions on password change (review fix #3)', async () => {
+    const { access } = await signup()
+
+    // Pre-change: token works.
+    const before = await SELF.fetch('http://baobab/api/auth/me', {
+      headers: { Authorization: `Bearer ${access}` },
+    })
+    expect(before.status).toBe(200)
+
+    // Change password — bumps pwv:${userId} sentinel.
+    const change = await SELF.fetch('http://baobab/api/auth/password', {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${access}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ current: 'long-password-123', next: 'new-password-12345' }),
+    })
+    expect(change.status).toBe(200)
+
+    // The same access token must now fail. JWT iat predates pwv timestamp.
+    // Tokens issued AFTER this point (via /login with the new password) work.
+    const after = await SELF.fetch('http://baobab/api/auth/me', {
+      headers: { Authorization: `Bearer ${access}` },
+    })
+    expect(after.status).toBe(401)
+  })
 })

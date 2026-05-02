@@ -102,4 +102,24 @@ describe('POST /api/auth/logout', () => {
     const res = await SELF.fetch('http://baobab/api/auth/logout', { method: 'POST' })
     expect(res.status).toBe(401)
   })
+
+  it('logout also revokes the paired refresh — refresh after logout fails (review fix #1)', async () => {
+    const { access, refresh } = await signup()
+
+    // Logout — should revoke BOTH access and the paired refresh.
+    const out = await SELF.fetch('http://baobab/api/auth/logout', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${access}` },
+    })
+    expect(out.status).toBe(200)
+
+    // Refresh with the old refresh token must now fail; otherwise an
+    // attacker who steals BOTH tokens can ride past a logout.
+    const r = await SELF.fetch('http://baobab/api/auth/refresh', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh }),
+    })
+    expect(r.status).toBe(401)
+  })
 })

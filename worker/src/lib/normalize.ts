@@ -5,7 +5,12 @@
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
-export function normalizeEmail(input: string): string | null {
+// Accepts unknown so route handlers can pass JSON-parsed body fields directly
+// without a separate typeof guard. JSON-via-readJson can produce numbers,
+// arrays, or objects under attacker control; non-strings normalize to null
+// rather than throwing.
+export function normalizeEmail(input: unknown): string | null {
+  if (typeof input !== 'string') return null
   const e = input.trim().toLowerCase()
   return EMAIL_RE.test(e) ? e : null
 }
@@ -14,7 +19,8 @@ export function normalizeEmail(input: string): string | null {
 // First digit after + must be 1-9 (no leading zero on country code).
 const E164_RE = /^\+[1-9]\d{7,14}$/
 
-export function normalizePhoneE164(input: string): string | null {
+export function normalizePhoneE164(input: unknown): string | null {
+  if (typeof input !== 'string') return null
   // Strip spaces, dashes, parentheses, dots — common formatting noise.
   const stripped = input.replace(/[\s\-().]/g, '')
   return E164_RE.test(stripped) ? stripped : null
@@ -46,7 +52,8 @@ const COUNTRY_PREFIXES: Record<string, string> = {
   MZ: '258',
 }
 
-export function toE164(input: string, country: string): string | null {
+export function toE164(input: unknown, country: string): string | null {
+  if (typeof input !== 'string') return null
   const direct = normalizePhoneE164(input)
   if (direct) return direct
 

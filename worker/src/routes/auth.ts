@@ -2,11 +2,10 @@ import { Hono } from 'hono'
 import type { AppContext } from '../types'
 import { generateCode, storeOtp, verifyOtp, recordOtpAttempt, getSendCount } from '../services/otp'
 import { selectProviders } from '../services/otp/select'
-import { normalizePhoneE164 } from '../lib/normalize'
+import { normalizeEmail, normalizePhoneE164 } from '../lib/normalize'
 import { newId, getUserByPhone, getUserByEmail, getUserById, insertUser } from '../lib/db'
-import { startSession, endAccessSession, rotateRefresh } from '../lib/session'
+import { startSession, endSession, rotateRefresh, bumpPasswordVersion } from '../lib/session'
 import { hashPassword, verifyPassword } from '../lib/password'
-import { normalizeEmail } from '../lib/normalize'
 import { verifyRefresh } from '../lib/jwt'
 import { authMiddleware } from '../middleware/auth'
 
@@ -14,8 +13,7 @@ const SEND_LIMIT_PER_HOUR = 3
 
 // Type-safe JSON body reader. Returns Partial<T> on parse failure rather
 // than letting Hono's c.req.json throw — which would surface as a 500 via
-// onError, when 400 is the right status for a malformed body. Partial<T>
-// (T already optional-fielded) keeps narrowing usable downstream.
+// onError, when 400 is the right status for a malformed body.
 async function readJson<T extends object>(req: { json(): Promise<unknown> }): Promise<Partial<T>> {
   try {
     const v = await req.json()
@@ -25,11 +23,28 @@ async function readJson<T extends object>(req: { json(): Promise<unknown> }): Pr
   }
 }
 
+// Narrow an unknown JSON body field to string. The Partial<T> typing on
+// readJson lies about runtime — attackers can send `{ password: 12345 }`
+// or `{ phone: ['+233...'] }` and the value will not be a string. Every
+// route uses this to cleanly emit 400 instead of crashing into 500.
+function asString(v: unknown): string | null {
+  return typeof v === 'string' ? v : null
+}
+
+// Translate D1 UNIQUE constraint failures from check-then-insert races into
+// 409s. Anything else propagates and surfaces as 500 via onError.
+function isUniqueViolation(e: unknown, column?: string): boolean {
+  if (!(e instanceof Error)) return false
+  const m = e.message
+  if (column) return new RegExp(`UNIQUE constraint failed.*\\.${column}`).test(m)
+  return /UNIQUE constraint failed/.test(m)
+}
+
 export const auth = new Hono<AppContext>()
 
 auth.post('/otp/send', async (c) => {
   const body = await readJson<{ phone?: string }>(c.req)
-  const phone = body.phone ? normalizePhoneE164(body.phone) : null
+  const phone = normalizePhoneE164(body.phone)
   if (!phone) return c.json({ error: 'invalid phone' }, 400)
 
   const sent = await getSendCount(c.env.OTP, phone)
@@ -58,17 +73,27 @@ auth.post('/otp/send', async (c) => {
 
 auth.post('/otp/verify', async (c) => {
   const body = await readJson<{ phone?: string; code?: string }>(c.req)
-  const phone = body.phone ? normalizePhoneE164(body.phone) : null
-  if (!phone || !body.code) return c.json({ error: 'phone and code required' }, 400)
+  const phone = normalizePhoneE164(body.phone)
+  const code = asString(body.code)
+  if (!phone || !code) return c.json({ error: 'phone and code required' }, 400)
 
-  const ok = await verifyOtp(c.env.OTP, phone, body.code)
+  const ok = await verifyOtp(c.env.OTP, phone, code)
   if (!ok) return c.json({ error: 'invalid or expired code' }, 401)
 
   let user = await getUserByPhone(c.env.DB, phone)
   if (!user) {
     const id = newId()
-    await insertUser(c.env.DB, { id, phone })
-    user = await getUserById(c.env.DB, id)
+    try {
+      await insertUser(c.env.DB, { id, phone })
+    } catch (e) {
+      if (isUniqueViolation(e, 'phone')) {
+        // Race: another concurrent /otp/verify won the insert. Re-read.
+        user = await getUserByPhone(c.env.DB, phone)
+      } else {
+        throw e
+      }
+    }
+    if (!user) user = await getUserById(c.env.DB, id)
   }
   if (!user) return c.json({ error: 'user lookup failed' }, 500)
 
@@ -81,40 +106,50 @@ auth.post('/otp/verify', async (c) => {
 
 auth.post('/signup', async (c) => {
   const body = await readJson<{ email?: string; password?: string; display_name?: string }>(c.req)
-  const email = body.email ? normalizeEmail(body.email) : null
+  const email = normalizeEmail(body.email)
+  const password = asString(body.password)
+  const display_name = asString(body.display_name) ?? undefined
   if (!email) return c.json({ error: 'invalid email' }, 400)
-  if (!body.password || body.password.length < 8) return c.json({ error: 'password too short' }, 400)
+  if (!password || password.length < 8) return c.json({ error: 'password too short' }, 400)
 
   const existing = await getUserByEmail(c.env.DB, email)
   if (existing) return c.json({ error: 'email already registered' }, 409)
 
   const id = newId()
-  const password_hash = await hashPassword(body.password)
-  await insertUser(c.env.DB, { id, email, password_hash, display_name: body.display_name })
+  const password_hash = await hashPassword(password)
+  try {
+    await insertUser(c.env.DB, { id, email, password_hash, display_name })
+  } catch (e) {
+    if (isUniqueViolation(e, 'email')) {
+      // Race: lost the check-then-insert window to a concurrent signup.
+      return c.json({ error: 'email already registered' }, 409)
+    }
+    throw e
+  }
 
   const tokens = await startSession(c.env, id)
   return c.json({
     ...tokens,
-    user: { id, email, display_name: body.display_name },
+    user: { id, email, display_name },
   })
 })
 
 auth.post('/login', async (c) => {
   const body = await readJson<{ email?: string; password?: string }>(c.req)
-  const email = body.email ? normalizeEmail(body.email) : null
-  // Always burn ~600k iterations even on miss to avoid timing-based user
-  // enumeration. The 401 reason is uniformly 'invalid credentials'.
-  if (!email || !body.password) return c.json({ error: 'invalid credentials' }, 401)
+  const email = normalizeEmail(body.email)
+  const password = asString(body.password)
+  // Uniform 401 message regardless of failure mode (no user enumeration).
+  if (!email || !password) return c.json({ error: 'invalid credentials' }, 401)
 
   const user = await getUserByEmail(c.env.DB, email)
   if (!user || !user.password_hash) {
     // Burn comparable wall-clock time so attackers can't use response time to
     // probe for valid emails.
-    await hashPassword(body.password).catch(() => null)
+    await hashPassword(password).catch(() => null)
     return c.json({ error: 'invalid credentials' }, 401)
   }
 
-  const ok = await verifyPassword(body.password, user.password_hash)
+  const ok = await verifyPassword(password, user.password_hash)
   if (!ok) return c.json({ error: 'invalid credentials' }, 401)
 
   const tokens = await startSession(c.env, user.id)
@@ -126,11 +161,12 @@ auth.post('/login', async (c) => {
 
 auth.post('/refresh', async (c) => {
   const body = await readJson<{ refresh?: string }>(c.req)
-  if (!body.refresh) return c.json({ error: 'refresh required' }, 400)
+  const refresh = asString(body.refresh)
+  if (!refresh) return c.json({ error: 'refresh required' }, 400)
 
   let claims
   try {
-    claims = await verifyRefresh(c.env.AUTH_SECRET, body.refresh)
+    claims = await verifyRefresh(c.env.AUTH_SECRET, refresh)
   } catch {
     return c.json({ error: 'invalid refresh' }, 401)
   }
@@ -141,9 +177,11 @@ auth.post('/refresh', async (c) => {
 })
 
 auth.post('/logout', authMiddleware, async (c) => {
-  // authMiddleware sets c.var.jti to the verified access-token jti.
+  // authMiddleware set c.var.jti to the verified access-token jti.
+  // endSession revokes BOTH the access record and its paired refresh
+  // record so a logged-out token can't /refresh back into use.
   const jti = c.get('jti')
-  if (jti) await endAccessSession(c.env, jti)
+  if (jti) await endSession(c.env, jti)
   return c.json({ ok: true })
 })
 
@@ -154,8 +192,8 @@ auth.get('/me', authMiddleware, async (c) => {
 })
 
 // Allowlisted fields for PUT /settings — explicitly excludes password_hash,
-// id, created_at, phone, email, etc. to prevent privilege escalation via
-// arbitrary column updates.
+// id, created_at, phone, email, is_active, etc. to prevent privilege
+// escalation via arbitrary column updates.
 const SETTINGS_FIELDS = [
   'display_name', 'avatar_url', 'default_model', 'theme', 'ad_blocking', 'privacy_mode',
   'low_bandwidth_mode', 'search_engine', 'language', 'country', 'sidebar_position',
@@ -181,12 +219,24 @@ auth.put('/settings', authMiddleware, async (c) => {
 
 auth.put('/password', authMiddleware, async (c) => {
   const body = await readJson<{ current?: string; next?: string }>(c.req)
-  if (!body.current || !body.next || body.next.length < 8) return c.json({ error: 'invalid request' }, 400)
-  const user = await getUserById(c.env.DB, c.get('userId')!)
+  const current = asString(body.current)
+  const next = asString(body.next)
+  if (!current || !next || next.length < 8) return c.json({ error: 'invalid request' }, 400)
+
+  const userId = c.get('userId')!
+  const user = await getUserById(c.env.DB, userId)
   if (!user || !user.password_hash) return c.json({ error: 'no password set' }, 400)
-  const ok = await verifyPassword(body.current, user.password_hash)
+  const ok = await verifyPassword(current, user.password_hash)
   if (!ok) return c.json({ error: 'wrong current password' }, 401)
-  const next = await hashPassword(body.next)
-  await c.env.DB.prepare('UPDATE users SET password_hash = ?, updated_at = unixepoch() WHERE id = ?').bind(next, user.id).run()
+
+  const nextHash = await hashPassword(next)
+  await c.env.DB.prepare('UPDATE users SET password_hash = ?, updated_at = unixepoch() WHERE id = ?').bind(nextHash, user.id).run()
+
+  // Bump the password-version sentinel: any access/refresh token issued
+  // BEFORE this moment will be rejected by authMiddleware on next use,
+  // even though its JWT signature is still valid. This is the OWASP
+  // ASVS 3.5.7 invariant — password change invalidates active sessions.
+  await bumpPasswordVersion(c.env, userId)
+
   return c.json({ ok: true })
 })

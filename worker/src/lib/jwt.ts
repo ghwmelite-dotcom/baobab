@@ -54,16 +54,29 @@ export async function issueTokens(secret: string, userId: string): Promise<Issue
 export interface VerifiedClaims {
   sub: string
   jti: string
+  // Issued-at in seconds since epoch. authMiddleware compares against the
+  // per-user password-version sentinel to invalidate pre-password-change tokens.
+  iat: number
 }
 
 export async function verifyAccess(secret: string, token: string): Promise<VerifiedClaims> {
   const { payload } = await jwtVerify(token, enc.encode(secret), VERIFY_OPTS)
-  if (payload.typ !== 'access' || !payload.sub || !payload.jti) throw new Error('not an access token')
-  return { sub: payload.sub, jti: payload.jti }
+  if (
+    payload.typ !== 'access' ||
+    !payload.sub ||
+    !payload.jti ||
+    typeof payload.iat !== 'number'
+  ) throw new Error('not an access token')
+  return { sub: payload.sub, jti: payload.jti, iat: payload.iat }
 }
 
 export async function verifyRefresh(secret: string, token: string): Promise<VerifiedClaims> {
   const { payload } = await jwtVerify(token, enc.encode(secret), VERIFY_OPTS)
-  if (payload.typ !== 'refresh' || !payload.sub || !payload.jti) throw new Error('not a refresh token')
-  return { sub: payload.sub, jti: payload.jti }
+  if (
+    payload.typ !== 'refresh' ||
+    !payload.sub ||
+    !payload.jti ||
+    typeof payload.iat !== 'number'
+  ) throw new Error('not a refresh token')
+  return { sub: payload.sub, jti: payload.jti, iat: payload.iat }
 }
