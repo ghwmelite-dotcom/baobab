@@ -26,8 +26,8 @@ CREATE TABLE users (
   created_at INTEGER DEFAULT (unixepoch()),
   updated_at INTEGER DEFAULT (unixepoch())
 );
-CREATE INDEX idx_users_phone ON users(phone);
-CREATE INDEX idx_users_email ON users(email);
+-- phone/email lookups are served by SQLite's auto-created UNIQUE indexes;
+-- see migration 0002 for the cleanup of the redundant explicit indexes.
 
 CREATE TABLE tabs (
   id TEXT PRIMARY KEY,
@@ -144,4 +144,6 @@ CREATE TABLE offline_articles (
   read_at INTEGER,
   size_bytes INTEGER
 );
-CREATE INDEX idx_offline_user_unread ON offline_articles(user_id, read_at, saved_at DESC);
+CREATE INDEX idx_offline_user_unread
+  ON offline_articles(user_id, saved_at DESC)
+  WHERE read_at IS NULL;
