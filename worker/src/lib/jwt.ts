@@ -1,4 +1,4 @@
-import { SignJWT, jwtVerify } from 'jose'
+import { SignJWT, jwtVerify, type JWTVerifyOptions } from 'jose'
 
 // Pinned issuer/audience guard against future cross-environment token reuse
 // (e.g. a staging-issued token leaked into prod). Bump if the surface ever
@@ -12,12 +12,12 @@ const CLOCK_SKEW_SEC = 5
 
 const enc = new TextEncoder()
 
-const VERIFY_OPTS = {
+const VERIFY_OPTS: JWTVerifyOptions = {
   algorithms: ['HS256'],
   issuer: JWT_ISSUER,
   audience: JWT_AUDIENCE,
   clockTolerance: CLOCK_SKEW_SEC,
-} as const
+}
 
 export interface IssuedTokens {
   access: string
