@@ -17,5 +17,5 @@ module.exports = {
     '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
     '@typescript-eslint/no-explicit-any': 'error',
   },
-  ignorePatterns: ['dist', 'node_modules', '.turbo', 'src-tauri/target', '*.config.*'],
+  ignorePatterns: ['dist', 'node_modules', '.turbo', 'src-tauri/target', '*.config.js', '*.config.cjs', '*.config.mjs'],
 }
