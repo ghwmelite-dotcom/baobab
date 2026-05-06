@@ -1,0 +1,6 @@
+node_modules
+dist
+.turbo
+src-tauri/target
+package-lock.json
+worker/.wrangler
