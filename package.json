@@ -6,11 +6,19 @@
   "license": "AGPL-3.0",
   "workspaces": ["apps/*", "packages/*", "worker"],
   "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "test": "turbo run test",
+    "typecheck": "turbo run typecheck",
+    "lint": "turbo run lint",
     "dev:worker": "cd worker && npm run dev",
     "test:worker": "cd worker && npm test",
-    "deploy:worker": "cd worker && npm run deploy"
+    "deploy:worker": "cd worker && npm run deploy",
+    "dev:desktop": "cd apps/desktop && npm run tauri dev",
+    "build:desktop": "cd apps/desktop && npm run tauri build"
   },
   "devDependencies": {
+    "turbo": "^2.0.0",
     "typescript": "^5.6.0"
   }
 }
