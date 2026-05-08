@@ -1,0 +1,24 @@
+/* Global token defaults — apply on <html> via globals.css.
+   ThemeProvider overrides per subtree. */
+:root {
+  --canvas: #15110d;
+  --surface-1: #1c1814;
+  --surface-2: #251f19;
+  --surface-3: #2e271f;
+  --border: #3a3127;
+  --text-primary: #f0e9dc;
+  --text-secondary: #b8ad9a;
+  --accent: #d97706;
+  color-scheme: dark;
+}
+
+[data-baobab-theme='light'] {
+  color-scheme: light;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0ms !important;
+    transition-duration: 0ms !important;
+  }
+}
