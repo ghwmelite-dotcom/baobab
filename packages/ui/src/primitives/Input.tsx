@@ -15,6 +15,11 @@ const style: CSSProperties = {
 type Props = InputHTMLAttributes<HTMLInputElement>
 
 export const Input = forwardRef<HTMLInputElement, Props>((props, ref) => (
-  <input ref={ref} {...props} style={{ ...style, ...props.style }} />
+  <input
+    ref={ref}
+    {...props}
+    className={['baobab-input', props.className].filter(Boolean).join(' ')}
+    style={{ ...style, ...props.style }}
+  />
 ))
 Input.displayName = 'Input'

@@ -17,4 +17,8 @@ describe('brand tokens', () => {
     expect(typography.reading).toBe('Source Serif 4')
     expect(typography.mono).toBe('JetBrains Mono')
   })
+  it('exposes textOnAccent for primary buttons in both themes', () => {
+    expect(darkTokens.textOnAccent).toBe('#15110d')
+    expect(lightTokens.textOnAccent).toBe('#faf6ee')
+  })
 })

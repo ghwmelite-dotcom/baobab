@@ -19,6 +19,7 @@ function tokensToCssVars(tokens: ThemeTokens): CSSProperties {
     '--text-primary': tokens.textPrimary,
     '--text-secondary': tokens.textSecondary,
     '--text-muted': tokens.textMuted,
+    '--text-on-accent': tokens.textOnAccent,
     '--accent': tokens.accent,
     '--accent-light': tokens.accentLight,
     '--accent-dim': tokens.accentDim,

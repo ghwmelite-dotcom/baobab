@@ -22,7 +22,11 @@ const style: CSSProperties = {
 
 export function IconButton({ children, ...rest }: Props) {
   return (
-    <button {...rest} style={{ ...style, ...rest.style }}>
+    <button
+      {...rest}
+      className={['baobab-icon-button', rest.className].filter(Boolean).join(' ')}
+      style={{ ...style, ...rest.style }}
+    >
       {children}
     </button>
   )

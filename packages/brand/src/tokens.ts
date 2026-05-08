@@ -12,6 +12,7 @@ export interface ThemeTokens {
   textPrimary: string
   textSecondary: string
   textMuted: string
+  textOnAccent: string
   accent: string
   accentLight: string
   accentDim: string
@@ -31,6 +32,7 @@ export const darkTokens: ThemeTokens = {
   textPrimary: '#f0e9dc',
   textSecondary: '#b8ad9a',
   textMuted: '#7a7060',
+  textOnAccent: '#15110d',
   accent: '#d97706',
   accentLight: '#f59e0b',
   accentDim: 'rgba(217, 119, 6, 0.12)',
@@ -50,6 +52,7 @@ export const lightTokens: ThemeTokens = {
   textPrimary: '#1c1814',
   textSecondary: '#3f3527',
   textMuted: '#6b5d49',
+  textOnAccent: '#faf6ee',
   accent: '#c2410c',
   accentLight: '#d97706',
   accentDim: 'rgba(194, 65, 12, 0.1)',

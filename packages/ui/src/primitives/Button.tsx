@@ -21,7 +21,7 @@ const baseStyle: CSSProperties = {
 }
 
 const variantStyles: Record<Variant, CSSProperties> = {
-  primary: { background: 'var(--accent)', color: '#15110d', borderColor: 'var(--accent)' },
+  primary: { background: 'var(--accent)', color: 'var(--text-on-accent)', borderColor: 'var(--accent)' },
   secondary: { background: 'var(--surface-2)', color: 'var(--text-primary)' },
   ghost: { background: 'transparent', color: 'var(--text-primary)', borderColor: 'transparent' },
 }
@@ -39,6 +39,7 @@ export function Button({
       {...rest}
       disabled={disabled || loading}
       aria-busy={loading || undefined}
+      className={['baobab-button', rest.className].filter(Boolean).join(' ')}
       style={{ ...baseStyle, ...variantStyles[variant], ...style }}
     >
       {children}

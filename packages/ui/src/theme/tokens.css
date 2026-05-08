@@ -1,3 +1,5 @@
+@import url('../primitives/primitives.css');
+
 /* Global token defaults — apply on <html> via globals.css.
    ThemeProvider overrides per subtree. */
 :root {
