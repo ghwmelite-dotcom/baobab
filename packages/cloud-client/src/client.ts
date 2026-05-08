@@ -13,14 +13,18 @@ export interface ClientOptions {
   baseUrl: string
   /** Inject for tests; defaults to global `fetch`. */
   fetch?: typeof fetch
+  /** Per-request timeout in ms. Default 15_000. Pass 0 to disable. */
+  timeoutMs?: number
 }
 
 export class BaobabClient {
   private accessToken: string | null = null
   private readonly fetchFn: typeof fetch
+  private readonly defaultTimeoutMs: number
 
   constructor(private readonly opts: ClientOptions) {
     this.fetchFn = opts.fetch ?? globalThis.fetch
+    this.defaultTimeoutMs = opts.timeoutMs ?? 15_000
   }
 
   setAccessToken(token: string | null): void {
@@ -33,7 +37,21 @@ export class BaobabClient {
     if (this.accessToken) headers.set('Authorization', `Bearer ${this.accessToken}`)
     if (!headers.has('Content-Type') && init.body) headers.set('Content-Type', 'application/json')
     const url = this.opts.baseUrl.replace(/\/$/, '') + path
-    return this.fetchFn(url, { ...init, headers })
+
+    const controller = new AbortController()
+    const timer =
+      this.defaultTimeoutMs > 0 ? setTimeout(() => controller.abort(), this.defaultTimeoutMs) : null
+    // Forward caller's abort signal too.
+    if (init.signal) {
+      if (init.signal.aborted) controller.abort()
+      else init.signal.addEventListener('abort', () => controller.abort(), { once: true })
+    }
+
+    try {
+      return await this.fetchFn(url, { ...init, headers, signal: controller.signal })
+    } finally {
+      if (timer) clearTimeout(timer)
+    }
   }
 
   async getJson<T>(path: string): Promise<T> {
