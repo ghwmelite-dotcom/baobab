@@ -1,11 +1,19 @@
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const host = process.env.TAURI_DEV_HOST
 
 export default defineConfig({
   plugins: [react()],
   clearScreen: false,
+  resolve: {
+    alias: {
+      '~': path.resolve(__dirname, './src'),
+    },
+  },
   server: {
     port: 1420,
     strictPort: true,
