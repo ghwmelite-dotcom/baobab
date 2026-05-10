@@ -2,6 +2,7 @@ import { ThemeProvider } from '@baobab/ui'
 import { ChromeShell } from './chrome/ChromeShell'
 import { TitleBar } from './chrome/TitleBar'
 import { TabStrip } from './chrome/TabStrip'
+import { Omnibar } from './chrome/Omnibar'
 import { useChromeShortcuts } from './chrome/useChromeShortcuts'
 
 export function App() {
@@ -11,7 +12,7 @@ export function App() {
       <ChromeShell
         titlebar={<TitleBar />}
         tabStrip={<TabStrip />}
-        omnibar={<div style={{ height: 56, background: 'var(--surface-1)' }} />}
+        omnibar={<Omnibar />}
         statusBar={<div style={{ height: 28, background: 'var(--surface-1)' }} />}
       >
         {null}
