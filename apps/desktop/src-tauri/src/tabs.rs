@@ -77,6 +77,15 @@ pub async fn navigate_tab(app: AppHandle, id: String, url: String) -> Result<(),
 }
 
 #[tauri::command]
+pub async fn hide_tab(app: AppHandle, id: String) -> Result<(), String> {
+    let label = tab_label(&id);
+    if let Some(wv) = app.get_webview(&label) {
+        wv.hide().map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
+#[tauri::command]
 pub async fn list_tabs(app: AppHandle) -> Result<Vec<TabInfo>, String> {
     let main = app
         .get_window("main")

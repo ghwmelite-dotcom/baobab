@@ -18,6 +18,7 @@ pub fn run() {
             tabs::create_tab,
             tabs::close_tab,
             tabs::show_tab,
+            tabs::hide_tab,
             tabs::navigate_tab,
             tabs::list_tabs,
         ])

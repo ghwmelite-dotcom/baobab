@@ -12,6 +12,8 @@ export const ipcCloseTab = (id: string): Promise<void> => invoke('close_tab', { 
 
 export const ipcShowTab = (id: string): Promise<void> => invoke('show_tab', { id })
 
+export const ipcHideTab = (id: string): Promise<void> => invoke('hide_tab', { id })
+
 export const ipcNavigateTab = (id: string, url: string): Promise<void> =>
   invoke('navigate_tab', { id, url })
 
