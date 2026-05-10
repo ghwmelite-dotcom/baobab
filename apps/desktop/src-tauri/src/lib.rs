@@ -1,3 +1,5 @@
+mod tabs;
+
 use tauri::Manager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -12,7 +14,13 @@ pub fn run() {
             }
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![])
+        .invoke_handler(tauri::generate_handler![
+            tabs::create_tab,
+            tabs::close_tab,
+            tabs::show_tab,
+            tabs::navigate_tab,
+            tabs::list_tabs,
+        ])
         .run(tauri::generate_context!())
         .expect("error while running Baobab");
 }
