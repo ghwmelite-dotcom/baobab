@@ -81,6 +81,7 @@ export function Omnibar() {
     >
       <input
         ref={ref}
+        className="baobab-input"
         value={value}
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={(e) => {
@@ -101,7 +102,6 @@ export function Omnibar() {
           color: 'var(--text-primary)',
           fontFamily: '"JetBrains Mono", Menlo, monospace',
           fontSize: 13,
-          outline: 'none',
         }}
       />
     </div>
