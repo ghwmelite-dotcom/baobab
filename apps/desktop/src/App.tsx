@@ -9,7 +9,7 @@ import { NewTabPage } from './chrome/NewTabPage'
 import { useChromeShortcuts } from './chrome/useChromeShortcuts'
 import { refreshResidency } from './state/health'
 import { useTabsStore } from './state/tabs.store'
-import { ipcHideTab } from './ipc/tabs'
+import { ipcHideTab, ipcShowTab } from './ipc/tabs'
 
 export function App() {
   useChromeShortcuts()
@@ -25,8 +25,11 @@ export function App() {
   const showNtp = !active || active.url === 'about:blank'
 
   useEffect(() => {
-    if (showNtp && activeId) {
+    if (!activeId) return
+    if (showNtp) {
       void ipcHideTab(activeId).catch(() => undefined)
+    } else {
+      void ipcShowTab(activeId).catch(() => undefined)
     }
   }, [showNtp, activeId])
 
