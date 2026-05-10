@@ -1,0 +1,9 @@
+# Pin this crate to the GNU target on Windows.
+# Rationale: see plan_deviations.md "Desktop P0a Task 11".
+# CI runners (desktop-release.yml) override this and use MSVC; that's intentional.
+
+[build]
+target = "x86_64-pc-windows-gnu"
+
+[target.x86_64-pc-windows-gnu]
+linker = "C:/msys64/mingw64/bin/x86_64-w64-mingw32-gcc.exe"
