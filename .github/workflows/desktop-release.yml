@@ -55,18 +55,10 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Code signing — populate in repo secrets before first signed release.
-          # Windows (Azure Trusted Signing): TBD plugin; for v0 we ship unsigned.
-          # macOS:
-          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          # Tauri updater signing key (generated once via `tauri signer generate`):
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          # Code signing env vars are intentionally omitted until certs are
+          # provisioned. tauri-action skips signing when these are unset.
+          # When ready, restore the APPLE_*, TAURI_SIGNING_*, and Windows
+          # signing blocks. See plan_deviations.md "Task 24 / desktop-release".
         with:
           projectPath: apps/desktop
           tagName: ${{ github.ref_name }}
