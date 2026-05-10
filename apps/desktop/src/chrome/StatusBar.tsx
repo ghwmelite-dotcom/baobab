@@ -49,6 +49,7 @@ export function StatusBar() {
 
       <button
         type="button"
+        className="baobab-button"
         onClick={() => setLowBwMode(lowBwMode === 'on' ? 'auto' : 'on')}
         title={strings.tooltips.lowBandwidth}
         style={{
