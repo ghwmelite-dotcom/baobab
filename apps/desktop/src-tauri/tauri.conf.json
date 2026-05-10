@@ -39,7 +39,7 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "category": "Network",
+    "category": "Utility",
     "shortDescription": "African AI Browser",
     "longDescription": "Sovereign-by-design browser with AI on Cloudflare's African edge."
   },
