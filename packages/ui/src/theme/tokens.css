@@ -1,20 +1,47 @@
 @import url('../primitives/primitives.css');
 
 /* Global token defaults — apply on <html> via globals.css.
-   ThemeProvider overrides per subtree. */
+   ThemeProvider overrides per subtree. Values mirror darkTokens / lightTokens
+   in @baobab/brand. Keep these in sync if either side changes. */
 :root {
   --canvas: #15110d;
   --surface-1: #1c1814;
   --surface-2: #251f19;
   --surface-3: #2e271f;
   --border: #3a3127;
+  --border-accent: #4a3e2f;
   --text-primary: #f0e9dc;
   --text-secondary: #b8ad9a;
+  --text-muted: #7a7060;
+  --text-on-accent: #15110d;
   --accent: #d97706;
+  --accent-light: #f59e0b;
+  --accent-dim: rgba(217, 119, 6, 0.12);
+  --sovereignty-ok: #65a30d;
+  --sovereignty-warn: #d97706;
+  --critical: #b91c1c;
+  --info: #0891b2;
   color-scheme: dark;
 }
 
 [data-baobab-theme='light'] {
+  --canvas: #faf6ee;
+  --surface-1: #f4ecdc;
+  --surface-2: #ebe1cd;
+  --surface-3: #e0d4bc;
+  --border: #cdbfa3;
+  --border-accent: #b09b78;
+  --text-primary: #1c1814;
+  --text-secondary: #3f3527;
+  --text-muted: #6b5d49;
+  --text-on-accent: #faf6ee;
+  --accent: #c2410c;
+  --accent-light: #d97706;
+  --accent-dim: rgba(194, 65, 12, 0.1);
+  --sovereignty-ok: #4d7c0f;
+  --sovereignty-warn: #c2410c;
+  --critical: #991b1b;
+  --info: #0e7490;
   color-scheme: light;
 }
 
