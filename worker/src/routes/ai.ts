@@ -2,7 +2,8 @@ import { Hono } from 'hono'
 import { authMiddleware } from '../middleware/auth'
 import { rateLimit } from '../middleware/rate-limit'
 import { newId, getUserById } from '../lib/db'
-import { runChat, runChatStream, pickModel, type ChatMessage } from '../services/ai'
+import { runChat, runChatStream, pickModel, embedQuery, type ChatMessage } from '../services/ai'
+import { AFRICAN_SOURCES_SEED, rerank } from '../services/search-rank'
 import type { AppContext } from '../types'
 
 export const ai = new Hono<AppContext>()
@@ -132,4 +133,43 @@ ai.post('/summarize', async (c) => {
 
   await c.env.PAGE_CACHE.put(cacheKey, JSON.stringify(parsed), { expirationTtl: 3600 })
   return c.json({ ...parsed, cached: false })
+})
+
+ai.post('/search', async (c) => {
+  const body = await c.req.json<{ query?: string }>()
+  if (!body.query) return c.json({ error: 'query required' }, 400)
+
+  c.executionCtx.waitUntil(embedQuery(c.env, body.query).catch(() => []))
+
+  const reply = await runChat(c.env, c.env.DEFAULT_MODEL, [
+    {
+      role: 'system',
+      content:
+        'You are Baobab Search. For the user query, give a concise direct answer (2-3 sentences) and then list 5-8 candidate URLs that would help. Prioritize African sources (gov.gh, gov.ng, gov.ke, gov.za, au.int, premiumtimesng.com, dailymaverick.co.za, theeastafrican.co.ke, africanews.com etc) when the topic is Africa-relevant. Output JSON: {"answer":"...","results":[{"title":"...","url":"https://..."}]}',
+    },
+    { role: 'user', content: body.query },
+  ])
+
+  let parsed: { answer: string; results: Array<{ title: string; url: string }> }
+  try {
+    parsed = JSON.parse(reply.replace(/^```json\s*|\s*```$/g, ''))
+  } catch {
+    parsed = { answer: reply.slice(0, 500), results: [] }
+  }
+  parsed.results = rerank(parsed.results, AFRICAN_SOURCES_SEED)
+
+  return c.json(parsed)
+})
+
+ai.post('/compare', async (c) => {
+  const body = await c.req.json<{ items?: string[]; criteria?: string }>()
+  if (!body.items || body.items.length < 2) return c.json({ error: 'need at least 2 items' }, 400)
+  const reply = await runChat(c.env, c.env.DEFAULT_MODEL, [
+    {
+      role: 'system',
+      content: 'Compare the items the user provides on the criteria they specify. Output a structured markdown table.',
+    },
+    { role: 'user', content: `Items: ${body.items.join(' vs ')}\nCriteria: ${body.criteria ?? 'general suitability'}` },
+  ])
+  return c.json({ comparison: reply })
 })
