@@ -10,6 +10,7 @@ import { proxy } from './routes/proxy'
 import { history } from './routes/history'
 import { bookmarks } from './routes/bookmarks'
 import { tabs } from './routes/tabs'
+import { conversations } from './routes/conversations'
 
 export { ReaderQueue } from './durable-objects/reader-queue'
 
@@ -48,6 +49,7 @@ app.route('/api/proxy', proxy)
 app.route('/api/history', history)
 app.route('/api/bookmarks', bookmarks)
 app.route('/api/tabs', tabs)
+app.route('/api/conversations', conversations)
 
 app.onError((err, c) => {
   const reqId = c.get('reqId')
