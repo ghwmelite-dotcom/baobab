@@ -7,6 +7,7 @@ import { residency } from './middleware/residency'
 import { auth } from './routes/auth'
 import { ai } from './routes/ai'
 import { proxy } from './routes/proxy'
+import { history } from './routes/history'
 
 export { ReaderQueue } from './durable-objects/reader-queue'
 
@@ -42,6 +43,7 @@ app.get('/', (c) => c.json({ name: c.env.APP_NAME, version: c.env.APP_VERSION })
 app.route('/api/auth', auth)
 app.route('/api/ai', ai)
 app.route('/api/proxy', proxy)
+app.route('/api/history', history)
 
 app.onError((err, c) => {
   const reqId = c.get('reqId')
