@@ -10,6 +10,7 @@ import { useChromeShortcuts } from './chrome/useChromeShortcuts'
 import { refreshResidency } from './state/health'
 import { useTabsStore } from './state/tabs.store'
 import { ipcHideTab, ipcShowTab } from './ipc/tabs'
+import { AuthGate } from './auth/AuthGate'
 
 export function App() {
   useChromeShortcuts()
@@ -35,14 +36,16 @@ export function App() {
 
   return (
     <ThemeProvider theme="dark">
-      <ChromeShell
-        titlebar={<TitleBar />}
-        tabStrip={<TabStrip />}
-        omnibar={<Omnibar />}
-        statusBar={<StatusBar />}
-      >
-        {showNtp ? <NewTabPage /> : null}
-      </ChromeShell>
+      <AuthGate>
+        <ChromeShell
+          titlebar={<TitleBar />}
+          tabStrip={<TabStrip />}
+          omnibar={<Omnibar />}
+          statusBar={<StatusBar />}
+        >
+          {showNtp ? <NewTabPage /> : null}
+        </ChromeShell>
+      </AuthGate>
     </ThemeProvider>
   )
 }
