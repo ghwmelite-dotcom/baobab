@@ -2,7 +2,7 @@ import { Hono } from 'hono'
 import { authMiddleware } from '../middleware/auth'
 import { rateLimit } from '../middleware/rate-limit'
 import { newId, getUserById } from '../lib/db'
-import { runChatStream, pickModel, type ChatMessage } from '../services/ai'
+import { runChat, runChatStream, pickModel, type ChatMessage } from '../services/ai'
 import type { AppContext } from '../types'
 
 export const ai = new Hono<AppContext>()
@@ -90,3 +90,46 @@ function extractTextFromSSE(raw: string): string {
   }
   return out
 }
+
+async function sha256(s: string): Promise<string> {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s))
+  return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, '0')).join('')
+}
+
+ai.post('/summarize', async (c) => {
+  const body = await c.req.json<{ url?: string; html_content?: string }>()
+  if (!body.url) return c.json({ error: 'url required' }, 400)
+
+  const cacheKey = `summary:${await sha256(body.url)}`
+  const cached = await c.env.PAGE_CACHE.get(cacheKey)
+  if (cached) return c.json({ ...JSON.parse(cached), cached: true })
+
+  let html = body.html_content
+  if (!html) {
+    const fetched = await fetch(body.url, { headers: { 'User-Agent': 'BaobabBot/1.0 (+https://baobab.africa)' } })
+    if (!fetched.ok) return c.json({ error: 'failed to fetch url' }, 502)
+    html = (await fetched.text()).slice(0, 6000)
+  }
+
+  const user = await getUserById(c.env.DB, c.get('userId')!)
+  const model = pickModel(c.env, { model: c.env.SUMMARIZE_MODEL, lowBw: !!user?.low_bandwidth_mode })
+
+  const reply = await runChat(c.env, model, [
+    {
+      role: 'system',
+      content:
+        'Summarize the page content into a 3-sentence summary, then list 3-5 key points as a JSON array. Output strict JSON: {"summary":"...","key_points":["..."],"est_read_time":N}',
+    },
+    { role: 'user', content: html.slice(0, 6000) },
+  ])
+
+  let parsed: { summary: string; key_points: string[]; est_read_time: number }
+  try {
+    parsed = JSON.parse(reply.replace(/^```json\s*|\s*```$/g, ''))
+  } catch {
+    parsed = { summary: reply.slice(0, 500), key_points: [], est_read_time: 1 }
+  }
+
+  await c.env.PAGE_CACHE.put(cacheKey, JSON.stringify(parsed), { expirationTtl: 3600 })
+  return c.json({ ...parsed, cached: false })
+})
