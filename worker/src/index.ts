@@ -8,6 +8,7 @@ import { auth } from './routes/auth'
 import { ai } from './routes/ai'
 import { proxy } from './routes/proxy'
 import { history } from './routes/history'
+import { bookmarks } from './routes/bookmarks'
 
 export { ReaderQueue } from './durable-objects/reader-queue'
 
@@ -44,6 +45,7 @@ app.route('/api/auth', auth)
 app.route('/api/ai', ai)
 app.route('/api/proxy', proxy)
 app.route('/api/history', history)
+app.route('/api/bookmarks', bookmarks)
 
 app.onError((err, c) => {
   const reqId = c.get('reqId')
