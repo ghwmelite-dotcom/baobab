@@ -12,6 +12,7 @@ import { bookmarks } from './routes/bookmarks'
 import { tabs } from './routes/tabs'
 import { conversations } from './routes/conversations'
 import { assets } from './routes/assets'
+import { offline } from './routes/offline'
 
 export { ReaderQueue } from './durable-objects/reader-queue'
 
@@ -52,6 +53,7 @@ app.route('/api/bookmarks', bookmarks)
 app.route('/api/tabs', tabs)
 app.route('/api/conversations', conversations)
 app.route('/api/assets', assets)
+app.route('/api/offline', offline)
 
 app.onError((err, c) => {
   const reqId = c.get('reqId')
