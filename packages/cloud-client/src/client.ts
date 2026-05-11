@@ -15,6 +15,8 @@ export interface ClientOptions {
   fetch?: typeof fetch
   /** Per-request timeout in ms. Default 15_000. Pass 0 to disable. */
   timeoutMs?: number
+  /** Called on 401. Return a fresh access token to retry once, or null to give up. */
+  onUnauthorized?: () => Promise<string | null>
 }
 
 export class BaobabClient {
@@ -48,7 +50,19 @@ export class BaobabClient {
     }
 
     try {
-      return await this.fetchFn(url, { ...init, headers, signal: controller.signal })
+      let r = await this.fetchFn(url, { ...init, headers, signal: controller.signal })
+      if (r.status === 401 && this.opts.onUnauthorized) {
+        const newToken = await this.opts.onUnauthorized()
+        if (newToken) {
+          this.accessToken = newToken
+          const retryHeaders = new Headers(init.headers)
+          retryHeaders.set('Authorization', `Bearer ${newToken}`)
+          if (init.body && !retryHeaders.has('Content-Type'))
+            retryHeaders.set('Content-Type', 'application/json')
+          r = await this.fetchFn(url, { ...init, headers: retryHeaders, signal: controller.signal })
+        }
+      }
+      return r
     } finally {
       if (timer) clearTimeout(timer)
     }

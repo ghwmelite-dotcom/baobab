@@ -51,6 +51,23 @@ describe('BaobabClient', () => {
     expect(headers.get('Authorization')).toBeNull()
   })
 
+  it('retries once via onUnauthorized when a 401 is returned', async () => {
+    let call = 0
+    const fetchMock = vi.fn<Parameters<typeof fetch>, ReturnType<typeof fetch>>(async () => {
+      call++
+      if (call === 1) return new Response('{}', { status: 401 })
+      return new Response(JSON.stringify({ ok: true }), { status: 200 })
+    })
+    const client = new BaobabClient({
+      baseUrl: 'https://x',
+      fetch: fetchMock,
+      onUnauthorized: async () => 'new-token',
+    })
+    const r = await client.getJson<{ ok: boolean }>('/x')
+    expect(r.ok).toBe(true)
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+
   it('aborts the request when timeoutMs elapses', async () => {
     vi.useFakeTimers()
     const fetchMock = vi.fn<Parameters<typeof fetch>, ReturnType<typeof fetch>>(
