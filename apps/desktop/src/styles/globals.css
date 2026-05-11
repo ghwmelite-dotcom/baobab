@@ -1,0 +1,21 @@
+@import '@baobab/ui/src/theme/tokens.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* { box-sizing: border-box; }
+
+html, body, #root {
+  margin: 0;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--canvas);
+  color: var(--text-primary);
+  font-family: 'General Sans', system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+button { font: inherit; }
