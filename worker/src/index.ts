@@ -1,7 +1,8 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { secureHeaders } from 'hono/secure-headers'
-import type { AppContext } from './types'
+import type { AppContext, Env } from './types'
+import { scheduled } from './cron'
 import { requestId } from './middleware/request-id'
 import { residency } from './middleware/residency'
 import { auth } from './routes/auth'
@@ -71,4 +72,9 @@ app.onError((err, c) => {
   return c.json({ error: 'internal_error', requestId: reqId }, 500)
 })
 
-export default app
+export default {
+  fetch: app.fetch,
+  scheduled(ev: ScheduledController, env: Env, ctx: ExecutionContext) {
+    return scheduled(ev, env, ctx)
+  },
+} satisfies ExportedHandler<Env>

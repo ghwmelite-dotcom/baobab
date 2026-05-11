@@ -63,3 +63,6 @@ CODE_MODEL = "@cf/deepseek-ai/deepseek-r1-distill-qwen-32b"
 TRANSLATE_MODEL = "@cf/meta/m2m100-1.2b"
 TRANSLATE_MODEL_M2M = "@cf/meta/m2m100-1.2b"
 EMBEDDING_MODEL = "@cf/baai/bge-large-en-v1.5"
+
+[triggers]
+crons = ["0 3 * * *"]
