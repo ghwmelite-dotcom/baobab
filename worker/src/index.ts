@@ -5,6 +5,7 @@ import type { AppContext } from './types'
 import { requestId } from './middleware/request-id'
 import { residency } from './middleware/residency'
 import { auth } from './routes/auth'
+import { ai } from './routes/ai'
 
 export { ReaderQueue } from './durable-objects/reader-queue'
 
@@ -38,6 +39,7 @@ app.use('*', residency)
 
 app.get('/', (c) => c.json({ name: c.env.APP_NAME, version: c.env.APP_VERSION }))
 app.route('/api/auth', auth)
+app.route('/api/ai', ai)
 
 app.onError((err, c) => {
   const reqId = c.get('reqId')
