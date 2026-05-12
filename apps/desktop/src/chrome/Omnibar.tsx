@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { parseOmnibarInput } from '@baobab/core'
 import { useTabsStore } from '~/state/tabs.store'
 import { OS } from '~/platform/os'
-
-const SEARCH_FALLBACK_URL = 'https://duckduckgo.com/?q='
+import { aiClient } from '~/ai/api'
+import { useAiStore } from '~/ai/ai.store'
 
 // Carry-over from Task 5/6 code review: parseOmnibarInput accepts ANY scheme,
 // including `javascript:`, `data:`, `file:`. The omnibar must NOT navigate
@@ -20,12 +20,18 @@ function isNavigableUrl(url: string): boolean {
   }
 }
 
+function newMsgId(): string {
+  return `m${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
+}
+
 export function Omnibar() {
   const ref = useRef<HTMLInputElement | null>(null)
   const activeId = useTabsStore((s) => s.activeId)
   const tabs = useTabsStore((s) => s.tabs)
   const navigate = useTabsStore((s) => s.navigate)
   const openTab = useTabsStore((s) => s.openTab)
+  const setActive = useAiStore((s) => s.setActive)
+  const pushMessage = useAiStore((s) => s.pushMessage)
 
   const activeTab = tabs.find((t) => t.id === activeId)
   const [value, setValue] = useState(activeTab?.url ?? '')
@@ -48,23 +54,45 @@ export function Omnibar() {
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
-  const submit = () => {
+  const runAiSearch = async (query: string) => {
+    // Ensure sidebar is open
+    if (!useAiStore.getState().sidebarOpen) useAiStore.getState().toggleSidebar()
+    const convId = `c${Date.now().toString(36)}`
+    setActive(convId)
+    const userMsgId = newMsgId()
+    const asstMsgId = newMsgId()
+    pushMessage(convId, { id: userMsgId, role: 'user', content: query })
+    pushMessage(convId, { id: asstMsgId, role: 'assistant', content: 'Reaching across the continent…' })
+    try {
+      const r = await aiClient.search({ query })
+      const list = r.results.map((x) => `• [${x.title}](${x.url})`).join('\n')
+      // Replace the placeholder assistant message — easiest path: push a new one.
+      // For v0.1.0 simplicity we push a new assistant message and leave the placeholder; user sees both.
+      pushMessage(convId, { id: newMsgId(), role: 'assistant', content: `${r.answer}\n\n${list}` })
+    } catch (e) {
+      pushMessage(convId, {
+        id: newMsgId(),
+        role: 'assistant',
+        content: `Search failed: ${e instanceof Error ? e.message : 'unknown'}`,
+      })
+    }
+  }
+
+  const submit = async () => {
     const parsed = parseOmnibarInput(value)
     if (parsed.kind === 'empty') return
-    let targetUrl: string
     if (parsed.kind === 'url') {
-      // Block javascript:, data:, file:, etc. — fall back to search.
-      targetUrl = isNavigableUrl(parsed.url)
-        ? parsed.url
-        : `${SEARCH_FALLBACK_URL}${encodeURIComponent(parsed.url)}`
-    } else {
-      targetUrl = `${SEARCH_FALLBACK_URL}${encodeURIComponent(parsed.query)}`
+      if (!isNavigableUrl(parsed.url)) {
+        // Blocked scheme — fall through to AI search using the raw input
+        await runAiSearch(value)
+        return
+      }
+      if (activeId) void navigate(activeId, parsed.url)
+      else void openTab(parsed.url)
+      return
     }
-    if (activeId) {
-      void navigate(activeId, targetUrl)
-    } else {
-      void openTab(targetUrl)
-    }
+    // search branch
+    await runAiSearch(parsed.query)
   }
 
   return (
@@ -85,7 +113,10 @@ export function Omnibar() {
         value={value}
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={(e) => {
-          if (e.key === 'Enter') submit()
+          if (e.key === 'Enter') {
+            e.preventDefault()
+            void submit()
+          }
           if (e.key === 'Escape') (e.target as HTMLInputElement).blur()
         }}
         spellCheck={false}
