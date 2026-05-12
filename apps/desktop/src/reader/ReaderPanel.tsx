@@ -1,17 +1,18 @@
 import { useReaderStore } from './reader.store'
 import { ReaderHeader } from './ReaderHeader'
 import DOMPurify from 'dompurify'
+import { useOfflineStore } from '~/offline/offline.store'
 
 export function ReaderPanel() {
   const open = useReaderStore((s) => s.open)
   const a = useReaderStore((s) => s.article)
   const loading = useReaderStore((s) => s.loading)
   const error = useReaderStore((s) => s.error)
+  const saveOffline = useOfflineStore((s) => s.save)
 
   if (!open) return null
 
-  // Save offline is a stub for Task 11 — replace then.
-  const onSaveOffline = () => { console.log('save offline clicked') }
+  const onSaveOffline = async () => { if (a) await saveOffline(a) }
 
   return (
     <div style={{
