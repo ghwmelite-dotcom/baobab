@@ -7,6 +7,7 @@ import { Omnibar } from './chrome/Omnibar'
 import { StatusBar } from './chrome/StatusBar'
 import { NewTabPage } from './chrome/NewTabPage'
 import { Sidebar } from './ai/Sidebar'
+import { ChatPanel } from './ai/ChatPanel'
 import { useChromeShortcuts } from './chrome/useChromeShortcuts'
 import { refreshResidency } from './state/health'
 import { useTabsStore } from './state/tabs.store'
@@ -44,7 +45,9 @@ export function App() {
           omnibar={<Omnibar />}
           statusBar={<StatusBar />}
         >
-          <Sidebar />
+          <Sidebar>
+            <ChatPanel />
+          </Sidebar>
           {showNtp ? <NewTabPage /> : null}
         </ChromeShell>
       </AuthGate>
