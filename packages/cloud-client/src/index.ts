@@ -1,3 +1,5 @@
 export { BaobabClient, ApiError, type ClientOptions } from './client'
 export { probeHealth, type HealthResult } from './health'
 export { AuthClient, type AuthResponse, type RefreshResponse, type MeResponse, type AppSettingsPatch } from './auth'
+export { AiClient, type ChatRequest, type SummarizeRequest, type SummarizeResponse, type SearchRequest, type SearchResponse } from './ai'
+export { parseSseStream, type SseEvent } from './sse'
