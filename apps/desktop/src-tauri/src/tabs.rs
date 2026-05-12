@@ -85,6 +85,28 @@ pub async fn hide_tab(app: AppHandle, id: String) -> Result<(), String> {
     Ok(())
 }
 
+// Fire-and-forget: WebView2 silently no-ops if there's no entry to go to.
+// The TS side tracks an approximate depth/max counter to drive the UI enablement.
+#[tauri::command]
+pub async fn tab_go_back(app: AppHandle, tab_id: String) -> Result<(), String> {
+    let label = tab_label(&tab_id);
+    let wv = app
+        .get_webview(&label)
+        .ok_or_else(|| format!("webview {label} not found"))?;
+    wv.eval("history.back()").map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn tab_go_forward(app: AppHandle, tab_id: String) -> Result<(), String> {
+    let label = tab_label(&tab_id);
+    let wv = app
+        .get_webview(&label)
+        .ok_or_else(|| format!("webview {label} not found"))?;
+    wv.eval("history.forward()").map_err(|e| e.to_string())?;
+    Ok(())
+}
+
 #[tauri::command]
 pub async fn list_tabs(app: AppHandle) -> Result<Vec<TabInfo>, String> {
     let main = app

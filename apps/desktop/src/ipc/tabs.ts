@@ -18,3 +18,9 @@ export const ipcNavigateTab = (id: string, url: string): Promise<void> =>
   invoke('navigate_tab', { id, url })
 
 export const ipcListTabs = (): Promise<IpcTabInfo[]> => invoke('list_tabs')
+
+export const ipcTabGoBack = (tabId: string): Promise<void> =>
+  invoke('tab_go_back', { tabId })
+
+export const ipcTabGoForward = (tabId: string): Promise<void> =>
+  invoke('tab_go_forward', { tabId })

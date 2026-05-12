@@ -1,16 +1,35 @@
 import { create } from 'zustand'
 import type { Tab } from '@baobab/core'
-import { ipcCreateTab, ipcCloseTab, ipcShowTab, ipcNavigateTab } from '~/ipc/tabs'
+import {
+  ipcCreateTab,
+  ipcCloseTab,
+  ipcShowTab,
+  ipcNavigateTab,
+  ipcTabGoBack,
+  ipcTabGoForward,
+} from '~/ipc/tabs'
 import { useHistoryStore } from '~/history/history.store'
 import { persistence } from '~/state/persistence'
+
+interface HistoryCursor {
+  depth: number
+  max: number
+}
 
 interface TabsState {
   tabs: Tab[]
   activeId: string | null
+  // Per-tab navigation depth/max counter. Approximate: tracks IPC-driven
+  // navigations only — in-page JS history.pushState / popstate won't sync.
+  history: Record<string, HistoryCursor>
   openTab: (url: string) => Promise<string>
   closeTab: (id: string) => Promise<void>
   setActive: (id: string) => void
   navigate: (id: string, url: string) => Promise<void>
+  goBack: (id: string) => Promise<void>
+  goForward: (id: string) => Promise<void>
+  canGoBack: (id: string) => boolean
+  canGoForward: (id: string) => boolean
   reorderTab: (id: string, toIndex: number) => void
   togglePin: (id: string) => void
   hydrate: () => Promise<void>
@@ -53,6 +72,7 @@ function scheduleSave(state: TabsState): void {
 export const useTabsStore = create<TabsState>()((set, get) => ({
   tabs: [],
   activeId: null,
+  history: {},
 
   openTab: async (url) => {
     const id = nextId()
@@ -69,7 +89,11 @@ export const useTabsStore = create<TabsState>()((set, get) => ({
       const activeIdx = s.tabs.findIndex((t) => t.id === s.activeId)
       const insertAt = activeIdx === -1 ? s.tabs.length : activeIdx + 1
       const tabs = [...s.tabs.slice(0, insertAt), tab, ...s.tabs.slice(insertAt)]
-      return { tabs, activeId: id }
+      return {
+        tabs,
+        activeId: id,
+        history: { ...s.history, [id]: { depth: 0, max: 0 } },
+      }
     })
     await ipcCreateTab(id, url)
     await ipcShowTab(id)
@@ -89,7 +113,13 @@ export const useTabsStore = create<TabsState>()((set, get) => ({
       if (activeId === id) {
         activeId = tabs[idx]?.id ?? tabs[idx - 1]?.id ?? null
       }
-      return { tabs, activeId }
+      const history: Record<string, HistoryCursor> = {}
+      for (const k of Object.keys(s.history)) {
+        if (k === id) continue
+        const v = s.history[k]
+        if (v) history[k] = v
+      }
+      return { tabs, activeId, history }
     })
     const next = get().activeId
     if (next) await ipcShowTab(next)
@@ -102,12 +132,49 @@ export const useTabsStore = create<TabsState>()((set, get) => ({
 
   navigate: async (id, url) => {
     await ipcNavigateTab(id, url)
-    set((s) => ({
-      tabs: s.tabs.map((t) =>
-        t.id === id ? { ...t, url, loading: true, lastVisitedAt: Date.now() } : t,
-      ),
-    }))
+    set((s) => {
+      const cur = s.history[id] ?? { depth: 0, max: 0 }
+      const nextDepth = cur.depth + 1
+      return {
+        tabs: s.tabs.map((t) =>
+          t.id === id ? { ...t, url, loading: true, lastVisitedAt: Date.now() } : t,
+        ),
+        history: { ...s.history, [id]: { depth: nextDepth, max: nextDepth } },
+      }
+    })
     void useHistoryStore.getState().recordVisit(url)
+  },
+
+  goBack: async (id) => {
+    const cur = get().history[id]
+    if (!cur || cur.depth <= 0) return
+    await ipcTabGoBack(id)
+    set((s) => {
+      const c = s.history[id]
+      if (!c) return s
+      return { history: { ...s.history, [id]: { ...c, depth: c.depth - 1 } } }
+    })
+  },
+
+  goForward: async (id) => {
+    const cur = get().history[id]
+    if (!cur || cur.depth >= cur.max) return
+    await ipcTabGoForward(id)
+    set((s) => {
+      const c = s.history[id]
+      if (!c) return s
+      return { history: { ...s.history, [id]: { ...c, depth: c.depth + 1 } } }
+    })
+  },
+
+  canGoBack: (id) => {
+    const c = get().history[id]
+    return !!c && c.depth > 0
+  },
+
+  canGoForward: (id) => {
+    const c = get().history[id]
+    return !!c && c.depth < c.max
   },
 
   reorderTab: (id, toIndex) => {

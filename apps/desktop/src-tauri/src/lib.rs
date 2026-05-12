@@ -23,6 +23,8 @@ pub fn run() {
             tabs::hide_tab,
             tabs::navigate_tab,
             tabs::list_tabs,
+            tabs::tab_go_back,
+            tabs::tab_go_forward,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Baobab");

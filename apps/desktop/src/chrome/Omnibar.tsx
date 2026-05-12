@@ -86,6 +86,11 @@ export function Omnibar() {
   const tabs = useTabsStore((s) => s.tabs)
   const navigate = useTabsStore((s) => s.navigate)
   const openTab = useTabsStore((s) => s.openTab)
+  const goBack = useTabsStore((s) => s.goBack)
+  const goForward = useTabsStore((s) => s.goForward)
+  const historyCursor = useTabsStore((s) => (s.activeId ? s.history[s.activeId] : undefined))
+  const canGoBack = (historyCursor?.depth ?? 0) > 0
+  const canGoForward = !!historyCursor && historyCursor.depth < historyCursor.max
   const setActive = useAiStore((s) => s.setActive)
   const pushMessage = useAiStore((s) => s.pushMessage)
   const sidebarOpen = useAiStore((s) => s.sidebarOpen)
@@ -192,12 +197,20 @@ export function Omnibar() {
     >
       {/* Navigation cluster (left) */}
       <div style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}>
-        <NavBtn label="Back" disabled onClick={() => {}}>
+        <NavBtn
+          label="Back"
+          disabled={!activeId || !canGoBack}
+          onClick={() => { if (activeId) void goBack(activeId) }}
+        >
           <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden>
             <path d="M10 3 L5 8 L10 13" stroke="currentColor" strokeWidth="1.6" fill="none" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </NavBtn>
-        <NavBtn label="Forward" disabled onClick={() => {}}>
+        <NavBtn
+          label="Forward"
+          disabled={!activeId || !canGoForward}
+          onClick={() => { if (activeId) void goForward(activeId) }}
+        >
           <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden>
             <path d="M6 3 L11 8 L6 13" stroke="currentColor" strokeWidth="1.6" fill="none" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
