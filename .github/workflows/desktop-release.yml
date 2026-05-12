@@ -2,7 +2,9 @@ name: Desktop Release
 
 on:
   push:
-    tags: ['desktop-v*.*.*']
+    # Match strict semver tags (desktop-v0.1.0) and revision tags
+    # (desktop-v0.1.0-rN) issued while the public version is frozen.
+    tags: ['desktop-v*']
   workflow_dispatch:
 
 permissions:
@@ -62,8 +64,14 @@ jobs:
         with:
           projectPath: apps/desktop
           tagName: ${{ github.ref_name }}
-          releaseName: 'Baobab Desktop ${{ github.ref_name }}'
-          releaseBody: 'Built from tag ${{ github.ref_name }}.'
+          releaseName: 'Baobab Desktop · ${{ github.ref_name }}'
+          releaseBody: |
+            Public version held at **0.1.0** while we iterate on the
+            browser experience. Each tag is a build revision; the
+            artifacts inside are all `Baobab_0.1.0_*` regardless of
+            which revision tag triggered the build.
+
+            Built from `${{ github.ref_name }}`.
           releaseDraft: true
-          prerelease: false
+          prerelease: ${{ contains(github.ref_name, '-') }}
           args: --target ${{ matrix.target }}
