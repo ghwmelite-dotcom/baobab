@@ -273,6 +273,7 @@ export function Omnibar() {
           {/* Security / origin glyph */}
           {showSecurityGlyph && (
             <span
+              role="img"
               aria-label={isSecure ? 'Secure connection' : 'Not secure'}
               title={isSecure ? 'Secure connection (HTTPS)' : 'Not a secure connection'}
               style={{

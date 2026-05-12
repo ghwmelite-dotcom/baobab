@@ -170,15 +170,17 @@ function TabPill({ tab, active, onSelect, onClose }: {
     ? (hover ? 'rgba(0, 0, 0, 0.22)' : 'rgba(0, 0, 0, 0.15)')
     : (hover ? 'rgba(255,255,255,0.04)' : 'transparent')
   const inactiveColor = incognito ? 'var(--text-muted)' : 'var(--text-secondary)'
+  const label = tab.title || (tab.url === 'about:blank' ? 'New Tab' : tab.url)
+  // Browser tabs are NOT WAI-ARIA tabs (they don't switch panels within the
+  // page) — they're a list of switchable presentations. Modelling them as
+  // <button> children of a <div role="list"> avoids the nested-interactive
+  // violation that the previous role="tab"/role="tablist" structure caused
+  // (close button nested inside a focusable role="tab" container).
   return (
     <div
-      role="tab"
-      aria-selected={active}
-      tabIndex={0}
-      onClick={onSelect}
+      role="listitem"
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
-      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onSelect() }}
       style={{
         height: 30,
         minWidth: TAB_MIN_WIDTH,
@@ -186,15 +188,13 @@ function TabPill({ tab, active, onSelect, onClose }: {
         flex: '1 1 0',
         display: 'flex',
         alignItems: 'center',
-        gap: 8,
-        paddingInline: 12,
+        gap: 0,
         background: active
           ? (incognito ? 'rgba(0, 0, 0, 0.28)' : 'var(--canvas)')
           : inactiveBg,
         borderTop: active ? '2px solid var(--accent)' : '2px solid transparent',
         borderRadius: '8px 8px 4px 4px',
         color: active ? 'var(--text-primary)' : inactiveColor,
-        cursor: 'pointer',
         fontSize: 12,
         userSelect: 'none',
         overflow: 'hidden',
@@ -203,29 +203,50 @@ function TabPill({ tab, active, onSelect, onClose }: {
       }}
       title={incognito ? `${tab.url} — private` : tab.url}
     >
-      {incognito && (
-        <span
-          aria-label="Private tab"
-          title="Private tab"
-          style={{
-            display: 'inline-flex',
-            color: 'var(--text-muted)',
-            flexShrink: 0,
-          }}
-        >
-          <MaskGlyph size={12} />
-        </span>
-      )}
-      {tab.pinned && <span aria-hidden style={{ color: 'var(--accent)', fontSize: 8 }}>●</span>}
-      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
-        {tab.title || (tab.url === 'about:blank' ? 'New Tab' : tab.url)}
-      </span>
       <button
         type="button"
-        aria-label="Close tab"
+        onClick={onSelect}
+        aria-label={`Switch to tab: ${label}${incognito ? ' (private)' : ''}`}
+        aria-current={active ? 'page' : undefined}
+        style={{
+          flex: 1,
+          height: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          paddingInline: '12px 6px',
+          background: 'transparent',
+          border: 'none',
+          color: 'inherit',
+          cursor: 'pointer',
+          font: 'inherit',
+          textAlign: 'left',
+          overflow: 'hidden',
+        }}
+      >
+        {incognito && (
+          <span
+            aria-hidden
+            style={{
+              display: 'inline-flex',
+              color: 'var(--text-muted)',
+              flexShrink: 0,
+            }}
+          >
+            <MaskGlyph size={12} />
+          </span>
+        )}
+        {tab.pinned && <span aria-hidden style={{ color: 'var(--accent)', fontSize: 8 }}>●</span>}
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
+          {label}
+        </span>
+      </button>
+      <button
+        type="button"
+        aria-label={`Close tab: ${label}`}
         onClick={(e) => { e.stopPropagation(); onClose() }}
         style={{
-          marginLeft: 'auto',
+          marginRight: 6,
           background: 'transparent',
           border: 'none',
           color: 'inherit',
@@ -240,6 +261,7 @@ function TabPill({ tab, active, onSelect, onClose }: {
           display: 'inline-flex',
           alignItems: 'center',
           justifyContent: 'center',
+          flexShrink: 0,
         }}
         onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.1)' }}
         onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent' }}
@@ -268,7 +290,7 @@ export function TabStrip() {
   return (
     <header
       data-tauri-drag-region
-      role="tablist"
+      aria-label="Tab bar"
       style={{
         height: CHROME_BAR_HEIGHT,
         display: 'flex',
@@ -311,15 +333,26 @@ export function TabStrip() {
           overflow: 'hidden',
         }}
       >
-        {tabs.map((t) => (
-          <TabPill
-            key={t.id}
-            tab={t}
-            active={t.id === activeId}
-            onSelect={() => setActive(t.id)}
-            onClose={() => void closeTab(t.id)}
-          />
-        ))}
+        <div
+          role="list"
+          aria-label="Open tabs"
+          style={{
+            display: 'flex',
+            alignItems: 'flex-end',
+            gap: 2,
+            height: '100%',
+          }}
+        >
+          {tabs.map((t) => (
+            <TabPill
+              key={t.id}
+              tab={t}
+              active={t.id === activeId}
+              onSelect={() => setActive(t.id)}
+              onClose={() => void closeTab(t.id)}
+            />
+          ))}
+        </div>
         <button
           type="button"
           onClick={() => void openTab('about:blank')}
