@@ -8,6 +8,7 @@ import { aiClient } from '~/ai/api'
 import { useAiStore } from '~/ai/ai.store'
 import { useReaderStore } from '~/reader/reader.store'
 import { suggest } from '~/history/omnibar-autocomplete'
+import { BookmarkButton } from '~/bookmarks/BookmarkButton'
 
 // Carry-over from Task 5/6 code review: parseOmnibarInput accepts ANY scheme,
 // including `javascript:`, `data:`, `file:`. The omnibar must NOT navigate
@@ -160,6 +161,7 @@ export function Omnibar() {
           <path d="M2 3 H14 V13 H2 Z M4 5 H12 M4 8 H12 M4 11 H8" stroke="currentColor" strokeWidth="1.2" fill="none" />
         </svg>
       </IconButton>
+      <BookmarkButton />
       {focused && suggestions.length > 0 && (
         <ul
           role="listbox"

@@ -4,4 +4,5 @@ export { AuthClient, type AuthResponse, type RefreshResponse, type MeResponse, t
 export { AiClient, type ChatRequest, type SummarizeRequest, type SummarizeResponse, type SearchRequest, type SearchResponse } from './ai'
 export { OfflineClient, type OfflineArticle, type SaveOfflineRequest } from './offline'
 export { HistoryClient, type HistoryItem } from './history'
+export { BookmarksClient, type Bookmark, type BookmarkFolder } from './bookmarks'
 export { parseSseStream, type SseEvent } from './sse'

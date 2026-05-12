@@ -11,6 +11,8 @@ import { ChatPanel } from './ai/ChatPanel'
 import { ReaderPanel } from './reader/ReaderPanel'
 import { OfflineList } from './offline/OfflineList'
 import { HistoryPanel } from './history/HistoryPanel'
+import { BookmarksBar } from './bookmarks/BookmarksBar'
+import { BookmarksPanel } from './bookmarks/BookmarksPanel'
 import { useChromeShortcuts } from './chrome/useChromeShortcuts'
 import { refreshResidency } from './state/health'
 import { useTabsStore } from './state/tabs.store'
@@ -45,12 +47,14 @@ export function App() {
         <ChromeShell
           titlebar={<TitleBar />}
           tabStrip={<TabStrip />}
+          bookmarksBar={<BookmarksBar />}
           omnibar={<Omnibar />}
           statusBar={<StatusBar />}
         >
           <ReaderPanel />
           <HistoryPanel />
           <OfflineList />
+          <BookmarksPanel />
           <Sidebar>
             <ChatPanel />
           </Sidebar>
