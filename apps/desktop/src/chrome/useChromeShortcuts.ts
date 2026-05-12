@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useTabsStore } from '~/state/tabs.store'
 import { useAiStore } from '~/ai/ai.store'
+import { useSettingsStore } from '~/settings/settings.store'
 import { OS } from '~/platform/os'
 
 const NEW_TAB_DEFAULT_URL = 'about:blank'
@@ -43,6 +44,12 @@ export function useChromeShortcuts(): void {
       if (e.key === '\\') {
         e.preventDefault()
         useAiStore.getState().toggleSidebar()
+        return
+      }
+      // Ctrl/Cmd + , → toggle settings overlay
+      if (e.key === ',') {
+        e.preventDefault()
+        useSettingsStore.getState().toggle()
         return
       }
     }

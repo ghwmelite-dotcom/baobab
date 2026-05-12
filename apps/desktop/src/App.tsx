@@ -13,6 +13,7 @@ import { OfflineList } from './offline/OfflineList'
 import { HistoryPanel } from './history/HistoryPanel'
 import { BookmarksBar } from './bookmarks/BookmarksBar'
 import { BookmarksPanel } from './bookmarks/BookmarksPanel'
+import { SettingsScreen } from './settings/SettingsScreen'
 import { useChromeShortcuts } from './chrome/useChromeShortcuts'
 import { refreshResidency } from './state/health'
 import { useTabsStore } from './state/tabs.store'
@@ -51,6 +52,7 @@ export function App() {
           omnibar={<Omnibar />}
           statusBar={<StatusBar />}
         >
+          <SettingsScreen />
           <ReaderPanel />
           <HistoryPanel />
           <OfflineList />
