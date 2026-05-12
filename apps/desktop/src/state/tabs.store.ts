@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import type { Tab } from '@baobab/core'
 import { ipcCreateTab, ipcCloseTab, ipcShowTab, ipcNavigateTab } from '~/ipc/tabs'
 import { useHistoryStore } from '~/history/history.store'
+import { persistence } from '~/state/persistence'
 
 interface TabsState {
   tabs: Tab[]
@@ -12,10 +13,42 @@ interface TabsState {
   navigate: (id: string, url: string) => Promise<void>
   reorderTab: (id: string, toIndex: number) => void
   togglePin: (id: string) => void
+  hydrate: () => Promise<void>
 }
+
+interface TabsSnapshot {
+  tabs: Tab[]
+  activeId: string | null
+}
+
+const SNAPSHOT_KEY = 'tabs.snapshot'
 
 let counter = 0
 const nextId = () => `t${Date.now().toString(36)}-${++counter}`
+
+let hydrating = false
+let saveTimer: ReturnType<typeof setTimeout> | null = null
+let subscribed = false
+
+function isValidSnapshot(v: unknown): v is TabsSnapshot {
+  if (!v || typeof v !== 'object') return false
+  const o = v as { tabs?: unknown; activeId?: unknown }
+  if (!Array.isArray(o.tabs)) return false
+  if (o.activeId !== null && typeof o.activeId !== 'string') return false
+  return o.tabs.every((t) => t && typeof t === 'object' && typeof (t as Tab).url === 'string')
+}
+
+function scheduleSave(state: TabsState): void {
+  if (hydrating) return
+  if (saveTimer) clearTimeout(saveTimer)
+  saveTimer = setTimeout(() => {
+    saveTimer = null
+    const tabs = state.tabs.filter(
+      (t) => !(t as Tab & { incognito?: boolean }).incognito,
+    )
+    void persistence.set<TabsSnapshot>(SNAPSHOT_KEY, { tabs, activeId: state.activeId })
+  }, 300)
+}
 
 export const useTabsStore = create<TabsState>()((set, get) => ({
   tabs: [],
@@ -109,5 +142,47 @@ export const useTabsStore = create<TabsState>()((set, get) => ({
       const insertAt = firstUnpinnedIdx === -1 ? without.length : firstUnpinnedIdx
       return { tabs: [...without.slice(0, insertAt), updated, ...without.slice(insertAt)] }
     })
+  },
+
+  hydrate: async () => {
+    hydrating = true
+    try {
+      const snap = await persistence.get<TabsSnapshot>(SNAPSHOT_KEY)
+      if (isValidSnapshot(snap)) {
+        const idMap = new Map<string, string>()
+        for (const saved of snap.tabs) {
+          try {
+            const newId = await get().openTab(saved.url)
+            idMap.set(saved.id, newId)
+            set((s) => ({
+              tabs: s.tabs.map((t) =>
+                t.id === newId
+                  ? { ...t, title: saved.title, pinned: saved.pinned }
+                  : t,
+              ),
+            }))
+          } catch {
+            /* tolerate and continue */
+          }
+        }
+        const mappedActive = snap.activeId ? idMap.get(snap.activeId) : null
+        if (mappedActive) {
+          get().setActive(mappedActive)
+        }
+      }
+    } catch {
+      /* tolerate */
+    } finally {
+      hydrating = false
+    }
+
+    if (!subscribed) {
+      subscribed = true
+      useTabsStore.subscribe((state, prev) => {
+        if (state.tabs !== prev.tabs || state.activeId !== prev.activeId) {
+          scheduleSave(state)
+        }
+      })
+    }
   },
 }))

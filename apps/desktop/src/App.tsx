@@ -26,6 +26,7 @@ export function App() {
   useChromeShortcuts()
   useEffect(() => {
     void refreshResidency()
+    void useTabsStore.getState().hydrate()
     const t = setInterval(() => void refreshResidency(), 60_000)
     return () => clearInterval(t)
   }, [])
