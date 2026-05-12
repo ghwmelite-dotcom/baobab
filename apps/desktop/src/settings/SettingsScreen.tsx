@@ -3,6 +3,7 @@ import { GeneralSection } from './sections/GeneralSection'
 import { PrivacySection } from './sections/PrivacySection'
 import { AISection } from './sections/AISection'
 import { SovereigntySection } from './sections/SovereigntySection'
+import LegalSection from './LegalSection'
 import { useAuthStore } from '~/auth/auth.store'
 import { Button, IconButton } from '@baobab/ui'
 
@@ -81,6 +82,7 @@ export function SettingsScreen() {
         <PrivacySection />
         <AISection />
         <SovereigntySection />
+        <LegalSection />
       </div>
     </div>
   )
