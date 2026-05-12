@@ -29,7 +29,7 @@ beforeEach(() => {
   })
   useAuthStore.setState({
     user: null,
-    status: 'guest',
+    status: 'idle',
     signInOverlayOpen: false,
   })
   useTabsStore.setState({ tabs: [], activeId: null })
