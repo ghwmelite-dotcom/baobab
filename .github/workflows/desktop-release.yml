@@ -57,10 +57,15 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Code signing env vars are intentionally omitted until certs are
-          # provisioned. tauri-action skips signing when these are unset.
-          # When ready, restore the APPLE_*, TAURI_SIGNING_*, and Windows
-          # signing blocks. See plan_deviations.md "Task 24 / desktop-release".
+          # Tauri updater signing — pubkey embedded in tauri.conf.json,
+          # private key + (optional) password come from secrets.
+          # When unset, tauri-action skips signing and no updater
+          # manifest is generated — but updater will fail at runtime,
+          # so set TAURI_SIGNING_PRIVATE_KEY for r6 onward.
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          # Apple + Windows code-signing env vars are intentionally
+          # omitted until certs are provisioned.
         with:
           projectPath: apps/desktop
           tagName: ${{ github.ref_name }}
