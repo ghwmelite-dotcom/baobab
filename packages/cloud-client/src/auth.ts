@@ -13,6 +13,7 @@ export interface MeResponse {
   id: string
   email: string | null
   phone: string | null
+  display_name: string | null
   privacy_mode: number
   low_bandwidth_mode: number
   default_model: string

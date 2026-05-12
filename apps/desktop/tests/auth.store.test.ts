@@ -14,7 +14,7 @@ vi.mock('~/auth/api', () => {
       signupEmail: vi.fn(async () => ({ access: 'a', refresh: 'r' })),
       loginEmail: vi.fn(async () => ({ access: 'a', refresh: 'r' })),
       refresh: vi.fn(async () => ({ access: 'new-a' })),
-      me: vi.fn(async () => ({ id: 'u', email: 'a@b.com', phone: null, privacy_mode: 0, low_bandwidth_mode: 0, default_model: 'x' })),
+      me: vi.fn(async () => ({ id: 'u', email: 'a@b.com', phone: null, display_name: null, privacy_mode: 0, low_bandwidth_mode: 0, default_model: 'x' })),
       otpSend: vi.fn(async () => ({ ok: true })),
       otpVerify: vi.fn(async () => ({ access: 'a', refresh: 'r' })),
       logout: vi.fn(async () => ({ ok: true })),
@@ -47,7 +47,7 @@ describe('auth store', () => {
     useAuthStore.setState({
       accessToken: 'a',
       refreshToken: 'r',
-      user: { id: 'u', email: 'x', phone: null, privacy_mode: 0, low_bandwidth_mode: 0, default_model: 'm' },
+      user: { id: 'u', email: 'x', phone: null, display_name: null, privacy_mode: 0, low_bandwidth_mode: 0, default_model: 'm' },
       status: 'authed',
     })
     await useAuthStore.getState().logout()

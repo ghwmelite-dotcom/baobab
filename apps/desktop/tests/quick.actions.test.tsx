@@ -34,7 +34,7 @@ beforeEach(() => {
   })
   useAiStore.setState({ sidebarOpen: true, conversations: [], activeConversationId: null, messages: {}, streaming: false })
   useAuthStore.setState({
-    user: { id: 'u', email: 'a@b.com', phone: null, privacy_mode: 0, low_bandwidth_mode: 0, default_model: 'm' },
+    user: { id: 'u', email: 'a@b.com', phone: null, display_name: null, privacy_mode: 0, low_bandwidth_mode: 0, default_model: 'm' },
     status: 'authed',
     signInOverlayOpen: false,
   })
