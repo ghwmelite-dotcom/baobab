@@ -20,10 +20,8 @@ export function ChromeShell({
   return (
     <div
       style={{
-        display: 'grid',
-        gridTemplateRows: bookmarksBar
-          ? 'auto auto auto auto 1fr auto'
-          : 'auto auto auto 1fr auto',
+        display: 'flex',
+        flexDirection: 'column',
         height: '100vh',
         background: 'var(--canvas)',
       }}
@@ -32,7 +30,9 @@ export function ChromeShell({
       {tabStrip}
       {bookmarksBar}
       {omnibar}
-      <main style={{ position: 'relative', overflow: 'hidden' }}>{children}</main>
+      <main style={{ position: 'relative', overflow: 'hidden', flex: 1, minHeight: 0 }}>
+        {children}
+      </main>
       {statusBar}
     </div>
   )
