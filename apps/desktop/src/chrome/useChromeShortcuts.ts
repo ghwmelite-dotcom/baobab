@@ -22,6 +22,12 @@ export function useChromeShortcuts(): void {
         void store.openTab(NEW_TAB_DEFAULT_URL)
         return
       }
+      // Ctrl/Cmd + Shift + N → new private tab
+      if (e.key.toLowerCase() === 'n' && e.shiftKey) {
+        e.preventDefault()
+        void store.openIncognitoTab(NEW_TAB_DEFAULT_URL)
+        return
+      }
       // Ctrl/Cmd + W → close active tab
       if (e.key.toLowerCase() === 'w' && !e.shiftKey) {
         e.preventDefault()

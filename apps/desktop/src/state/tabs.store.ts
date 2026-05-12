@@ -16,13 +16,18 @@ interface HistoryCursor {
   max: number
 }
 
+interface OpenTabOptions {
+  incognito?: boolean
+}
+
 interface TabsState {
   tabs: Tab[]
   activeId: string | null
   // Per-tab navigation depth/max counter. Approximate: tracks IPC-driven
   // navigations only — in-page JS history.pushState / popstate won't sync.
   history: Record<string, HistoryCursor>
-  openTab: (url: string) => Promise<string>
+  openTab: (url: string, opts?: OpenTabOptions) => Promise<string>
+  openIncognitoTab: (url: string) => Promise<string>
   closeTab: (id: string) => Promise<void>
   setActive: (id: string) => void
   navigate: (id: string, url: string) => Promise<void>
@@ -62,9 +67,7 @@ function scheduleSave(state: TabsState): void {
   if (saveTimer) clearTimeout(saveTimer)
   saveTimer = setTimeout(() => {
     saveTimer = null
-    const tabs = state.tabs.filter(
-      (t) => !(t as Tab & { incognito?: boolean }).incognito,
-    )
+    const tabs = state.tabs.filter((t) => !t.incognito)
     void persistence.set<TabsSnapshot>(SNAPSHOT_KEY, { tabs, activeId: state.activeId })
   }, 300)
 }
@@ -74,8 +77,9 @@ export const useTabsStore = create<TabsState>()((set, get) => ({
   activeId: null,
   history: {},
 
-  openTab: async (url) => {
+  openTab: async (url, opts) => {
     const id = nextId()
+    const incognito = opts?.incognito === true
     const tab: Tab = {
       id,
       url,
@@ -84,6 +88,7 @@ export const useTabsStore = create<TabsState>()((set, get) => ({
       active: true,
       loading: true,
       lastVisitedAt: Date.now(),
+      ...(incognito ? { incognito: true } : {}),
     }
     set((s) => {
       const activeIdx = s.tabs.findIndex((t) => t.id === s.activeId)
@@ -95,12 +100,16 @@ export const useTabsStore = create<TabsState>()((set, get) => ({
         history: { ...s.history, [id]: { depth: 0, max: 0 } },
       }
     })
-    await ipcCreateTab(id, url)
+    await ipcCreateTab(id, url, incognito)
     await ipcShowTab(id)
-    if (url !== 'about:blank') {
+    if (url !== 'about:blank' && !incognito) {
       void useHistoryStore.getState().recordVisit(url)
     }
     return id
+  },
+
+  openIncognitoTab: async (url) => {
+    return get().openTab(url, { incognito: true })
   },
 
   closeTab: async (id) => {
@@ -132,6 +141,7 @@ export const useTabsStore = create<TabsState>()((set, get) => ({
 
   navigate: async (id, url) => {
     await ipcNavigateTab(id, url)
+    const isIncognito = get().tabs.find((t) => t.id === id)?.incognito === true
     set((s) => {
       const cur = s.history[id] ?? { depth: 0, max: 0 }
       const nextDepth = cur.depth + 1
@@ -142,7 +152,9 @@ export const useTabsStore = create<TabsState>()((set, get) => ({
         history: { ...s.history, [id]: { depth: nextDepth, max: nextDepth } },
       }
     })
-    void useHistoryStore.getState().recordVisit(url)
+    if (!isIncognito) {
+      void useHistoryStore.getState().recordVisit(url)
+    }
   },
 
   goBack: async (id) => {

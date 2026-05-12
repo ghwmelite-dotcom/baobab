@@ -17,7 +17,12 @@ fn tab_label(id: &str) -> String {
 }
 
 #[tauri::command]
-pub async fn create_tab(app: AppHandle, id: String, url: String) -> Result<TabInfo, String> {
+pub async fn create_tab(
+    app: AppHandle,
+    id: String,
+    url: String,
+    incognito: Option<bool>,
+) -> Result<TabInfo, String> {
     let main = app
         .get_window("main")
         .ok_or_else(|| "main window not found".to_string())?;
@@ -29,7 +34,15 @@ pub async fn create_tab(app: AppHandle, id: String, url: String) -> Result<TabIn
     let label = tab_label(&id);
     let webview_url = WebviewUrl::External(url.parse().map_err(|e: url::ParseError| e.to_string())?);
 
-    let builder = tauri::webview::WebviewBuilder::new(label, webview_url);
+    let mut builder = tauri::webview::WebviewBuilder::new(label, webview_url);
+    // Private browsing: point this webview at an ephemeral per-tab data
+    // directory under $TEMP so cookies / localStorage / IndexedDB never
+    // bleed back to the persistent profile. The OS reaps $TEMP eventually;
+    // for the alpha that's an acceptable cleanup boundary.
+    if incognito.unwrap_or(false) {
+        let dir = std::env::temp_dir().join(format!("baobab-incognito-{}", id));
+        builder = builder.data_directory(dir);
+    }
     let builder = downloads::attach(builder, app.clone());
     main.add_child(
         builder,

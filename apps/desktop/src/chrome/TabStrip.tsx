@@ -134,6 +134,30 @@ function ResidencyChip() {
 
 // ── Tab pill ─────────────────────────────────────────────────────────────
 
+// Mask glyph — a theatre/incognito mask. Used both in the tab pill and on the
+// "New private tab" button. Real inline SVG (no emoji).
+function MaskGlyph({ size = 12 }: { size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 16 16"
+      aria-hidden
+      style={{ flexShrink: 0 }}
+    >
+      <path
+        d="M2 6 Q2 5 3 5 L13 5 Q14 5 14 6 L13.5 9 Q13 11 11 11 Q9.5 11 8.8 9.6 Q8.4 9 8 9 Q7.6 9 7.2 9.6 Q6.5 11 5 11 Q3 11 2.5 9 Z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.2"
+        strokeLinejoin="round"
+      />
+      <circle cx="5.2" cy="7.6" r="0.9" fill="currentColor" />
+      <circle cx="10.8" cy="7.6" r="0.9" fill="currentColor" />
+    </svg>
+  )
+}
+
 function TabPill({ tab, active, onSelect, onClose }: {
   tab: Tab
   active: boolean
@@ -141,6 +165,11 @@ function TabPill({ tab, active, onSelect, onClose }: {
   onClose: () => void
 }) {
   const [hover, setHover] = useState(false)
+  const incognito = tab.incognito === true
+  const inactiveBg = incognito
+    ? (hover ? 'rgba(0, 0, 0, 0.22)' : 'rgba(0, 0, 0, 0.15)')
+    : (hover ? 'rgba(255,255,255,0.04)' : 'transparent')
+  const inactiveColor = incognito ? 'var(--text-muted)' : 'var(--text-secondary)'
   return (
     <div
       role="tab"
@@ -160,11 +189,11 @@ function TabPill({ tab, active, onSelect, onClose }: {
         gap: 8,
         paddingInline: 12,
         background: active
-          ? 'var(--canvas)'
-          : hover ? 'rgba(255,255,255,0.04)' : 'transparent',
+          ? (incognito ? 'rgba(0, 0, 0, 0.28)' : 'var(--canvas)')
+          : inactiveBg,
         borderTop: active ? '2px solid var(--accent)' : '2px solid transparent',
         borderRadius: '8px 8px 4px 4px',
-        color: active ? 'var(--text-primary)' : 'var(--text-secondary)',
+        color: active ? 'var(--text-primary)' : inactiveColor,
         cursor: 'pointer',
         fontSize: 12,
         userSelect: 'none',
@@ -172,8 +201,21 @@ function TabPill({ tab, active, onSelect, onClose }: {
         position: 'relative',
         transition: 'background 140ms ease, color 140ms ease',
       }}
-      title={tab.url}
+      title={incognito ? `${tab.url} — private` : tab.url}
     >
+      {incognito && (
+        <span
+          aria-label="Private tab"
+          title="Private tab"
+          style={{
+            display: 'inline-flex',
+            color: 'var(--text-muted)',
+            flexShrink: 0,
+          }}
+        >
+          <MaskGlyph size={12} />
+        </span>
+      )}
       {tab.pinned && <span aria-hidden style={{ color: 'var(--accent)', fontSize: 8 }}>●</span>}
       <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
         {tab.title || (tab.url === 'about:blank' ? 'New Tab' : tab.url)}
@@ -218,6 +260,8 @@ export function TabStrip() {
   const setActive = useTabsStore((s) => s.setActive)
   const closeTab = useTabsStore((s) => s.closeTab)
   const openTab = useTabsStore((s) => s.openTab)
+  const openIncognitoTab = useTabsStore((s) => s.openIncognitoTab)
+  const incognitoShortcut = OS === 'macos' ? 'Cmd+Shift+N' : 'Ctrl+Shift+N'
 
   const isMac = OS === 'macos'
 
@@ -307,6 +351,36 @@ export function TabStrip() {
           }}
         >
           +
+        </button>
+        <button
+          type="button"
+          onClick={() => void openIncognitoTab('about:blank')}
+          aria-label="New private tab"
+          title={`New private tab (${incognitoShortcut})`}
+          style={{
+            height: 28,
+            width: 28,
+            marginLeft: 2,
+            background: 'transparent',
+            border: 'none',
+            borderRadius: 6,
+            color: 'var(--text-secondary)',
+            cursor: 'pointer',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'background 120ms ease, color 120ms ease',
+          }}
+          onMouseEnter={(e) => {
+            ;(e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.06)'
+            ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-primary)'
+          }}
+          onMouseLeave={(e) => {
+            ;(e.currentTarget as HTMLButtonElement).style.background = 'transparent'
+            ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)'
+          }}
+        >
+          <MaskGlyph size={14} />
         </button>
         <div data-tauri-drag-region style={{ flex: 1, minWidth: 16, height: '100%' }} />
       </div>

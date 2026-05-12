@@ -10,6 +10,12 @@ export interface Tab {
   loading: boolean
   /** Unix ms — last time a navigation completed */
   lastVisitedAt: number
+  /**
+   * Private browsing tab — uses an ephemeral webview data_directory,
+   * is excluded from the tab-snapshot persistence, and is skipped by
+   * history recording.
+   */
+  incognito?: boolean
 }
 
 export interface HistoryEntry {

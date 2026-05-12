@@ -5,8 +5,11 @@ export interface IpcTabInfo {
   url: string
 }
 
-export const ipcCreateTab = (id: string, url: string): Promise<IpcTabInfo> =>
-  invoke('create_tab', { id, url })
+export const ipcCreateTab = (
+  id: string,
+  url: string,
+  incognito?: boolean,
+): Promise<IpcTabInfo> => invoke('create_tab', { id, url, incognito: incognito ?? false })
 
 export const ipcCloseTab = (id: string): Promise<void> => invoke('close_tab', { id })
 
