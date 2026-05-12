@@ -135,6 +135,11 @@ ai.post('/summarize', async (c) => {
   return c.json({ ...parsed, cached: false })
 })
 
+// Worker-side search is LLM-generated for the alpha: the model produces an
+// `answer` plus a synthetic list of plausible URLs from its training data —
+// nothing is fetched live and the results are not crawled/ranked. Real web
+// crawl + ranking (Browser Rendering / Vectorize index over indexed pages) is
+// a P1 task.
 ai.post('/search', async (c) => {
   const body = await c.req.json<{ query?: string }>()
   if (!body.query) return c.json({ error: 'query required' }, 400)

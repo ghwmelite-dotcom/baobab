@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
+import * as Sentry from '@sentry/react'
 
 interface Props {
   children: ReactNode
@@ -20,6 +21,7 @@ export class ErrorBoundary extends Component<Props, State> {
     const componentStack = errorInfo.componentStack ?? null
     this.setState({ componentStack })
     console.error(error, errorInfo)
+    Sentry.captureException(error, { contexts: { react: { componentStack } } })
     if (typeof window !== 'undefined') {
       window.dispatchEvent(
         new CustomEvent('baobab:react-error', {

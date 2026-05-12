@@ -1,6 +1,8 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { secureHeaders } from 'hono/secure-headers'
+import { withSentry } from '@sentry/cloudflare'
+import type { ExportedHandler as CfExportedHandler } from '@cloudflare/workers-types'
 import type { AppContext, Env } from './types'
 import { scheduled } from './cron'
 import { requestId } from './middleware/request-id'
@@ -72,9 +74,27 @@ app.onError((err, c) => {
   return c.json({ error: 'internal_error', requestId: reqId }, 500)
 })
 
-export default {
+const handler = {
   fetch: app.fetch,
   scheduled(ev: ScheduledController, env: Env, ctx: ExecutionContext) {
     return scheduled(ev, env, ctx)
   },
 } satisfies ExportedHandler<Env>
+
+// withSentry wraps the handler and reads the DSN from env per-request. When
+// SENTRY_DSN is unset/empty we pass `enabled: false`, which makes the SDK a
+// no-op so devs without a Sentry account can run the worker cleanly.
+//
+// We cast through `unknown` to `CfExportedHandler<Env>` (imported directly
+// from @cloudflare/workers-types) because Hono's `app.fetch` types Request
+// with `CfProperties` while @sentry/cloudflare expects the more specific
+// `IncomingRequestCfProperties`. Runtime shape is identical.
+export default withSentry(
+  (env: Env) => ({
+    dsn: env.SENTRY_DSN ?? '',
+    environment: env.ENVIRONMENT,
+    tracesSampleRate: 0,
+    enabled: typeof env.SENTRY_DSN === 'string' && env.SENTRY_DSN.length > 0,
+  }),
+  handler as unknown as CfExportedHandler<Env>,
+)

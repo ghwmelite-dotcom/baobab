@@ -51,11 +51,14 @@ class_name = "ReaderQueue"
 tag = "v1"
 new_sqlite_classes = ["ReaderQueue"]
 
+# SENTRY_DSN is intentionally blank in vars. In production, set the real DSN
+# as a secret via: wrangler secret put SENTRY_DSN
 [vars]
 ENVIRONMENT = "development"
 APP_NAME = "Baobab"
 APP_VERSION = "0.0.1"
 CORS_ORIGIN = "http://localhost:5173,http://localhost:8080"
+SENTRY_DSN = ""
 DEFAULT_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
 LOWBW_MODEL = "@cf/meta/llama-3.1-8b-instruct"
 SUMMARIZE_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast"

@@ -28,6 +28,7 @@ export interface Env {
   AUTH_SECRET: string
   ENCRYPTION_KEY: string
   ADMIN_API_KEY: string
+  SENTRY_DSN?: string
   OTP_AFRICASTALKING_KEY?: string
   OTP_AFRICASTALKING_USERNAME?: string
   OTP_TWILIO_SID?: string
