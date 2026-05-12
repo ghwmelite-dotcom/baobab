@@ -9,6 +9,7 @@ import { useAiStore } from '~/ai/ai.store'
 import { useReaderStore } from '~/reader/reader.store'
 import { suggest } from '~/history/omnibar-autocomplete'
 import { BookmarkButton } from '~/bookmarks/BookmarkButton'
+import { useAuthStore } from '~/auth/auth.store'
 
 // Carry-over from Task 5/6 code review: parseOmnibarInput accepts ANY scheme,
 // including `javascript:`, `data:`, `file:`. The omnibar must NOT navigate
@@ -69,6 +70,10 @@ export function Omnibar() {
   }, [])
 
   const runAiSearch = async (query: string) => {
+    if (!useAuthStore.getState().user) {
+      useAuthStore.getState().openSignIn()
+      return
+    }
     // Ensure sidebar is open
     if (!useAiStore.getState().sidebarOpen) useAiStore.getState().toggleSidebar()
     const convId = `c${Date.now().toString(36)}`

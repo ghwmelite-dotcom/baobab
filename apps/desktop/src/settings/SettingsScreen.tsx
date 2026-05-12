@@ -9,7 +9,9 @@ import { Button, IconButton } from '@baobab/ui'
 export function SettingsScreen() {
   const open = useSettingsStore((s) => s.open)
   const close = useSettingsStore((s) => s.close)
+  const user = useAuthStore((s) => s.user)
   const logout = useAuthStore((s) => s.logout)
+  const openSignIn = useAuthStore((s) => s.openSignIn)
 
   if (!open) return null
 
@@ -46,9 +48,15 @@ export function SettingsScreen() {
           Settings
         </h1>
         <div style={{ display: 'flex', gap: 8 }}>
-          <Button variant="ghost" onClick={() => void logout()}>
-            Sign out
-          </Button>
+          {user ? (
+            <Button variant="ghost" onClick={() => void logout()}>
+              Sign out
+            </Button>
+          ) : (
+            <Button variant="ghost" onClick={() => { close(); openSignIn() }}>
+              Sign in
+            </Button>
+          )}
           <IconButton aria-label="Close settings" onClick={close}>
             <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
               <path d="M3 3 L11 11 M11 3 L3 11" stroke="currentColor" strokeWidth="1.5" />

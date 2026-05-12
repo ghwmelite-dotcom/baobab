@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import type { HistoryItem } from '@baobab/cloud-client'
 import { historyClient } from './api'
+import { useAuthStore } from '~/auth/auth.store'
 
 interface HistoryState {
   drawerOpen: boolean
@@ -39,6 +40,7 @@ export const useHistoryStore = create<HistoryState>()((set, get) => ({
   },
 
   recordVisit: async (url, title) => {
+    if (!useAuthStore.getState().user) return
     try { await historyClient.record(url, title) } catch { /* tolerate */ }
   },
 }))

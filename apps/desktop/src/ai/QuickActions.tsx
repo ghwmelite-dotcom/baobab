@@ -2,6 +2,7 @@ import { useTabsStore } from '~/state/tabs.store'
 import { aiClient } from './api'
 import { useAiStore } from './ai.store'
 import { strings } from '@baobab/brand'
+import { useAuthStore } from '~/auth/auth.store'
 
 const ACTIONS = [
   { id: 'summarize', label: 'Summarize' },
@@ -21,9 +22,12 @@ export function QuickActions() {
   const activeTab = tabs.find((t) => t.id === activeId)
   const setActive = useAiStore((s) => s.setActive)
   const pushMessage = useAiStore((s) => s.pushMessage)
+  const user = useAuthStore((s) => s.user)
+  const openSignIn = useAuthStore((s) => s.openSignIn)
 
   const runSummarize = async () => {
     if (!activeTab?.url || activeTab.url === 'about:blank') return
+    if (!user) { openSignIn(); return }
     const convId = `c${Date.now().toString(36)}`
     setActive(convId)
     pushMessage(convId, { id: newMsgId(), role: 'user', content: `Summarize ${activeTab.url}` })
@@ -39,6 +43,7 @@ export function QuickActions() {
 
   const runAction = (id: string) => {
     if (id === 'summarize') return void runSummarize()
+    if (!user) { openSignIn(); return }
     const convId = `c${Date.now().toString(36)}`
     setActive(convId)
     pushMessage(convId, {

@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import type { Bookmark, BookmarkFolder } from '@baobab/cloud-client'
 import { bookmarksClient } from './api'
+import { useAuthStore } from '~/auth/auth.store'
 
 interface BookmarksState {
   drawerOpen: boolean
@@ -35,6 +36,10 @@ export const useBookmarksStore = create<BookmarksState>()((set, get) => ({
   },
 
   add: async (url, title, folder_id) => {
+    if (!useAuthStore.getState().user) {
+      useAuthStore.getState().openSignIn()
+      return undefined
+    }
     try {
       const r = await bookmarksClient.create({ url, title, folder_id })
       await get().refresh()

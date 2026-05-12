@@ -6,6 +6,7 @@ import { ModelSelector } from './ModelSelector'
 import { QuickActions } from './QuickActions'
 import { Button, Input } from '@baobab/ui'
 import { strings } from '@baobab/brand'
+import { useAuthStore } from '~/auth/auth.store'
 
 function newMsgId(): string {
   return `m${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
@@ -21,6 +22,8 @@ export function ChatPanel() {
   const setStreaming = useAiStore((s) => s.setStreaming)
   const streaming = useAiStore((s) => s.streaming)
   const messages = useAiStore((s) => (activeId ? (s.messages[activeId] ?? []) : []))
+  const user = useAuthStore((s) => s.user)
+  const openSignIn = useAuthStore((s) => s.openSignIn)
   const endRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
@@ -29,6 +32,7 @@ export function ChatPanel() {
 
   const send = async () => {
     if (!input.trim() || streaming) return
+    if (!user) { openSignIn(); return }
     const userContent = input.trim()
     const userMsg = { id: newMsgId(), role: 'user' as const, content: userContent }
     const convId = activeId ?? `c${Date.now().toString(36)}`

@@ -19,6 +19,7 @@ import { refreshResidency } from './state/health'
 import { useTabsStore } from './state/tabs.store'
 import { ipcHideTab, ipcShowTab } from './ipc/tabs'
 import { AuthGate } from './auth/AuthGate'
+import { AuthScreen } from './auth/AuthScreen'
 import { UpdateToast } from './updater/UpdateToast'
 
 export function App() {
@@ -53,6 +54,7 @@ export function App() {
           omnibar={<Omnibar />}
           statusBar={<StatusBar />}
         >
+          <AuthScreen />
           <SettingsScreen />
           <ReaderPanel />
           <HistoryPanel />

@@ -11,12 +11,15 @@ interface AuthState {
   user: MeResponse | null
   status: Status
   error: string | null
+  signInOverlayOpen: boolean
   hydrate: () => Promise<void>
   signupEmail: (email: string, password: string) => Promise<void>
   loginEmail: (email: string, password: string) => Promise<void>
   otpSend: (phone: string) => Promise<void>
   otpVerify: (phone: string, code: string) => Promise<void>
   logout: () => Promise<void>
+  openSignIn: () => void
+  closeSignIn: () => void
 }
 
 async function persistTokens(access: string, refresh: string): Promise<void> {
@@ -35,6 +38,10 @@ export const useAuthStore = create<AuthState>()((set) => ({
   user: null,
   status: 'idle',
   error: null,
+  signInOverlayOpen: false,
+
+  openSignIn: () => set({ signInOverlayOpen: true }),
+  closeSignIn: () => set({ signInOverlayOpen: false }),
 
   hydrate: async () => {
     const a = await persistence.get<string>('auth.accessToken')
@@ -60,7 +67,7 @@ export const useAuthStore = create<AuthState>()((set) => ({
       client.setAccessToken(access)
       await persistTokens(access, refresh)
       const user = await authClient.me()
-      set({ accessToken: access, refreshToken: refresh, user, status: 'authed' })
+      set({ accessToken: access, refreshToken: refresh, user, status: 'authed', signInOverlayOpen: false })
     } catch (e) {
       set({ status: 'error', error: e instanceof Error ? e.message : 'signup failed' })
       throw e
@@ -74,7 +81,7 @@ export const useAuthStore = create<AuthState>()((set) => ({
       client.setAccessToken(access)
       await persistTokens(access, refresh)
       const user = await authClient.me()
-      set({ accessToken: access, refreshToken: refresh, user, status: 'authed' })
+      set({ accessToken: access, refreshToken: refresh, user, status: 'authed', signInOverlayOpen: false })
     } catch (e) {
       set({ status: 'error', error: e instanceof Error ? e.message : 'login failed' })
       throw e
@@ -92,7 +99,7 @@ export const useAuthStore = create<AuthState>()((set) => ({
       client.setAccessToken(access)
       await persistTokens(access, refresh)
       const user = await authClient.me()
-      set({ accessToken: access, refreshToken: refresh, user, status: 'authed' })
+      set({ accessToken: access, refreshToken: refresh, user, status: 'authed', signInOverlayOpen: false })
     } catch (e) {
       set({ status: 'error', error: e instanceof Error ? e.message : 'verification failed' })
       throw e

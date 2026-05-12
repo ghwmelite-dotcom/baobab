@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { fetchReader, type ReaderArticle } from './api'
+import { useAuthStore } from '~/auth/auth.store'
 
 interface ReaderState {
   open: boolean
@@ -16,6 +17,11 @@ export const useReaderStore = create<ReaderState>()((set) => ({
   loading: false,
   error: null,
   openFor: async (url) => {
+    const u = useAuthStore.getState().user
+    if (!u) {
+      useAuthStore.getState().openSignIn()
+      return
+    }
     set({ open: true, loading: true, error: null, article: null })
     try {
       const a = await fetchReader(url)

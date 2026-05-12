@@ -12,10 +12,13 @@ vi.mock('~/auth/auth.store', () => {
   const state = {
     status: 'idle' as const,
     error: null as string | null,
+    signInOverlayOpen: true,
     loginEmail: mockLoginEmail,
     signupEmail: mockSignupEmail,
     otpSend: mockOtpSend,
     otpVerify: mockOtpVerify,
+    openSignIn: () => undefined,
+    closeSignIn: () => undefined,
   }
   const useAuthStore = Object.assign(
     (sel: (s: typeof state) => unknown) => sel(state),

@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import type { OfflineArticle } from '@baobab/cloud-client'
 import { offlineClient } from './api'
 import type { ReaderArticle } from '~/reader/api'
+import { useAuthStore } from '~/auth/auth.store'
 
 interface OfflineState {
   drawerOpen: boolean
@@ -32,6 +33,10 @@ export const useOfflineStore = create<OfflineState>()((set, get) => ({
   },
 
   save: async (a) => {
+    if (!useAuthStore.getState().user) {
+      useAuthStore.getState().openSignIn()
+      return
+    }
     await offlineClient.save({
       url: a.url,
       title: a.title,
