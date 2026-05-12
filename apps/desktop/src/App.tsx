@@ -2,10 +2,8 @@ import { useEffect } from 'react'
 import { ThemeProvider } from '@baobab/ui'
 import { motion } from '@baobab/brand'
 import { ChromeShell } from './chrome/ChromeShell'
-import { TitleBar } from './chrome/TitleBar'
 import { TabStrip } from './chrome/TabStrip'
 import { Omnibar } from './chrome/Omnibar'
-import { StatusBar } from './chrome/StatusBar'
 import { NewTabPage } from './chrome/NewTabPage'
 import { Sidebar, SIDEBAR_WIDTH } from './ai/Sidebar'
 import { ChatPanel } from './ai/ChatPanel'
@@ -56,11 +54,9 @@ export function App() {
     <ThemeProvider theme="dark">
       <AuthGate>
         <ChromeShell
-          titlebar={<TitleBar />}
-          tabStrip={<TabStrip />}
+          chromeBar={<TabStrip />}
+          addressBar={<Omnibar />}
           bookmarksBar={<BookmarksBar />}
-          omnibar={<Omnibar />}
-          statusBar={<StatusBar />}
         >
           {/* Canvas reflows when the sidebar opens (push-aside layout). */}
           <div

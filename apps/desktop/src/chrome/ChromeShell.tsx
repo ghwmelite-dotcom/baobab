@@ -1,22 +1,13 @@
 import type { ReactNode } from 'react'
 
 interface Props {
-  titlebar: ReactNode
-  tabStrip: ReactNode
+  chromeBar: ReactNode
+  addressBar: ReactNode
   bookmarksBar?: ReactNode
-  omnibar: ReactNode
-  statusBar: ReactNode
   children: ReactNode
 }
 
-export function ChromeShell({
-  titlebar,
-  tabStrip,
-  bookmarksBar,
-  omnibar,
-  statusBar,
-  children,
-}: Props) {
+export function ChromeShell({ chromeBar, addressBar, bookmarksBar, children }: Props) {
   return (
     <div
       style={{
@@ -26,14 +17,12 @@ export function ChromeShell({
         background: 'var(--canvas)',
       }}
     >
-      {titlebar}
-      {tabStrip}
+      {chromeBar}
+      {addressBar}
       {bookmarksBar}
-      {omnibar}
       <main style={{ position: 'relative', overflow: 'hidden', flex: 1, minHeight: 0 }}>
         {children}
       </main>
-      {statusBar}
     </div>
   )
 }

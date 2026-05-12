@@ -1,26 +1,24 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { parseOmnibarInput } from '@baobab/core'
-import { IconButton } from '@baobab/ui'
 import type { HistoryItem } from '@baobab/cloud-client'
 import { useTabsStore } from '~/state/tabs.store'
 import { OS } from '~/platform/os'
 import { aiClient } from '~/ai/api'
 import { useAiStore } from '~/ai/ai.store'
 import { useReaderStore } from '~/reader/reader.store'
+import { useHistoryStore } from '~/history/history.store'
+import { useOfflineStore } from '~/offline/offline.store'
+import { useBookmarksStore } from '~/bookmarks/bookmarks.store'
 import { suggest } from '~/history/omnibar-autocomplete'
 import { BookmarkButton } from '~/bookmarks/BookmarkButton'
 import { useAuthStore } from '~/auth/auth.store'
 
-// Carry-over from Task 5/6 code review: parseOmnibarInput accepts ANY scheme,
-// including `javascript:`, `data:`, `file:`. The omnibar must NOT navigate
-// to those — they are XSS / local-FS exfiltration vectors. Allowlist only
-// http(s) + about: schemes for omnibar-initiated navigation.
+// XSS / local-FS exfiltration guard for omnibar-initiated navigation.
 const NAVIGATION_SCHEME_ALLOWLIST = new Set(['http:', 'https:', 'about:'])
 
 function isNavigableUrl(url: string): boolean {
   try {
-    const u = new URL(url)
-    return NAVIGATION_SCHEME_ALLOWLIST.has(u.protocol)
+    return NAVIGATION_SCHEME_ALLOWLIST.has(new URL(url).protocol)
   } catch {
     return false
   }
@@ -30,6 +28,58 @@ function newMsgId(): string {
   return `m${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
 }
 
+// ── Generic icon button used in the address bar action area ──────────────
+
+function NavBtn({ label, onClick, disabled, active, children, danger }: {
+  label: string
+  onClick: () => void
+  disabled?: boolean
+  active?: boolean
+  danger?: boolean
+  children: ReactNode
+}) {
+  const [hover, setHover] = useState(false)
+  const baseColor: string = active ? 'var(--accent-light)' : 'var(--text-secondary)'
+  const hoverColor: string = danger ? '#fff' : 'var(--text-primary)'
+  const bg: string = disabled
+    ? 'transparent'
+    : active
+      ? 'var(--accent-dim)'
+      : hover
+        ? (danger ? 'rgba(185, 28, 28, 0.85)' : 'rgba(255,255,255,0.06)')
+        : 'transparent'
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      aria-pressed={active}
+      title={label}
+      onClick={disabled ? undefined : onClick}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      disabled={disabled}
+      style={{
+        width: 32,
+        height: 32,
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: bg,
+        border: 'none',
+        borderRadius: 8,
+        color: disabled ? 'var(--text-muted)' : (hover ? hoverColor : baseColor),
+        cursor: disabled ? 'default' : 'pointer',
+        opacity: disabled ? 0.4 : 1,
+        transition: 'background 140ms ease, color 140ms ease',
+      }}
+    >
+      {children}
+    </button>
+  )
+}
+
+// ── Address bar ──────────────────────────────────────────────────────────
+
 export function Omnibar() {
   const ref = useRef<HTMLInputElement | null>(null)
   const activeId = useTabsStore((s) => s.activeId)
@@ -38,7 +88,12 @@ export function Omnibar() {
   const openTab = useTabsStore((s) => s.openTab)
   const setActive = useAiStore((s) => s.setActive)
   const pushMessage = useAiStore((s) => s.pushMessage)
+  const sidebarOpen = useAiStore((s) => s.sidebarOpen)
+  const toggleSidebar = useAiStore((s) => s.toggleSidebar)
   const openReader = useReaderStore((s) => s.openFor)
+  const toggleHistory = useHistoryStore((s) => s.toggle)
+  const toggleSaved = useOfflineStore((s) => s.toggle)
+  const toggleBookmarks = useBookmarksStore((s) => s.toggle)
 
   const activeTab = tabs.find((t) => t.id === activeId)
   const [value, setValue] = useState(activeTab?.url ?? '')
@@ -46,12 +101,12 @@ export function Omnibar() {
   const [focused, setFocused] = useState(false)
 
   useEffect(() => {
-    setValue(activeTab?.url ?? '')
+    setValue(activeTab?.url === 'about:blank' ? '' : (activeTab?.url ?? ''))
   }, [activeTab?.url])
 
   useEffect(() => {
     if (!focused) { setSuggestions([]); return }
-    const t = setTimeout(() => { void suggest(value, 5).then(setSuggestions) }, 150)
+    const t = setTimeout(() => { void suggest(value, 6).then(setSuggestions) }, 150)
     return () => clearTimeout(t)
   }, [value, focused])
 
@@ -74,19 +129,14 @@ export function Omnibar() {
       useAuthStore.getState().openSignIn()
       return
     }
-    // Ensure sidebar is open
     if (!useAiStore.getState().sidebarOpen) useAiStore.getState().toggleSidebar()
     const convId = `c${Date.now().toString(36)}`
     setActive(convId)
-    const userMsgId = newMsgId()
-    const asstMsgId = newMsgId()
-    pushMessage(convId, { id: userMsgId, role: 'user', content: query })
-    pushMessage(convId, { id: asstMsgId, role: 'assistant', content: 'Reaching across the continent…' })
+    pushMessage(convId, { id: newMsgId(), role: 'user', content: query })
+    pushMessage(convId, { id: newMsgId(), role: 'assistant', content: 'Reaching across the continent…' })
     try {
       const r = await aiClient.search({ query })
       const list = r.results.map((x) => `• [${x.title}](${x.url})`).join('\n')
-      // Replace the placeholder assistant message — easiest path: push a new one.
-      // For v0.1.0 simplicity we push a new assistant message and leave the placeholder; user sees both.
       pushMessage(convId, { id: newMsgId(), role: 'assistant', content: `${r.answer}\n\n${list}` })
     } catch (e) {
       pushMessage(convId, {
@@ -102,7 +152,6 @@ export function Omnibar() {
     if (parsed.kind === 'empty') return
     if (parsed.kind === 'url') {
       if (!isNavigableUrl(parsed.url)) {
-        // Blocked scheme — fall through to AI search using the raw input
         await runAiSearch(value)
         return
       }
@@ -110,15 +159,29 @@ export function Omnibar() {
       else void openTab(parsed.url)
       return
     }
-    // search branch
     await runAiSearch(parsed.query)
   }
+
+  const reload = () => {
+    if (activeId && activeTab?.url && activeTab.url !== 'about:blank') {
+      void navigate(activeId, activeTab.url)
+    }
+  }
+
+  const isSecure = activeTab?.url?.startsWith('https://') ?? false
+  const showSecurityGlyph = activeTab?.url && activeTab.url !== 'about:blank'
+  const omnibarBg: CSSProperties['background'] = focused
+    ? 'var(--canvas)'
+    : 'rgba(255,255,255,0.04)'
+  const omnibarBorder: CSSProperties['border'] = focused
+    ? '1px solid var(--accent)'
+    : '1px solid var(--border)'
 
   return (
     <div
       style={{
         position: 'relative',
-        height: 56,
+        height: 48,
         display: 'flex',
         alignItems: 'center',
         gap: 8,
@@ -127,91 +190,225 @@ export function Omnibar() {
         borderBottom: '1px solid var(--border)',
       }}
     >
-      <input
-        ref={ref}
-        className="baobab-input"
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setTimeout(() => setFocused(false), 100)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') {
-            e.preventDefault()
-            void submit()
-          }
-          if (e.key === 'Escape') (e.target as HTMLInputElement).blur()
-        }}
-        spellCheck={false}
-        autoComplete="off"
-        placeholder="Search or type a URL"
-        aria-label="Address and search bar"
+      {/* Navigation cluster (left) */}
+      <div style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}>
+        <NavBtn label="Back" disabled onClick={() => {}}>
+          <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden>
+            <path d="M10 3 L5 8 L10 13" stroke="currentColor" strokeWidth="1.6" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </NavBtn>
+        <NavBtn label="Forward" disabled onClick={() => {}}>
+          <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden>
+            <path d="M6 3 L11 8 L6 13" stroke="currentColor" strokeWidth="1.6" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </NavBtn>
+        <NavBtn label="Reload" onClick={reload} disabled={!activeTab?.url || activeTab.url === 'about:blank'}>
+          <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden>
+            <path d="M13 4 V8 H9 M13 8 A5 5 0 1 1 11 4" stroke="currentColor" strokeWidth="1.4" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </NavBtn>
+      </div>
+
+      {/* Omnibar pill — centered, max-width 720px */}
+      <div
         style={{
           flex: 1,
-          height: 40,
-          paddingInline: 14,
-          borderRadius: 999,
-          border: '1px solid var(--border)',
-          background: 'var(--canvas)',
-          color: 'var(--text-primary)',
-          fontFamily: '"JetBrains Mono", Menlo, monospace',
-          fontSize: 13,
+          display: 'flex',
+          justifyContent: 'center',
+          paddingInline: 4,
         }}
-      />
-      <IconButton
-        aria-label="Open Reader Mode"
-        onClick={() => activeTab?.url && activeTab.url !== 'about:blank' && void openReader(activeTab.url)}
-        disabled={!activeTab?.url || activeTab.url === 'about:blank'}
       >
-        <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
-          <path d="M2 3 H14 V13 H2 Z M4 5 H12 M4 8 H12 M4 11 H8" stroke="currentColor" strokeWidth="1.2" fill="none" />
-        </svg>
-      </IconButton>
-      <BookmarkButton />
-      {focused && suggestions.length > 0 && (
-        <ul
-          role="listbox"
-          aria-label="History suggestions"
+        <div
           style={{
-            position: 'absolute',
-            top: 56,
-            left: 12,
-            right: 12,
-            background: 'var(--surface-1)',
-            border: '1px solid var(--border)',
-            borderRadius: 8,
-            listStyle: 'none',
-            padding: 4,
-            margin: 0,
-            maxHeight: 240,
-            overflow: 'auto',
-            zIndex: 30,
+            position: 'relative',
+            width: '100%',
+            maxWidth: 760,
+            height: 34,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            paddingInline: 12,
+            borderRadius: 999,
+            background: omnibarBg,
+            border: omnibarBorder,
+            transition: 'background 140ms ease, border-color 140ms ease, box-shadow 140ms ease',
+            boxShadow: focused ? '0 0 0 3px rgba(217, 119, 6, 0.12)' : 'none',
           }}
         >
-          {suggestions.map((s) => (
-            <li key={s.id}>
-              <button
-                type="button"
-                onMouseDown={(e) => {
-                  e.preventDefault()
-                  if (activeId) void navigate(activeId, s.url)
-                  else void openTab(s.url)
-                  setSuggestions([])
-                  setFocused(false)
-                }}
-                style={{
-                  display: 'block', width: '100%', textAlign: 'left',
-                  padding: '8px 10px', background: 'transparent',
-                  color: 'var(--text-primary)', border: 'none', cursor: 'pointer',
-                  fontSize: 12, borderRadius: 6,
-                }}
-              >
-                <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.title ?? s.url}</div>
-                <div style={{ fontSize: 10, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.url}</div>
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
+          {/* Security / origin glyph */}
+          {showSecurityGlyph && (
+            <span
+              aria-label={isSecure ? 'Secure connection' : 'Not secure'}
+              title={isSecure ? 'Secure connection (HTTPS)' : 'Not a secure connection'}
+              style={{
+                display: 'inline-flex',
+                color: isSecure ? 'var(--sovereignty-ok)' : 'var(--sovereignty-warn)',
+              }}
+            >
+              {isSecure ? (
+                <svg width="13" height="13" viewBox="0 0 13 13" aria-hidden>
+                  <path d="M3.5 6 V4.5 A3 3 0 0 1 9.5 4.5 V6 M2.5 6 H10.5 V11 H2.5 Z" stroke="currentColor" strokeWidth="1.2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              ) : (
+                <svg width="13" height="13" viewBox="0 0 13 13" aria-hidden>
+                  <circle cx="6.5" cy="6.5" r="5" stroke="currentColor" strokeWidth="1.2" fill="none" />
+                  <path d="M6.5 4 V7 M6.5 9 V9.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+                </svg>
+              )}
+            </span>
+          )}
+
+          {!showSecurityGlyph && (
+            <span style={{ display: 'inline-flex', color: 'var(--text-muted)' }} aria-hidden>
+              <svg width="13" height="13" viewBox="0 0 13 13">
+                <circle cx="5.5" cy="5.5" r="3.5" stroke="currentColor" strokeWidth="1.2" fill="none" />
+                <path d="M8 8 L11 11" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+              </svg>
+            </span>
+          )}
+
+          <input
+            ref={ref}
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            onFocus={() => setFocused(true)}
+            onBlur={() => setTimeout(() => setFocused(false), 100)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault()
+                void submit()
+              }
+              if (e.key === 'Escape') (e.target as HTMLInputElement).blur()
+            }}
+            spellCheck={false}
+            autoComplete="off"
+            placeholder="Search the continent or type a URL"
+            aria-label="Address and search bar"
+            style={{
+              flex: 1,
+              height: '100%',
+              padding: 0,
+              border: 'none',
+              outline: 'none',
+              background: 'transparent',
+              color: 'var(--text-primary)',
+              fontFamily: 'var(--font-default)',
+              fontSize: 13.5,
+              letterSpacing: '0.005em',
+            }}
+          />
+
+          {/* AI hint glyph on the right of the pill */}
+          <span
+            aria-hidden
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 4,
+              color: 'var(--text-muted)',
+              fontSize: 10,
+              letterSpacing: '0.06em',
+              textTransform: 'uppercase',
+            }}
+          >
+            <svg width="11" height="11" viewBox="0 0 11 11" aria-hidden>
+              <path d="M5.5 1 L6.7 4.3 L10 5.5 L6.7 6.7 L5.5 10 L4.3 6.7 L1 5.5 L4.3 4.3 Z" fill="currentColor" opacity="0.6" />
+            </svg>
+            {OS === 'macos' ? '⌘L' : 'Ctrl+L'}
+          </span>
+
+          {/* Suggestions dropdown */}
+          {focused && suggestions.length > 0 && (
+            <ul
+              role="listbox"
+              aria-label="History suggestions"
+              style={{
+                position: 'absolute',
+                top: 40,
+                left: 0,
+                right: 0,
+                background: 'var(--surface-1)',
+                border: '1px solid var(--border)',
+                borderRadius: 14,
+                listStyle: 'none',
+                padding: 6,
+                margin: 0,
+                maxHeight: 280,
+                overflow: 'auto',
+                zIndex: 30,
+                boxShadow: '0 12px 32px -8px rgba(0, 0, 0, 0.4)',
+              }}
+            >
+              {suggestions.map((s) => (
+                <li key={s.id}>
+                  <button
+                    type="button"
+                    onMouseDown={(e) => {
+                      e.preventDefault()
+                      if (activeId) void navigate(activeId, s.url)
+                      else void openTab(s.url)
+                      setSuggestions([])
+                      setFocused(false)
+                    }}
+                    style={{
+                      display: 'block', width: '100%', textAlign: 'left',
+                      padding: '8px 12px', background: 'transparent',
+                      color: 'var(--text-primary)', border: 'none', cursor: 'pointer',
+                      fontSize: 12.5, borderRadius: 8,
+                    }}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.04)' }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent' }}
+                  >
+                    <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.title ?? s.url}</div>
+                    <div style={{ fontSize: 10.5, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: 2, fontFamily: 'var(--font-mono)' }}>{s.url}</div>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+
+      {/* Right-side action cluster */}
+      <div style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}>
+        <NavBtn
+          label="Reader Mode"
+          onClick={() => activeTab?.url && activeTab.url !== 'about:blank' && void openReader(activeTab.url)}
+          disabled={!activeTab?.url || activeTab.url === 'about:blank'}
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden>
+            <path d="M2 3 H14 V13 H2 Z M4 5 H12 M4 8 H12 M4 11 H8" stroke="currentColor" strokeWidth="1.2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </NavBtn>
+
+        <BookmarkButton />
+
+        <NavBtn label="Bookmarks" onClick={toggleBookmarks}>
+          <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden>
+            <path d="M3 5 H13 M3 8 H13 M3 11 H10" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+          </svg>
+        </NavBtn>
+
+        <NavBtn label="History" onClick={toggleHistory}>
+          <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden>
+            <circle cx="8" cy="8" r="5.5" stroke="currentColor" strokeWidth="1.4" fill="none" />
+            <path d="M8 5 V8 L10 9.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          </svg>
+        </NavBtn>
+
+        <NavBtn label="Saved" onClick={toggleSaved}>
+          <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden>
+            <path d="M4 2 H12 V14 L8 11 L4 14 Z" stroke="currentColor" strokeWidth="1.4" fill="none" strokeLinejoin="round" />
+          </svg>
+        </NavBtn>
+
+        <NavBtn label={sidebarOpen ? 'Hide AI sidebar' : 'Open AI sidebar'} active={sidebarOpen} onClick={toggleSidebar}>
+          <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden>
+            <path d="M8 2 L9.6 5.6 L13 6.5 L9.6 7.4 L8 11 L6.4 7.4 L3 6.5 L6.4 5.6 Z" fill="currentColor" />
+            <path d="M11.5 11 L12 12.5 L13.5 13 L12 13.5 L11.5 15 L11 13.5 L9.5 13 L11 12.5 Z" fill="currentColor" opacity="0.7" />
+          </svg>
+        </NavBtn>
+      </div>
     </div>
   )
 }

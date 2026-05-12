@@ -3,21 +3,19 @@ import { render, screen } from '@testing-library/react'
 import { ChromeShell } from '~/chrome/ChromeShell'
 
 describe('ChromeShell', () => {
-  it('renders titlebar / tabstrip slot / main / status regions', () => {
+  it('renders chrome bar / address bar / main / optional bookmarks bar', () => {
     render(
       <ChromeShell
-        titlebar={<div data-testid="tb">tb</div>}
-        tabStrip={<div data-testid="ts">ts</div>}
-        omnibar={<div data-testid="ob">ob</div>}
-        statusBar={<div data-testid="sb">sb</div>}
+        chromeBar={<div data-testid="chrome-bar">chrome</div>}
+        addressBar={<div data-testid="address-bar">address</div>}
+        bookmarksBar={<div data-testid="bookmarks-bar">bookmarks</div>}
       >
         <div data-testid="content">content</div>
       </ChromeShell>,
     )
-    expect(screen.getByTestId('tb')).toBeInTheDocument()
-    expect(screen.getByTestId('ts')).toBeInTheDocument()
-    expect(screen.getByTestId('ob')).toBeInTheDocument()
-    expect(screen.getByTestId('sb')).toBeInTheDocument()
+    expect(screen.getByTestId('chrome-bar')).toBeInTheDocument()
+    expect(screen.getByTestId('address-bar')).toBeInTheDocument()
+    expect(screen.getByTestId('bookmarks-bar')).toBeInTheDocument()
     expect(screen.getByTestId('content')).toBeInTheDocument()
   })
 })
