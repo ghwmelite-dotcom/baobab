@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import type { Tab } from '@baobab/core'
 import { ipcCreateTab, ipcCloseTab, ipcShowTab, ipcNavigateTab } from '~/ipc/tabs'
+import { useHistoryStore } from '~/history/history.store'
 
 interface TabsState {
   tabs: Tab[]
@@ -39,6 +40,9 @@ export const useTabsStore = create<TabsState>()((set, get) => ({
     })
     await ipcCreateTab(id, url)
     await ipcShowTab(id)
+    if (url !== 'about:blank') {
+      void useHistoryStore.getState().recordVisit(url)
+    }
     return id
   },
 
@@ -70,6 +74,7 @@ export const useTabsStore = create<TabsState>()((set, get) => ({
         t.id === id ? { ...t, url, loading: true, lastVisitedAt: Date.now() } : t,
       ),
     }))
+    void useHistoryStore.getState().recordVisit(url)
   },
 
   reorderTab: (id, toIndex) => {

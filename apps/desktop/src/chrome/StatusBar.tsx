@@ -1,6 +1,7 @@
 import { strings } from '@baobab/brand'
 import { useSovereigntyStore } from '~/state/sovereignty.store'
 import { useOfflineStore } from '~/offline/offline.store'
+import { useHistoryStore } from '~/history/history.store'
 
 export function StatusBar() {
   const residency = useSovereigntyStore((s) => s.residency)
@@ -9,6 +10,7 @@ export function StatusBar() {
   const lowBwMode = useSovereigntyStore((s) => s.lowBwMode)
   const setLowBwMode = useSovereigntyStore((s) => s.setLowBwMode)
   const toggleSaved = useOfflineStore((s) => s.toggle)
+  const toggleHistory = useHistoryStore((s) => s.toggle)
 
   const isHome = residency.region === 'africa'
   const label = residency.region === 'unknown' ? '—' : isHome ? strings.residency.home : strings.residency.roaming
@@ -52,9 +54,27 @@ export function StatusBar() {
       <button
         type="button"
         className="baobab-button"
-        onClick={toggleSaved}
+        onClick={toggleHistory}
         style={{
           marginLeft: 'auto',
+          height: 22,
+          paddingInline: 8,
+          borderRadius: 4,
+          border: '1px solid var(--border)',
+          background: 'transparent',
+          color: 'var(--text-secondary)',
+          cursor: 'pointer',
+          fontSize: 11,
+        }}
+      >
+        History
+      </button>
+
+      <button
+        type="button"
+        className="baobab-button"
+        onClick={toggleSaved}
+        style={{
           height: 22,
           paddingInline: 8,
           borderRadius: 4,

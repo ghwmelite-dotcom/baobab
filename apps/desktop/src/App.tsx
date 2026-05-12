@@ -10,6 +10,7 @@ import { Sidebar } from './ai/Sidebar'
 import { ChatPanel } from './ai/ChatPanel'
 import { ReaderPanel } from './reader/ReaderPanel'
 import { OfflineList } from './offline/OfflineList'
+import { HistoryPanel } from './history/HistoryPanel'
 import { useChromeShortcuts } from './chrome/useChromeShortcuts'
 import { refreshResidency } from './state/health'
 import { useTabsStore } from './state/tabs.store'
@@ -48,6 +49,7 @@ export function App() {
           statusBar={<StatusBar />}
         >
           <ReaderPanel />
+          <HistoryPanel />
           <OfflineList />
           <Sidebar>
             <ChatPanel />

@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { parseOmnibarInput } from '@baobab/core'
 import { IconButton } from '@baobab/ui'
+import type { HistoryItem } from '@baobab/cloud-client'
 import { useTabsStore } from '~/state/tabs.store'
 import { OS } from '~/platform/os'
 import { aiClient } from '~/ai/api'
 import { useAiStore } from '~/ai/ai.store'
 import { useReaderStore } from '~/reader/reader.store'
+import { suggest } from '~/history/omnibar-autocomplete'
 
 // Carry-over from Task 5/6 code review: parseOmnibarInput accepts ANY scheme,
 // including `javascript:`, `data:`, `file:`. The omnibar must NOT navigate
@@ -38,10 +40,18 @@ export function Omnibar() {
 
   const activeTab = tabs.find((t) => t.id === activeId)
   const [value, setValue] = useState(activeTab?.url ?? '')
+  const [suggestions, setSuggestions] = useState<HistoryItem[]>([])
+  const [focused, setFocused] = useState(false)
 
   useEffect(() => {
     setValue(activeTab?.url ?? '')
   }, [activeTab?.url])
+
+  useEffect(() => {
+    if (!focused) { setSuggestions([]); return }
+    const t = setTimeout(() => { void suggest(value, 5).then(setSuggestions) }, 150)
+    return () => clearTimeout(t)
+  }, [value, focused])
 
   // Ctrl/Cmd + L focuses
   useEffect(() => {
@@ -101,6 +111,7 @@ export function Omnibar() {
   return (
     <div
       style={{
+        position: 'relative',
         height: 56,
         display: 'flex',
         alignItems: 'center',
@@ -115,6 +126,8 @@ export function Omnibar() {
         className="baobab-input"
         value={value}
         onChange={(e) => setValue(e.target.value)}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setTimeout(() => setFocused(false), 100)}
         onKeyDown={(e) => {
           if (e.key === 'Enter') {
             e.preventDefault()
@@ -147,6 +160,51 @@ export function Omnibar() {
           <path d="M2 3 H14 V13 H2 Z M4 5 H12 M4 8 H12 M4 11 H8" stroke="currentColor" strokeWidth="1.2" fill="none" />
         </svg>
       </IconButton>
+      {focused && suggestions.length > 0 && (
+        <ul
+          role="listbox"
+          aria-label="History suggestions"
+          style={{
+            position: 'absolute',
+            top: 56,
+            left: 12,
+            right: 12,
+            background: 'var(--surface-1)',
+            border: '1px solid var(--border)',
+            borderRadius: 8,
+            listStyle: 'none',
+            padding: 4,
+            margin: 0,
+            maxHeight: 240,
+            overflow: 'auto',
+            zIndex: 30,
+          }}
+        >
+          {suggestions.map((s) => (
+            <li key={s.id}>
+              <button
+                type="button"
+                onMouseDown={(e) => {
+                  e.preventDefault()
+                  if (activeId) void navigate(activeId, s.url)
+                  else void openTab(s.url)
+                  setSuggestions([])
+                  setFocused(false)
+                }}
+                style={{
+                  display: 'block', width: '100%', textAlign: 'left',
+                  padding: '8px 10px', background: 'transparent',
+                  color: 'var(--text-primary)', border: 'none', cursor: 'pointer',
+                  fontSize: 12, borderRadius: 6,
+                }}
+              >
+                <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.title ?? s.url}</div>
+                <div style={{ fontSize: 10, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.url}</div>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   )
 }
