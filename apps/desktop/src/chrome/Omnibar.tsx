@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { parseOmnibarInput } from '@baobab/core'
+import { IconButton } from '@baobab/ui'
 import { useTabsStore } from '~/state/tabs.store'
 import { OS } from '~/platform/os'
 import { aiClient } from '~/ai/api'
 import { useAiStore } from '~/ai/ai.store'
+import { useReaderStore } from '~/reader/reader.store'
 
 // Carry-over from Task 5/6 code review: parseOmnibarInput accepts ANY scheme,
 // including `javascript:`, `data:`, `file:`. The omnibar must NOT navigate
@@ -32,6 +34,7 @@ export function Omnibar() {
   const openTab = useTabsStore((s) => s.openTab)
   const setActive = useAiStore((s) => s.setActive)
   const pushMessage = useAiStore((s) => s.pushMessage)
+  const openReader = useReaderStore((s) => s.openFor)
 
   const activeTab = tabs.find((t) => t.id === activeId)
   const [value, setValue] = useState(activeTab?.url ?? '')
@@ -135,6 +138,15 @@ export function Omnibar() {
           fontSize: 13,
         }}
       />
+      <IconButton
+        aria-label="Open Reader Mode"
+        onClick={() => activeTab?.url && activeTab.url !== 'about:blank' && void openReader(activeTab.url)}
+        disabled={!activeTab?.url || activeTab.url === 'about:blank'}
+      >
+        <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+          <path d="M2 3 H14 V13 H2 Z M4 5 H12 M4 8 H12 M4 11 H8" stroke="currentColor" strokeWidth="1.2" fill="none" />
+        </svg>
+      </IconButton>
     </div>
   )
 }

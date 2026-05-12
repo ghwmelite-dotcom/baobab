@@ -8,6 +8,7 @@ import { StatusBar } from './chrome/StatusBar'
 import { NewTabPage } from './chrome/NewTabPage'
 import { Sidebar } from './ai/Sidebar'
 import { ChatPanel } from './ai/ChatPanel'
+import { ReaderPanel } from './reader/ReaderPanel'
 import { useChromeShortcuts } from './chrome/useChromeShortcuts'
 import { refreshResidency } from './state/health'
 import { useTabsStore } from './state/tabs.store'
@@ -45,6 +46,7 @@ export function App() {
           omnibar={<Omnibar />}
           statusBar={<StatusBar />}
         >
+          <ReaderPanel />
           <Sidebar>
             <ChatPanel />
           </Sidebar>
