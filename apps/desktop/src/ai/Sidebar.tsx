@@ -6,7 +6,7 @@ interface Props {
   children?: ReactNode
 }
 
-const SIDEBAR_WIDTH = 380
+export const SIDEBAR_WIDTH = 380
 
 export function Sidebar({ children }: Props) {
   const open = useAiStore((s) => s.sidebarOpen)

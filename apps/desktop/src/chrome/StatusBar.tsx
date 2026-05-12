@@ -3,6 +3,7 @@ import { useSovereigntyStore } from '~/state/sovereignty.store'
 import { useOfflineStore } from '~/offline/offline.store'
 import { useHistoryStore } from '~/history/history.store'
 import { useBookmarksStore } from '~/bookmarks/bookmarks.store'
+import { useAiStore } from '~/ai/ai.store'
 
 export function StatusBar() {
   const residency = useSovereigntyStore((s) => s.residency)
@@ -13,6 +14,8 @@ export function StatusBar() {
   const toggleSaved = useOfflineStore((s) => s.toggle)
   const toggleHistory = useHistoryStore((s) => s.toggle)
   const toggleBookmarks = useBookmarksStore((s) => s.toggle)
+  const toggleSidebar = useAiStore((s) => s.toggleSidebar)
+  const sidebarOpen = useAiStore((s) => s.sidebarOpen)
 
   const isHome = residency.region === 'africa'
   const label = residency.region === 'unknown' ? '—' : isHome ? strings.residency.home : strings.residency.roaming
@@ -56,9 +59,29 @@ export function StatusBar() {
       <button
         type="button"
         className="baobab-button"
-        onClick={toggleBookmarks}
+        onClick={toggleSidebar}
+        aria-pressed={sidebarOpen}
+        title={sidebarOpen ? 'Collapse AI sidebar' : 'Open AI sidebar'}
         style={{
           marginLeft: 'auto',
+          height: 22,
+          paddingInline: 8,
+          borderRadius: 4,
+          border: '1px solid var(--border)',
+          background: sidebarOpen ? 'var(--accent-dim)' : 'transparent',
+          color: sidebarOpen ? 'var(--accent-light)' : 'var(--text-secondary)',
+          cursor: 'pointer',
+          fontSize: 11,
+        }}
+      >
+        AI
+      </button>
+
+      <button
+        type="button"
+        className="baobab-button"
+        onClick={toggleBookmarks}
+        style={{
           height: 22,
           paddingInline: 8,
           borderRadius: 4,

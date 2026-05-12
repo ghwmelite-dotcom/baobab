@@ -4,7 +4,7 @@ import { aiClient } from './api'
 import { MessageBubble } from './MessageBubble'
 import { ModelSelector } from './ModelSelector'
 import { QuickActions } from './QuickActions'
-import { Button, Input } from '@baobab/ui'
+import { Button, IconButton, Input } from '@baobab/ui'
 import { strings } from '@baobab/brand'
 import { useAuthStore } from '~/auth/auth.store'
 
@@ -64,12 +64,21 @@ export function ChatPanel() {
         style={{
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: 12,
+          gap: 8,
+          padding: '8px 8px 8px 4px',
           borderBottom: '1px solid var(--border)',
         }}
       >
-        <strong style={{ fontSize: 13 }}>Baobab AI</strong>
+        <IconButton
+          aria-label="Collapse AI sidebar"
+          onClick={() => useAiStore.getState().toggleSidebar()}
+          style={{ width: 32, height: 32, color: 'var(--text-secondary)' }}
+        >
+          <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
+            <path d="M5 3 L9 7 L5 11" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </IconButton>
+        <strong style={{ fontSize: 13, flex: 1 }}>Baobab AI</strong>
         <ModelSelector value={model} onChange={setModel} />
       </header>
       <QuickActions />
