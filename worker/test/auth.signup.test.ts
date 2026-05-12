@@ -60,4 +60,61 @@ describe('POST /api/auth/signup', () => {
     })
     expect(res.status).toBe(409)
   })
+
+  it('signs up via phone and returns tokens (no SMS, no OTP)', async () => {
+    const phone = `+23355500${String(Date.now()).slice(-4)}`
+    const res = await SELF.fetch('http://baobab/api/auth/signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone, password: 'long-password-123' }),
+    })
+    expect(res.status).toBe(200)
+    const body = await res.json() as { access: string; refresh: string; user: { phone: string; email: string | null } }
+    expect(body.user.phone).toBe(phone)
+    expect(body.user.email).toBeNull()
+    expect(body.access).toBeTruthy()
+    expect(body.refresh).toBeTruthy()
+
+    // /me reflects phone-only user
+    const me = await SELF.fetch('http://baobab/api/auth/me', {
+      headers: { Authorization: `Bearer ${body.access}` },
+    })
+    expect(me.status).toBe(200)
+    const meBody = await me.json() as { email: string | null; phone: string | null }
+    expect(meBody.phone).toBe(phone)
+    expect(meBody.email).toBeNull()
+  })
+
+  it('rejects duplicate phone (409)', async () => {
+    const phone = `+23355501${String(Date.now()).slice(-4)}`
+    await SELF.fetch('http://baobab/api/auth/signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone, password: 'long-password-123' }),
+    })
+    const res = await SELF.fetch('http://baobab/api/auth/signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone, password: 'long-password-123' }),
+    })
+    expect(res.status).toBe(409)
+  })
+
+  it('rejects missing identifier (400)', async () => {
+    const res = await SELF.fetch('http://baobab/api/auth/signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: 'long-password-123' }),
+    })
+    expect(res.status).toBe(400)
+  })
+
+  it('rejects malformed phone (400)', async () => {
+    const res = await SELF.fetch('http://baobab/api/auth/signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone: '0241112222', password: 'long-password-123' }),
+    })
+    expect(res.status).toBe(400)
+  })
 })

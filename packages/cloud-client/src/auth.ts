@@ -33,6 +33,12 @@ export class AuthClient {
   loginEmail(email: string, password: string): Promise<AuthResponse> {
     return this.client.postJson('/api/auth/login', { email, password })
   }
+  signupPhone(phone: string, password: string): Promise<AuthResponse> {
+    return this.client.postJson('/api/auth/signup', { phone, password })
+  }
+  loginPhone(phone: string, password: string): Promise<AuthResponse> {
+    return this.client.postJson('/api/auth/login', { phone, password })
+  }
   refresh(refreshToken: string): Promise<RefreshResponse> {
     return this.client.postJson('/api/auth/refresh', { refresh: refreshToken })
   }

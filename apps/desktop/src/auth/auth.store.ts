@@ -15,6 +15,8 @@ interface AuthState {
   hydrate: () => Promise<void>
   signupEmail: (email: string, password: string) => Promise<void>
   loginEmail: (email: string, password: string) => Promise<void>
+  signupPhone: (phone: string, password: string) => Promise<void>
+  loginPhone: (phone: string, password: string) => Promise<void>
   otpSend: (phone: string) => Promise<void>
   otpVerify: (phone: string, code: string) => Promise<void>
   logout: () => Promise<void>
@@ -78,6 +80,34 @@ export const useAuthStore = create<AuthState>()((set) => ({
     set({ status: 'authing', error: null })
     try {
       const { access, refresh } = await authClient.loginEmail(email, password)
+      client.setAccessToken(access)
+      await persistTokens(access, refresh)
+      const user = await authClient.me()
+      set({ accessToken: access, refreshToken: refresh, user, status: 'authed', signInOverlayOpen: false })
+    } catch (e) {
+      set({ status: 'error', error: e instanceof Error ? e.message : 'login failed' })
+      throw e
+    }
+  },
+
+  signupPhone: async (phone, password) => {
+    set({ status: 'authing', error: null })
+    try {
+      const { access, refresh } = await authClient.signupPhone(phone, password)
+      client.setAccessToken(access)
+      await persistTokens(access, refresh)
+      const user = await authClient.me()
+      set({ accessToken: access, refreshToken: refresh, user, status: 'authed', signInOverlayOpen: false })
+    } catch (e) {
+      set({ status: 'error', error: e instanceof Error ? e.message : 'signup failed' })
+      throw e
+    }
+  },
+
+  loginPhone: async (phone, password) => {
+    set({ status: 'authing', error: null })
+    try {
+      const { access, refresh } = await authClient.loginPhone(phone, password)
       client.setAccessToken(access)
       await persistTokens(access, refresh)
       const user = await authClient.me()
