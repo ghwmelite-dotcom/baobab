@@ -3,6 +3,7 @@ import { useAiStore } from './ai.store'
 import { aiClient } from './api'
 import { MessageBubble } from './MessageBubble'
 import { ModelSelector } from './ModelSelector'
+import { QuickActions } from './QuickActions'
 import { Button, Input } from '@baobab/ui'
 import { strings } from '@baobab/brand'
 
@@ -67,6 +68,7 @@ export function ChatPanel() {
         <strong style={{ fontSize: 13 }}>Baobab AI</strong>
         <ModelSelector value={model} onChange={setModel} />
       </header>
+      <QuickActions />
       <div style={{ flex: 1, overflow: 'auto', paddingBlock: 8 }}>
         {messages.length === 0 && (
           <div style={{ padding: 24, color: 'var(--text-muted)', fontSize: 12, textAlign: 'center' }}>
