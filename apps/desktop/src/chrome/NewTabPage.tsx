@@ -256,7 +256,7 @@ function CapabilityCard({ c, index }: { c: Capability; index: number }) {
       {/* Eyebrow — editorial italic all-caps */}
       <div
         style={{
-          fontFamily: '"Fraunces", "Source Serif 4", Georgia, serif',
+          fontFamily: 'var(--font-default)',
           fontStyle: 'italic',
           fontSize: 10,
           letterSpacing: '0.22em',
@@ -271,7 +271,7 @@ function CapabilityCard({ c, index }: { c: Capability; index: number }) {
       {/* Title — Fraunces serif, characterful */}
       <div
         style={{
-          fontFamily: '"Fraunces", "Source Serif 4", Georgia, serif',
+          fontFamily: 'var(--font-default)',
           fontVariationSettings: '"SOFT" 50, "opsz" 32, "wght" 500',
           fontSize: 22,
           lineHeight: 1.1,
@@ -382,7 +382,7 @@ export function NewTabPage() {
         {/* Greeting */}
         <div
           style={{
-            fontFamily: '"Fraunces", "Source Serif 4", Georgia, serif',
+            fontFamily: 'var(--font-default)',
             fontStyle: 'italic',
             fontVariationSettings: '"SOFT" 40, "opsz" 9, "wght" 400',
             fontSize: 13,
@@ -397,11 +397,13 @@ export function NewTabPage() {
           {greetingFull}
         </div>
 
-        {/* Hero wordmark — massive Fraunces serif with gradient sweep */}
+        {/* Hero wordmark — Fraunces variable-axes serif with gradient sweep.
+            Kept on Fraunces only because the gradient relies on the SOFT
+            and opsz axes; the rest of the UI is Bookman by default. */}
         <h1
           style={{
             margin: '14px 0 0 0',
-            fontFamily: '"Fraunces", "Source Serif 4", Georgia, serif',
+            fontFamily: 'var(--font-display)',
             fontVariationSettings: '"SOFT" 100, "opsz" 144, "wght" 600',
             fontSize: 'clamp(72px, 11vw, 156px)',
             lineHeight: 0.92,
@@ -423,7 +425,7 @@ export function NewTabPage() {
         <p
           style={{
             margin: '12px 0 0 0',
-            fontFamily: '"Fraunces", "Source Serif 4", Georgia, serif',
+            fontFamily: 'var(--font-default)',
             fontStyle: 'italic',
             fontVariationSettings: '"SOFT" 60, "opsz" 18, "wght" 400',
             fontSize: 'clamp(16px, 1.55vw, 22px)',
@@ -478,7 +480,7 @@ export function NewTabPage() {
           }}
         >
           <LeafGlyph pulsing={isHome} />
-          <span style={{ fontFamily: '"Sora", system-ui, sans-serif' }}>{residencyLabel}</span>
+          <span style={{ fontFamily: 'var(--font-default)' }}>{residencyLabel}</span>
         </div>
 
         {/* Spacer pushes cards toward middle/bottom */}

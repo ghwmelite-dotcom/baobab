@@ -41,7 +41,7 @@ export function ReaderPanel() {
             )}
             <article
               style={{
-                fontFamily: '"Source Serif 4", Georgia, serif', fontSize: 18,
+                fontFamily: 'var(--font-default)', fontSize: 18,
                 lineHeight: 1.7, color: 'var(--text-primary)',
               }}
               dangerouslySetInnerHTML={{

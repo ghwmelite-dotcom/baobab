@@ -14,7 +14,7 @@ export function ReaderHeader({ onSaveOffline }: Props) {
     }}>
       <div style={{ flex: 1, minWidth: 0 }}>
         <h1 style={{
-          fontFamily: '"Source Serif 4", Georgia, serif', fontSize: 22, margin: 0,
+          fontFamily: 'var(--font-default)', fontSize: 22, margin: 0, fontWeight: 600,
           color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
         }}>{a.title}</h1>
         <div style={{ marginTop: 4, fontSize: 12, color: 'var(--text-muted)' }}>

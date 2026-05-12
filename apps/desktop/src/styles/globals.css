@@ -1,9 +1,24 @@
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT@0,9..144,300..900,0..100;1,9..144,300..900,0..100&family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT@0,9..144,300..900,0..100;1,9..144,300..900,0..100&family=JetBrains+Mono:wght@400;500&display=swap');
 @import '@baobab/ui/src/theme/tokens.css';
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ── Typography tokens ─────────────────────────────────────────────────
+   Baobab uses Bookman Old Style as the default UI font — a warm, sturdy
+   transitional serif that gives the browser an editorial, literary feel
+   (think Penguin Classics, The New Yorker). Windows users get the real
+   font bundled with Office; macOS/Linux fall through the stack. Fraunces
+   stays for the NTP hero only (its variable axes drive the gradient).
+   ───────────────────────────────────────────────────────────────────── */
+:root {
+  --font-default: 'Bookman Old Style', 'ITC Bookman', 'URW Bookman L',
+                  'TeX Gyre Bonum', Bookman, 'Source Serif 4', Georgia,
+                  'Times New Roman', serif;
+  --font-display: 'Fraunces', var(--font-default);
+  --font-mono: 'JetBrains Mono', Menlo, Consolas, monospace;
+}
 
 * { box-sizing: border-box; }
 
@@ -13,7 +28,7 @@ html, body, #root {
   overflow: hidden;
   background: var(--canvas);
   color: var(--text-primary);
-  font-family: 'Sora', system-ui, -apple-system, sans-serif;
+  font-family: var(--font-default);
   font-size: 14px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;

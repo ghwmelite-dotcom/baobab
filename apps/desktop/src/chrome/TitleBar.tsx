@@ -98,12 +98,12 @@ export function TitleBar() {
         userSelect: 'none',
       }}
     >
-      {/* Wordmark — Fraunces serif for warmth, slight italic */}
+      {/* Wordmark — Bookman Old Style, warm transitional serif. */}
       <span
         data-tauri-drag-region
         style={{
-          fontFamily: '"Fraunces", "Source Serif 4", Georgia, serif',
-          fontVariationSettings: '"SOFT" 80, "opsz" 12, "wght" 500',
+          fontFamily: 'var(--font-default)',
+          fontWeight: 600,
           fontSize: 13.5,
           color: 'var(--text-primary)',
           letterSpacing: '0.005em',

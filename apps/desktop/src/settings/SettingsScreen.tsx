@@ -41,7 +41,7 @@ export function SettingsScreen() {
         <h1
           style={{
             margin: 0,
-            fontFamily: 'Recoleta, "General Sans", system-ui, sans-serif',
+            fontFamily: 'var(--font-default)',
             fontSize: 22,
           }}
         >

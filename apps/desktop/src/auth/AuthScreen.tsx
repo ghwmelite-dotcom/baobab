@@ -38,7 +38,7 @@ export function AuthScreen() {
         </svg>
       </IconButton>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 24, alignItems: 'center' }}>
-        <h1 style={{ fontFamily: 'Recoleta, "General Sans", system-ui, sans-serif', fontSize: 40, margin: 0 }}>{strings.appName}</h1>
+        <h1 style={{ fontFamily: 'var(--font-default)', fontSize: 40, margin: 0, fontWeight: 600 }}>{strings.appName}</h1>
         <p style={{ margin: 0, color: 'var(--text-secondary)' }}>{strings.tagline}</p>
         <div role="tablist" style={{ display: 'flex', gap: 8, marginTop: 16 }}>
           {(['phone', 'email'] as const).map((t) => (
