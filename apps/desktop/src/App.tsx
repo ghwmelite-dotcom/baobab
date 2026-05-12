@@ -19,6 +19,7 @@ import { refreshResidency } from './state/health'
 import { useTabsStore } from './state/tabs.store'
 import { ipcHideTab, ipcShowTab } from './ipc/tabs'
 import { AuthGate } from './auth/AuthGate'
+import { UpdateToast } from './updater/UpdateToast'
 
 export function App() {
   useChromeShortcuts()
@@ -61,6 +62,7 @@ export function App() {
             <ChatPanel />
           </Sidebar>
           {showNtp ? <NewTabPage /> : null}
+          <UpdateToast />
         </ChromeShell>
       </AuthGate>
     </ThemeProvider>
