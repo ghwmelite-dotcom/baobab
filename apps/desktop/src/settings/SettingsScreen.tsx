@@ -1,13 +1,16 @@
+import { useTranslation } from 'react-i18next'
 import { useSettingsStore } from './settings.store'
 import { GeneralSection } from './sections/GeneralSection'
 import { PrivacySection } from './sections/PrivacySection'
 import { AISection } from './sections/AISection'
 import { SovereigntySection } from './sections/SovereigntySection'
+import { LanguageSection } from './sections/LanguageSection'
 import LegalSection from './LegalSection'
 import { useAuthStore } from '~/auth/auth.store'
 import { Button, IconButton } from '@baobab/ui'
 
 export function SettingsScreen() {
+  const { t } = useTranslation()
   const open = useSettingsStore((s) => s.open)
   const close = useSettingsStore((s) => s.close)
   const user = useAuthStore((s) => s.user)
@@ -20,7 +23,7 @@ export function SettingsScreen() {
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="Settings"
+      aria-label={t('settings.title')}
       style={{
         position: 'absolute',
         inset: 0,
@@ -46,19 +49,19 @@ export function SettingsScreen() {
             fontSize: 22,
           }}
         >
-          Settings
+          {t('settings.title')}
         </h1>
         <div style={{ display: 'flex', gap: 8 }}>
           {user ? (
             <Button variant="ghost" onClick={() => void logout()}>
-              Sign out
+              {t('settings.signOut')}
             </Button>
           ) : (
             <Button variant="ghost" onClick={() => { close(); openSignIn() }}>
-              Sign in
+              {t('settings.signIn')}
             </Button>
           )}
-          <IconButton aria-label="Close settings" onClick={close}>
+          <IconButton aria-label={t('settings.closeLabel')} onClick={close}>
             <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
               <path d="M3 3 L11 11 M11 3 L3 11" stroke="currentColor" strokeWidth="1.5" />
             </svg>
@@ -79,6 +82,7 @@ export function SettingsScreen() {
         }}
       >
         <GeneralSection />
+        <LanguageSection />
         <PrivacySection />
         <AISection />
         <SovereigntySection />

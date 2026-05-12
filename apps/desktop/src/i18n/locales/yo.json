@@ -1,0 +1,8 @@
+{
+  "_meta": {
+    "language": "Yoruba",
+    "code": "yo",
+    "status": "stub",
+    "note": "TODO: Native Yoruba translator needed. All keys fall back to English via i18next fallbackLng='en'."
+  }
+}

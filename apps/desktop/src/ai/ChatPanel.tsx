@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useAiStore } from './ai.store'
 import { aiClient } from './api'
 import { MessageBubble } from './MessageBubble'
 import { ModelSelector } from './ModelSelector'
 import { QuickActions } from './QuickActions'
 import { Button, IconButton, Input } from '@baobab/ui'
-import { strings } from '@baobab/brand'
 import { useAuthStore } from '~/auth/auth.store'
 
 function newMsgId(): string {
@@ -13,6 +13,7 @@ function newMsgId(): string {
 }
 
 export function ChatPanel() {
+  const { t } = useTranslation()
   const [input, setInput] = useState('')
   const [model, setModel] = useState<string | undefined>()
   const activeId = useAiStore((s) => s.activeConversationId)
@@ -52,7 +53,7 @@ export function ChatPanel() {
         appendToken(convId, asstId, token)
       }
     } catch (e) {
-      appendToken(convId, asstId, `\n\n[error: ${e instanceof Error ? e.message : 'unknown'}]`)
+      appendToken(convId, asstId, `\n\n${t('chat.errorPrefix', { error: e instanceof Error ? e.message : 'unknown' })}`)
     } finally {
       setStreaming(false)
     }
@@ -70,7 +71,7 @@ export function ChatPanel() {
         }}
       >
         <IconButton
-          aria-label="Collapse AI sidebar"
+          aria-label={t('chat.collapseLabel')}
           onClick={() => useAiStore.getState().toggleSidebar()}
           style={{ width: 32, height: 32, color: 'var(--text-secondary)' }}
         >
@@ -78,14 +79,14 @@ export function ChatPanel() {
             <path d="M5 3 L9 7 L5 11" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </IconButton>
-        <strong style={{ fontSize: 13, flex: 1 }}>Baobab AI</strong>
+        <strong style={{ fontSize: 13, flex: 1 }}>{t('chat.title')}</strong>
         <ModelSelector value={model} onChange={setModel} />
       </header>
       <QuickActions />
       <div style={{ flex: 1, overflow: 'auto', paddingBlock: 8 }}>
         {messages.length === 0 && (
           <div style={{ padding: 24, color: 'var(--text-muted)', fontSize: 12, textAlign: 'center' }}>
-            {strings.loading.aiThinking.replace('…', '')} — say hi.
+            {t('chat.empty')}
           </div>
         )}
         {messages.map((m) => (
@@ -103,12 +104,12 @@ export function ChatPanel() {
               void send()
             }
           }}
-          placeholder="Ask anything…"
+          placeholder={t('chat.placeholder')}
           disabled={streaming}
-          aria-label="Chat input"
+          aria-label={t('chat.ariaInput')}
         />
         <Button onClick={() => void send()} loading={streaming} disabled={!input.trim() || streaming}>
-          Send
+          {t('chat.send')}
         </Button>
       </footer>
     </div>

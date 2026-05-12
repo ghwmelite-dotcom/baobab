@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { Trans, useTranslation } from 'react-i18next'
+import type { TFunction } from 'i18next'
 import { strings } from '@baobab/brand'
 import { useSovereigntyStore } from '~/state/sovereignty.store'
 import { useAuthStore } from '~/auth/auth.store'
@@ -7,13 +9,15 @@ import { useTabsStore } from '~/state/tabs.store'
 
 // ── Time-aware greeting ───────────────────────────────────────────────────
 
-function getGreeting(): string {
+type GreetingSlot = 'lateNight' | 'morning' | 'afternoon' | 'evening' | 'lamplight'
+
+function getGreetingSlot(): GreetingSlot {
   const h = new Date().getHours()
-  if (h < 5)  return 'Late night reading'
-  if (h < 12) return 'Good morning'
-  if (h < 17) return 'Good afternoon'
-  if (h < 21) return 'Good evening'
-  return 'Reading by lamplight'
+  if (h < 5)  return 'lateNight'
+  if (h < 12) return 'morning'
+  if (h < 17) return 'afternoon'
+  if (h < 21) return 'evening'
+  return 'lamplight'
 }
 
 // ── Baobab tree silhouette (hand-drawn line art) ──────────────────────────
@@ -169,40 +173,43 @@ function LeafGlyph({ pulsing }: { pulsing: boolean }) {
 
 // ── Capability card ──────────────────────────────────────────────────────
 
+type CapabilityId = 'summarize' | 'translate' | 'research' | 'compare' | 'code' | 'civic'
+
 interface Capability {
-  id: string
-  eyebrow: string
-  title: string
-  body: string
+  id: CapabilityId
   icon: ReactNode
-  starter: string
 }
 
 const CAPABILITIES: Capability[] = [
-  { id: 'summarize', eyebrow: 'AI · READING',  title: 'Summarize',    body: 'Give me the gist of any page.',                              icon: <IconSummarize />, starter: 'Paste a link or open a page — I\'ll give you the gist plus the points that matter.' },
-  { id: 'translate', eyebrow: 'AI · LANGUAGE', title: 'Translate',    body: 'Across Yoruba, Swahili, Hausa — and growing.',               icon: <IconTranslate />, starter: 'Tell me what to translate and into which language — Yoruba, Swahili, Hausa, Amharic, and more.' },
-  { id: 'research',  eyebrow: 'AI · SEARCH',   title: 'Research',     body: 'Compare sources, African ones lifted first.',                icon: <IconResearch />, starter: 'What are you researching? I\'ll cross-reference sources and lift African ones to the top.' },
-  { id: 'compare',   eyebrow: 'AI · DECIDE',   title: 'Compare',      body: 'Lay options side by side.',                                  icon: <IconCompare />, starter: 'List the options you\'re weighing — I\'ll lay them side by side on the dimensions that matter.' },
-  { id: 'code',      eyebrow: 'AI · MAKER',    title: 'Explain Code', body: 'Read or debug a code block out loud.',                       icon: <IconCode />, starter: 'Paste a code block — I\'ll read it out loud, explain what it does, and flag anything suspicious.' },
-  { id: 'civic',     eyebrow: 'NEAR HOME',     title: 'Civic',        body: 'Bills, courts, regional policy — kept close.',               icon: <IconCivic />, starter: 'Ask about a bill, a court ruling, or regional policy — I\'ll pull it close to home.' },
+  { id: 'summarize', icon: <IconSummarize /> },
+  { id: 'translate', icon: <IconTranslate /> },
+  { id: 'research',  icon: <IconResearch /> },
+  { id: 'compare',   icon: <IconCompare /> },
+  { id: 'code',      icon: <IconCode /> },
+  { id: 'civic',     icon: <IconCivic /> },
 ]
 
 function newMsgId(): string {
   return `m${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
 }
 
-function CapabilityCard({ c, index }: { c: Capability; index: number }) {
+function CapabilityCard({ c, index, t }: { c: Capability; index: number; t: TFunction }) {
   const [hover, setHover] = useState(false)
   const toggleSidebar = useAiStore((s) => s.toggleSidebar)
   const sidebarOpen = useAiStore((s) => s.sidebarOpen)
   const setActive = useAiStore((s) => s.setActive)
   const pushMessage = useAiStore((s) => s.pushMessage)
 
+  const eyebrow = t(`ntp.capabilities.${c.id}.eyebrow`)
+  const title = t(`ntp.capabilities.${c.id}.title`)
+  const body = t(`ntp.capabilities.${c.id}.body`)
+  const starter = t(`ntp.capabilities.${c.id}.starter`)
+
   const onActivate = () => {
     if (!sidebarOpen) toggleSidebar()
     const convId = `c${Date.now().toString(36)}`
     setActive(convId)
-    pushMessage(convId, { id: newMsgId(), role: 'assistant', content: c.starter })
+    pushMessage(convId, { id: newMsgId(), role: 'assistant', content: starter })
   }
 
   return (
@@ -265,7 +272,7 @@ function CapabilityCard({ c, index }: { c: Capability; index: number }) {
           marginBottom: 6,
         }}
       >
-        {c.eyebrow}
+        {eyebrow}
       </div>
 
       {/* Title — Fraunces serif, characterful */}
@@ -280,12 +287,12 @@ function CapabilityCard({ c, index }: { c: Capability; index: number }) {
           marginBottom: 6,
         }}
       >
-        {c.title}
+        {title}
       </div>
 
       {/* Body */}
       <div style={{ fontSize: 13, lineHeight: 1.55, color: 'var(--text-secondary)' }}>
-        {c.body}
+        {body}
       </div>
 
       {/* Hover arrow */}
@@ -312,7 +319,8 @@ function CapabilityCard({ c, index }: { c: Capability; index: number }) {
 // ── Main NTP component ────────────────────────────────────────────────────
 
 export function NewTabPage() {
-  const greeting = useMemo(getGreeting, [])
+  const { t } = useTranslation()
+  const greetingSlot = useMemo(getGreetingSlot, [])
   const residency = useSovereigntyStore((s) => s.residency)
   const user = useAuthStore((s) => s.user)
   const tabs = useTabsStore((s) => s.tabs)
@@ -320,25 +328,27 @@ export function NewTabPage() {
   // Refresh greeting once a minute (in case user lingers past the hour).
   const [, setTick] = useState(0)
   useEffect(() => {
-    const t = setInterval(() => setTick((n) => n + 1), 60_000)
-    return () => clearInterval(t)
+    const id = setInterval(() => setTick((n) => n + 1), 60_000)
+    return () => clearInterval(id)
   }, [])
 
+  const greetingWord = t(`ntp.greeting.${greetingSlot}`)
   const isHome = residency.region === 'africa'
   const residencyLabel =
     residency.region === 'unknown'
-      ? 'Reaching the edge…'
-      : isHome
-        ? `Served from ${residency.colo} · ${strings.residency.home}`
-        : `Served from ${residency.colo} · ${strings.residency.roaming}`
+      ? t('ntp.residency.reaching')
+      : t('ntp.residency.served', {
+          colo: residency.colo,
+          label: isHome ? strings.residency.home : strings.residency.roaming,
+        })
 
   const greetingFull = user?.display_name
-    ? `${greeting}, ${user.display_name}.`
-    : `${greeting}, friend.`
+    ? t('ntp.greetingFull', { greeting: greetingWord, name: user.display_name })
+    : t('ntp.greetingAnon', { greeting: greetingWord })
 
   // Editorial signature
   const issueNumber = String(Math.max(1, tabs.length || 1)).padStart(3, '0')
-  const issueLocation = residency.colo === 'unknown' ? 'The Edge' : residency.colo
+  const issueLocation = residency.colo === 'unknown' ? t('ntp.issueLocationFallback') : residency.colo
 
   return (
     <div
@@ -432,7 +442,7 @@ export function NewTabPage() {
             animationDelay: '140ms',
           }}
         >
-          Baobab
+          {t('ntp.wordmark')}
         </h1>
 
         {/* Tagline — editorial italic */}
@@ -451,8 +461,14 @@ export function NewTabPage() {
             animationDelay: '300ms',
           }}
         >
-          The browser that{' '}
-          <span style={{ color: 'var(--accent-light)', fontStyle: 'normal' }}>grew here.</span>
+          <Trans
+            i18nKey="ntp.tagline"
+            defaults="<0>The browser that </0><1>grew here.</1>"
+            components={[
+              <span key="prefix" />,
+              <span key="accent" style={{ color: 'var(--accent-light)', fontStyle: 'normal' }} />,
+            ]}
+          />
         </p>
 
         {/* Hairline rule — draws in from left */}
@@ -510,7 +526,7 @@ export function NewTabPage() {
           }}
         >
           {CAPABILITIES.map((c, i) => (
-            <CapabilityCard key={c.id} c={c} index={i} />
+            <CapabilityCard key={c.id} c={c} index={i} t={t} />
           ))}
         </div>
         </div>
@@ -535,7 +551,7 @@ export function NewTabPage() {
           pointerEvents: 'none',
         }}
       >
-        Issue {issueNumber} · {issueLocation}
+        {t('ntp.issue', { number: issueNumber, location: issueLocation })}
       </div>
     </div>
   )

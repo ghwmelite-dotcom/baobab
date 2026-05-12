@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '~/auth/auth.store'
 import { useSettingsStore } from '../settings.store'
 
@@ -8,14 +9,15 @@ const MODELS = [
 ] as const
 
 export function GeneralSection() {
+  const { t } = useTranslation()
   const user = useAuthStore((s) => s.user)
   const setDefaultModel = useSettingsStore((s) => s.setDefaultModel)
   const saving = useSettingsStore((s) => s.saving)
   return (
     <section style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <h2 style={{ margin: 0, fontSize: 16 }}>General</h2>
+      <h2 style={{ margin: 0, fontSize: 16 }}>{t('settings.general.title')}</h2>
       <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Default AI model</span>
+        <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{t('settings.general.defaultModel')}</span>
         <select
           value={user?.default_model ?? MODELS[0].id}
           onChange={(e) => void setDefaultModel(e.target.value)}

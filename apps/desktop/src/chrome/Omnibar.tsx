@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 import { parseOmnibarInput } from '@baobab/core'
 import type { HistoryItem } from '@baobab/cloud-client'
 import { useTabsStore } from '~/state/tabs.store'
@@ -99,6 +100,7 @@ function NavBtn({ label, onClick, disabled, active, children, danger, badge }: {
 // ── Address bar ──────────────────────────────────────────────────────────
 
 export function Omnibar() {
+  const { t } = useTranslation()
   const ref = useRef<HTMLInputElement | null>(null)
   const activeId = useTabsStore((s) => s.activeId)
   const tabs = useTabsStore((s) => s.tabs)
@@ -160,7 +162,7 @@ export function Omnibar() {
     const convId = `c${Date.now().toString(36)}`
     setActive(convId)
     pushMessage(convId, { id: newMsgId(), role: 'user', content: query })
-    pushMessage(convId, { id: newMsgId(), role: 'assistant', content: 'Reaching across the continent…' })
+    pushMessage(convId, { id: newMsgId(), role: 'assistant', content: t('omnibar.searchingContinent') })
     try {
       const r = await aiClient.search({ query })
       const list = r.results.map((x) => `• [${x.title}](${x.url})`).join('\n')
@@ -169,7 +171,7 @@ export function Omnibar() {
       pushMessage(convId, {
         id: newMsgId(),
         role: 'assistant',
-        content: `Search failed: ${e instanceof Error ? e.message : 'unknown'}`,
+        content: t('omnibar.searchFailed', { error: e instanceof Error ? e.message : 'unknown' }),
       })
     }
   }
@@ -220,7 +222,7 @@ export function Omnibar() {
       {/* Navigation cluster (left) */}
       <div style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}>
         <NavBtn
-          label="Back"
+          label={t('omnibar.back')}
           disabled={!activeId || !canGoBack}
           onClick={() => { if (activeId) void goBack(activeId) }}
         >
@@ -229,7 +231,7 @@ export function Omnibar() {
           </svg>
         </NavBtn>
         <NavBtn
-          label="Forward"
+          label={t('omnibar.forward')}
           disabled={!activeId || !canGoForward}
           onClick={() => { if (activeId) void goForward(activeId) }}
         >
@@ -237,7 +239,7 @@ export function Omnibar() {
             <path d="M6 3 L11 8 L6 13" stroke="currentColor" strokeWidth="1.6" fill="none" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </NavBtn>
-        <NavBtn label="Reload" onClick={reload} disabled={!activeTab?.url || activeTab.url === 'about:blank'}>
+        <NavBtn label={t('omnibar.reload')} onClick={reload} disabled={!activeTab?.url || activeTab.url === 'about:blank'}>
           <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden>
             <path d="M13 4 V8 H9 M13 8 A5 5 0 1 1 11 4" stroke="currentColor" strokeWidth="1.4" fill="none" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
@@ -274,8 +276,8 @@ export function Omnibar() {
           {showSecurityGlyph && (
             <span
               role="img"
-              aria-label={isSecure ? 'Secure connection' : 'Not secure'}
-              title={isSecure ? 'Secure connection (HTTPS)' : 'Not a secure connection'}
+              aria-label={isSecure ? t('omnibar.secure') : t('omnibar.notSecure')}
+              title={isSecure ? t('omnibar.secureTitle') : t('omnibar.notSecureTitle')}
               style={{
                 display: 'inline-flex',
                 color: isSecure ? 'var(--sovereignty-ok)' : 'var(--sovereignty-warn)',
@@ -318,8 +320,8 @@ export function Omnibar() {
             }}
             spellCheck={false}
             autoComplete="off"
-            placeholder="Search the continent or type a URL"
-            aria-label="Address and search bar"
+            placeholder={t('omnibar.placeholder')}
+            aria-label={t('omnibar.ariaLabel')}
             style={{
               flex: 1,
               height: '100%',
@@ -408,7 +410,7 @@ export function Omnibar() {
       {/* Right-side action cluster */}
       <div style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}>
         <NavBtn
-          label="Reader Mode"
+          label={t('omnibar.readerMode')}
           onClick={() => activeTab?.url && activeTab.url !== 'about:blank' && void openReader(activeTab.url)}
           disabled={!activeTab?.url || activeTab.url === 'about:blank'}
         >
@@ -417,7 +419,7 @@ export function Omnibar() {
           </svg>
         </NavBtn>
 
-        <NavBtn label="Downloads" onClick={toggleDownloads} badge={activeDownloads > 0}>
+        <NavBtn label={t('omnibar.downloads')} onClick={toggleDownloads} badge={activeDownloads > 0}>
           <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden>
             <path d="M8 2 V10 M5 7 L8 10 L11 7" stroke="currentColor" strokeWidth="1.4" fill="none" strokeLinecap="round" strokeLinejoin="round" />
             <path d="M3 13 H13" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
@@ -426,26 +428,26 @@ export function Omnibar() {
 
         <BookmarkButton />
 
-        <NavBtn label="Bookmarks" onClick={toggleBookmarks}>
+        <NavBtn label={t('omnibar.bookmarks')} onClick={toggleBookmarks}>
           <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden>
             <path d="M3 5 H13 M3 8 H13 M3 11 H10" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
           </svg>
         </NavBtn>
 
-        <NavBtn label="History" onClick={toggleHistory}>
+        <NavBtn label={t('omnibar.history')} onClick={toggleHistory}>
           <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden>
             <circle cx="8" cy="8" r="5.5" stroke="currentColor" strokeWidth="1.4" fill="none" />
             <path d="M8 5 V8 L10 9.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" fill="none" />
           </svg>
         </NavBtn>
 
-        <NavBtn label="Saved" onClick={toggleSaved}>
+        <NavBtn label={t('omnibar.saved')} onClick={toggleSaved}>
           <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden>
             <path d="M4 2 H12 V14 L8 11 L4 14 Z" stroke="currentColor" strokeWidth="1.4" fill="none" strokeLinejoin="round" />
           </svg>
         </NavBtn>
 
-        <NavBtn label={sidebarOpen ? 'Hide AI sidebar' : 'Open AI sidebar'} active={sidebarOpen} onClick={toggleSidebar}>
+        <NavBtn label={sidebarOpen ? t('omnibar.hideSidebar') : t('omnibar.openSidebar')} active={sidebarOpen} onClick={toggleSidebar}>
           <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden>
             <path d="M8 2 L9.6 5.6 L13 6.5 L9.6 7.4 L8 11 L6.4 7.4 L3 6.5 L6.4 5.6 Z" fill="currentColor" />
             <path d="M11.5 11 L12 12.5 L13.5 13 L12 13.5 L11.5 15 L11 13.5 L9.5 13 L11 12.5 Z" fill="currentColor" opacity="0.7" />

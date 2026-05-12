@@ -1,25 +1,31 @@
+import { useTranslation } from 'react-i18next'
 import { useTabsStore } from '~/state/tabs.store'
 import { aiClient } from './api'
 import { useAiStore } from './ai.store'
 import { strings } from '@baobab/brand'
 import { useAuthStore } from '~/auth/auth.store'
 
-const ACTIONS = [
-  { id: 'summarize', label: 'Summarize' },
-  { id: 'translate', label: 'Translate' },
-  { id: 'extract',   label: 'Extract' },
-  { id: 'compare',   label: 'Compare' },
-  { id: 'explain',   label: 'Explain Code' },
-] as const
+type ActionId = 'summarize' | 'translate' | 'extract' | 'compare' | 'explain'
+
+const ACTION_IDS: ReadonlyArray<ActionId> = ['summarize', 'translate', 'extract', 'compare', 'explain']
+
+const ACTION_LABEL_KEY: Record<ActionId, string> = {
+  summarize: 'quickActions.summarize',
+  translate: 'quickActions.translate',
+  extract: 'quickActions.extract',
+  compare: 'quickActions.compare',
+  explain: 'quickActions.explain',
+}
 
 function newMsgId(): string {
   return `m${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
 }
 
 export function QuickActions() {
+  const { t } = useTranslation()
   const tabs = useTabsStore((s) => s.tabs)
   const activeId = useTabsStore((s) => s.activeId)
-  const activeTab = tabs.find((t) => t.id === activeId)
+  const activeTab = tabs.find((tab) => tab.id === activeId)
   const setActive = useAiStore((s) => s.setActive)
   const pushMessage = useAiStore((s) => s.pushMessage)
   const user = useAuthStore((s) => s.user)
@@ -37,11 +43,15 @@ export function QuickActions() {
       const out = `${r.summary}\n\nKey points:\n${r.key_points.map((p) => `• ${p}`).join('\n')}\n\nEst. read time: ${r.est_read_time} min${r.cached ? ' (cached)' : ''}`
       pushMessage(convId, { id: newMsgId(), role: 'assistant', content: out })
     } catch (e) {
-      pushMessage(convId, { id: newMsgId(), role: 'assistant', content: `Summarize failed: ${e instanceof Error ? e.message : 'unknown'}` })
+      pushMessage(convId, {
+        id: newMsgId(),
+        role: 'assistant',
+        content: t('quickActions.summarizeFailed', { error: e instanceof Error ? e.message : 'unknown' }),
+      })
     }
   }
 
-  const runAction = (id: string) => {
+  const runAction = (id: ActionId) => {
     if (id === 'summarize') return void runSummarize()
     if (!user) { openSignIn(); return }
     const convId = `c${Date.now().toString(36)}`
@@ -56,7 +66,7 @@ export function QuickActions() {
   return (
     <div
       role="toolbar"
-      aria-label="Quick actions"
+      aria-label={t('quickActions.ariaLabel')}
       style={{
         display: 'flex',
         gap: 6,
@@ -65,11 +75,11 @@ export function QuickActions() {
         borderBottom: '1px solid var(--border)',
       }}
     >
-      {ACTIONS.map((a) => (
+      {ACTION_IDS.map((id) => (
         <button
-          key={a.id}
+          key={id}
           className="baobab-button"
-          onClick={() => runAction(a.id)}
+          onClick={() => runAction(id)}
           style={{
             padding: '4px 10px',
             minHeight: 28,
@@ -81,7 +91,7 @@ export function QuickActions() {
             cursor: 'pointer',
           }}
         >
-          {a.label}
+          {t(ACTION_LABEL_KEY[id])}
         </button>
       ))}
     </div>

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { strings } from '@baobab/brand'
 import { IconButton } from '@baobab/ui'
 import { EmailAuthForm } from './EmailAuthForm'
@@ -8,6 +9,7 @@ import { useAuthStore } from './auth.store'
 type Tab = 'phone' | 'email'
 
 export function AuthScreen() {
+  const { t } = useTranslation()
   const [tab, setTab] = useState<Tab>('phone')
   const open = useAuthStore((s) => s.signInOverlayOpen)
   const close = useAuthStore((s) => s.closeSignIn)
@@ -43,7 +45,7 @@ export function AuthScreen() {
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="Sign in to Baobab"
+        aria-label={t('auth.ariaLabel')}
         onClick={(e) => e.stopPropagation()}
         style={{
           position: 'relative',
@@ -62,7 +64,7 @@ export function AuthScreen() {
         }}
       >
         <IconButton
-          aria-label="Close sign-in"
+          aria-label={t('auth.closeLabel')}
           onClick={close}
           style={{ position: 'absolute', top: 12, right: 12 }}
         >
@@ -79,7 +81,7 @@ export function AuthScreen() {
             fontWeight: 600,
             letterSpacing: '-0.01em',
           }}>
-            Sign in to {strings.appName}
+            {t('auth.title', { app: strings.appName })}
           </h1>
           <p style={{
             margin: 0,
@@ -87,8 +89,7 @@ export function AuthScreen() {
             fontSize: 13,
             lineHeight: 1.5,
           }}>
-            Save bookmarks, history, and chats across devices. Otherwise, keep
-            browsing — everything works without an account.
+            {t('auth.subtitle')}
           </p>
         </div>
 
@@ -105,25 +106,25 @@ export function AuthScreen() {
             marginTop: 4,
           }}
         >
-          {(['phone', 'email'] as const).map((t) => (
+          {(['phone', 'email'] as const).map((tabId) => (
             <button
-              key={t}
+              key={tabId}
               role="tab"
-              aria-selected={tab === t}
-              onClick={() => setTab(t)}
+              aria-selected={tab === tabId}
+              onClick={() => setTab(tabId)}
               style={{
                 padding: '5px 14px',
                 minHeight: 28,
                 borderRadius: 999,
-                background: tab === t ? 'var(--accent)' : 'transparent',
-                color: tab === t ? 'var(--text-on-accent)' : 'var(--text-secondary)',
+                background: tab === tabId ? 'var(--accent)' : 'transparent',
+                color: tab === tabId ? 'var(--text-on-accent)' : 'var(--text-secondary)',
                 border: 'none',
                 cursor: 'pointer',
                 fontSize: 12.5,
                 transition: 'background 140ms ease, color 140ms ease',
               }}
             >
-              {t === 'phone' ? 'Phone' : 'Email'}
+              {tabId === 'phone' ? t('auth.tab.phone') : t('auth.tab.email')}
             </button>
           ))}
         </div>
@@ -146,7 +147,7 @@ export function AuthScreen() {
             textUnderlineOffset: 3,
           }}
         >
-          Continue without an account
+          {t('auth.continueWithout')}
         </button>
       </div>
     </div>

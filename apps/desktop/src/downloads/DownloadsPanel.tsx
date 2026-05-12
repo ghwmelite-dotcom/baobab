@@ -1,8 +1,10 @@
 import type { ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 import { IconButton } from '@baobab/ui'
 import { useDownloadsStore, type DownloadItem } from './downloads.store'
 
 export function DownloadsPanel() {
+  const { t } = useTranslation()
   const open = useDownloadsStore((s) => s.panelOpen)
   const downloads = useDownloadsStore((s) => s.downloads)
   const toggle = useDownloadsStore((s) => s.toggle)
@@ -14,7 +16,7 @@ export function DownloadsPanel() {
 
   return (
     <aside
-      aria-label="Downloads"
+      aria-label={t('downloads.title')}
       style={{
         position: 'absolute',
         top: 0,
@@ -38,7 +40,7 @@ export function DownloadsPanel() {
           justifyContent: 'space-between',
         }}
       >
-        <strong>Downloads</strong>
+        <strong>{t('downloads.title')}</strong>
         <div style={{ display: 'inline-flex', gap: 8, alignItems: 'center' }}>
           {downloads.length > 0 && (
             <button
@@ -54,10 +56,10 @@ export function DownloadsPanel() {
                 fontFamily: 'var(--font-default)',
               }}
             >
-              Clear
+              {t('downloads.clear')}
             </button>
           )}
-          <IconButton aria-label="Close downloads drawer" onClick={toggle}>
+          <IconButton aria-label={t('downloads.closeLabel')} onClick={toggle}>
             <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
               <path d="M3 3 L11 11 M11 3 L3 11" stroke="currentColor" strokeWidth="1.5" />
             </svg>
@@ -67,7 +69,7 @@ export function DownloadsPanel() {
       <div style={{ flex: 1, overflow: 'auto' }}>
         {downloads.length === 0 && (
           <p style={{ padding: 16, color: 'var(--text-muted)', fontSize: 12 }}>
-            No downloads yet.
+            {t('downloads.empty')}
           </p>
         )}
         {downloads.map((d) => (
@@ -90,6 +92,7 @@ interface RowProps {
 }
 
 function Row({ item, onShow, onOpen }: RowProps) {
+  const { t } = useTranslation()
   const isDone = item.status === 'completed'
   const isFailed = item.status === 'failed'
   const isLive = item.status === 'in-progress'
@@ -134,10 +137,10 @@ function Row({ item, onShow, onOpen }: RowProps) {
         <StatusBadge live={isLive} done={isDone} failed={isFailed} />
         <div style={{ display: 'inline-flex', gap: 6 }}>
           {isDone && (
-            <RowAction onClick={onOpen}>Open</RowAction>
+            <RowAction onClick={onOpen}>{t('downloads.open')}</RowAction>
           )}
           {(isDone || isFailed) && (
-            <RowAction onClick={onShow}>Show in folder</RowAction>
+            <RowAction onClick={onShow}>{t('downloads.showInFolder')}</RowAction>
           )}
         </div>
       </div>
@@ -155,6 +158,7 @@ function StatusBadge({
   done: boolean
   failed: boolean
 }) {
+  const { t } = useTranslation()
   if (live) {
     return (
       <span
@@ -177,21 +181,21 @@ function StatusBadge({
             animation: 'baobab-download-pulse 1.2s ease-in-out infinite',
           }}
         />
-        Downloading…
+        {t('downloads.status.downloading')}
       </span>
     )
   }
   if (done) {
     return (
       <span style={{ fontSize: 11, color: 'var(--sovereignty-ok, var(--text-secondary))' }}>
-        Completed
+        {t('downloads.status.completed')}
       </span>
     )
   }
   if (failed) {
     return (
       <span style={{ fontSize: 11, color: 'var(--critical, var(--text-secondary))' }}>
-        Failed
+        {t('downloads.status.failed')}
       </span>
     )
   }

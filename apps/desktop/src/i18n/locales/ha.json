@@ -1,0 +1,8 @@
+{
+  "_meta": {
+    "language": "Hausa",
+    "code": "ha",
+    "status": "stub",
+    "note": "TODO: Native Hausa translator needed. All keys fall back to English via i18next fallbackLng='en'."
+  }
+}

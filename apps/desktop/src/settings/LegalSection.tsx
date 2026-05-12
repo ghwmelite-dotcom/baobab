@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 
 const DEPENDENCIES: ReadonlyArray<{ name: string; license: string }> = [
   { name: 'Tauri 2.0', license: 'Apache-2.0 / MIT' },
@@ -56,6 +57,7 @@ function Disclosure({ title, children }: { title: string; children: ReactNode })
 }
 
 export default function LegalSection() {
+  const { t } = useTranslation()
   return (
     <section style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
       <h2
@@ -67,26 +69,15 @@ export default function LegalSection() {
           color: 'var(--text-primary)',
         }}
       >
-        Legal
+        {t('settings.legal.title')}
       </h2>
-      <Disclosure title="Privacy">
-        <p style={{ margin: 0 }}>
-          Baobab keeps your browsing local by default. Optional sync stores bookmarks,
-          history, and chats on Cloudflare&apos;s African edge &mdash; D1 for structured
-          data, R2 for content. We never sell your data, share it with third parties, or
-          train models on it. Local mode keeps everything on this device; sync only
-          activates when you sign in.
-        </p>
+      <Disclosure title={t('settings.legal.privacy.title')}>
+        <p style={{ margin: 0 }}>{t('settings.legal.privacy.body')}</p>
       </Disclosure>
-      <Disclosure title="Terms of Use">
-        <p style={{ margin: 0 }}>
-          Baobab is alpha software released under the AGPL-3.0 license. It&apos;s provided
-          as-is, without warranty. Source code lives at github.com/ghwmelite-dotcom/baobab.
-          By using it you accept that things may break, data may move during the alpha,
-          and we&apos;ll fix issues as we find them.
-        </p>
+      <Disclosure title={t('settings.legal.terms.title')}>
+        <p style={{ margin: 0 }}>{t('settings.legal.terms.body')}</p>
       </Disclosure>
-      <Disclosure title="Open-Source Licenses">
+      <Disclosure title={t('settings.legal.licenses.title')}>
         <ul
           style={{
             listStyle: 'none',
