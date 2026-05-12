@@ -365,20 +365,34 @@ export function NewTabPage() {
         }}
       />
 
-      {/* Baobab tree silhouette — bottom-right, breathing */}
+      {/* Baobab tree silhouette — bottom-right, breathing.
+          Pinned outside the scroll container so it doesn't drift away
+          when the user scrolls. */}
       <BaobabTree />
 
-      {/* Content stack */}
+      {/* Scroll container — content scrolls inside this layer while the
+          gradient, grain, and tree above remain fixed to the viewport. */}
       <div
+        className="baobab-scroll"
         style={{
-          position: 'relative',
-          height: '100%',
-          padding: '56px clamp(40px, 6vw, 88px) 64px',
-          display: 'flex',
-          flexDirection: 'column',
-          maxWidth: 1200,
+          position: 'absolute',
+          inset: 0,
+          overflowY: 'auto',
+          overflowX: 'hidden',
         }}
       >
+        {/* Content stack */}
+        <div
+          style={{
+            position: 'relative',
+            minHeight: '100%',
+            padding: '56px clamp(40px, 6vw, 88px) 88px',
+            display: 'flex',
+            flexDirection: 'column',
+            maxWidth: 1200,
+            boxSizing: 'border-box',
+          }}
+        >
         {/* Greeting */}
         <div
           style={{
@@ -499,27 +513,29 @@ export function NewTabPage() {
             <CapabilityCard key={c.id} c={c} index={i} />
           ))}
         </div>
-
-        {/* Editorial signature */}
-        <div
-          aria-hidden
-          style={{
-            position: 'absolute',
-            right: 'clamp(40px, 6vw, 88px)',
-            bottom: 22,
-            fontFamily: '"Fraunces", serif',
-            fontStyle: 'italic',
-            fontSize: 10.5,
-            letterSpacing: '0.32em',
-            textTransform: 'uppercase',
-            color: 'var(--text-muted)',
-            opacity: 0,
-            animation: 'baobab-fade-in 700ms ease forwards',
-            animationDelay: '900ms',
-          }}
-        >
-          Issue {issueNumber} · {issueLocation}
         </div>
+      </div>
+
+      {/* Editorial signature — pinned to viewport, outside scroll layer. */}
+      <div
+        aria-hidden
+        style={{
+          position: 'absolute',
+          right: 'clamp(40px, 6vw, 88px)',
+          bottom: 22,
+          fontFamily: '"Fraunces", serif',
+          fontStyle: 'italic',
+          fontSize: 10.5,
+          letterSpacing: '0.32em',
+          textTransform: 'uppercase',
+          color: 'var(--text-muted)',
+          opacity: 0,
+          animation: 'baobab-fade-in 700ms ease forwards',
+          animationDelay: '900ms',
+          pointerEvents: 'none',
+        }}
+      >
+        Issue {issueNumber} · {issueLocation}
       </div>
     </div>
   )
