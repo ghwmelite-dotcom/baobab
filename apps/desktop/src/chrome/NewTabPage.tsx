@@ -175,21 +175,35 @@ interface Capability {
   title: string
   body: string
   icon: ReactNode
+  starter: string
 }
 
 const CAPABILITIES: Capability[] = [
-  { id: 'summarize', eyebrow: 'AI · READING',  title: 'Summarize',    body: 'Give me the gist of any page.',                              icon: <IconSummarize /> },
-  { id: 'translate', eyebrow: 'AI · LANGUAGE', title: 'Translate',    body: 'Across Yoruba, Swahili, Hausa — and growing.',               icon: <IconTranslate /> },
-  { id: 'research',  eyebrow: 'AI · SEARCH',   title: 'Research',     body: 'Compare sources, African ones lifted first.',                icon: <IconResearch /> },
-  { id: 'compare',   eyebrow: 'AI · DECIDE',   title: 'Compare',      body: 'Lay options side by side.',                                  icon: <IconCompare /> },
-  { id: 'code',      eyebrow: 'AI · MAKER',    title: 'Explain Code', body: 'Read or debug a code block out loud.',                       icon: <IconCode /> },
-  { id: 'civic',     eyebrow: 'NEAR HOME',     title: 'Civic',        body: 'Bills, courts, regional policy — kept close.',               icon: <IconCivic /> },
+  { id: 'summarize', eyebrow: 'AI · READING',  title: 'Summarize',    body: 'Give me the gist of any page.',                              icon: <IconSummarize />, starter: 'Paste a link or open a page — I\'ll give you the gist plus the points that matter.' },
+  { id: 'translate', eyebrow: 'AI · LANGUAGE', title: 'Translate',    body: 'Across Yoruba, Swahili, Hausa — and growing.',               icon: <IconTranslate />, starter: 'Tell me what to translate and into which language — Yoruba, Swahili, Hausa, Amharic, and more.' },
+  { id: 'research',  eyebrow: 'AI · SEARCH',   title: 'Research',     body: 'Compare sources, African ones lifted first.',                icon: <IconResearch />, starter: 'What are you researching? I\'ll cross-reference sources and lift African ones to the top.' },
+  { id: 'compare',   eyebrow: 'AI · DECIDE',   title: 'Compare',      body: 'Lay options side by side.',                                  icon: <IconCompare />, starter: 'List the options you\'re weighing — I\'ll lay them side by side on the dimensions that matter.' },
+  { id: 'code',      eyebrow: 'AI · MAKER',    title: 'Explain Code', body: 'Read or debug a code block out loud.',                       icon: <IconCode />, starter: 'Paste a code block — I\'ll read it out loud, explain what it does, and flag anything suspicious.' },
+  { id: 'civic',     eyebrow: 'NEAR HOME',     title: 'Civic',        body: 'Bills, courts, regional policy — kept close.',               icon: <IconCivic />, starter: 'Ask about a bill, a court ruling, or regional policy — I\'ll pull it close to home.' },
 ]
+
+function newMsgId(): string {
+  return `m${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
+}
 
 function CapabilityCard({ c, index }: { c: Capability; index: number }) {
   const [hover, setHover] = useState(false)
   const toggleSidebar = useAiStore((s) => s.toggleSidebar)
   const sidebarOpen = useAiStore((s) => s.sidebarOpen)
+  const setActive = useAiStore((s) => s.setActive)
+  const pushMessage = useAiStore((s) => s.pushMessage)
+
+  const onActivate = () => {
+    if (!sidebarOpen) toggleSidebar()
+    const convId = `c${Date.now().toString(36)}`
+    setActive(convId)
+    pushMessage(convId, { id: newMsgId(), role: 'assistant', content: c.starter })
+  }
 
   return (
     <button
@@ -198,7 +212,7 @@ function CapabilityCard({ c, index }: { c: Capability; index: number }) {
       onMouseLeave={() => setHover(false)}
       onFocus={() => setHover(true)}
       onBlur={() => setHover(false)}
-      onClick={() => { if (!sidebarOpen) toggleSidebar() }}
+      onClick={onActivate}
       style={{
         position: 'relative',
         textAlign: 'left',
