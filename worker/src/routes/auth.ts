@@ -197,7 +197,9 @@ auth.post('/logout', authMiddleware, async (c) => {
 auth.get('/me', authMiddleware, async (c) => {
   const user = await getUserById(c.env.DB, c.get('userId')!)
   if (!user) return c.json({ error: 'not found' }, 404)
-  return c.json(user)
+  // Never leak password_hash to the client.
+  const { password_hash: _omit, ...safe } = user
+  return c.json(safe)
 })
 
 // Allowlisted fields for PUT /settings — explicitly excludes password_hash,
