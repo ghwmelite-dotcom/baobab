@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { useTabsStore } from '~/state/tabs.store'
+import { useAiStore } from '~/ai/ai.store'
 import { OS } from '~/platform/os'
 
 const NEW_TAB_DEFAULT_URL = 'about:blank'
@@ -36,6 +37,13 @@ export function useChromeShortcuts(): void {
         const nextIdx = (idx + dir + tabs.length) % tabs.length
         const next = tabs[nextIdx]
         if (next) store.setActive(next.id)
+        return
+      }
+      // Ctrl/Cmd + \ → toggle AI sidebar
+      if (e.key === '\\') {
+        e.preventDefault()
+        useAiStore.getState().toggleSidebar()
+        return
       }
     }
     window.addEventListener('keydown', onKey)
