@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, LogicalPosition, LogicalSize, Manager, WebviewUrl};
 
+use crate::downloads;
+
 const CHROME_HEIGHT: f64 = 36.0 + 40.0 + 56.0; // titlebar + tabstrip + omnibar
 const STATUS_HEIGHT: f64 = 28.0;
 
@@ -28,6 +30,7 @@ pub async fn create_tab(app: AppHandle, id: String, url: String) -> Result<TabIn
     let webview_url = WebviewUrl::External(url.parse().map_err(|e: url::ParseError| e.to_string())?);
 
     let builder = tauri::webview::WebviewBuilder::new(label, webview_url);
+    let builder = downloads::attach(builder, app.clone());
     main.add_child(
         builder,
         LogicalPosition::new(0.0, CHROME_HEIGHT),

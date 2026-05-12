@@ -12,6 +12,8 @@ import { OfflineList } from './offline/OfflineList'
 import { HistoryPanel } from './history/HistoryPanel'
 import { BookmarksBar } from './bookmarks/BookmarksBar'
 import { BookmarksPanel } from './bookmarks/BookmarksPanel'
+import { DownloadsPanel } from './downloads/DownloadsPanel'
+import { useDownloadsStore } from './downloads/downloads.store'
 import { SettingsScreen } from './settings/SettingsScreen'
 import { useChromeShortcuts } from './chrome/useChromeShortcuts'
 import { refreshResidency } from './state/health'
@@ -27,6 +29,7 @@ export function App() {
   useEffect(() => {
     void refreshResidency()
     void useTabsStore.getState().hydrate()
+    void useDownloadsStore.getState().initListeners()
     const t = setInterval(() => void refreshResidency(), 60_000)
     return () => clearInterval(t)
   }, [])
@@ -77,6 +80,7 @@ export function App() {
             <HistoryPanel />
             <OfflineList />
             <BookmarksPanel />
+            <DownloadsPanel />
             {showNtp ? <NewTabPage /> : null}
             <UpdateToast />
           </div>

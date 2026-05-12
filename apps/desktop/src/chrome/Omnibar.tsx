@@ -9,6 +9,7 @@ import { useReaderStore } from '~/reader/reader.store'
 import { useHistoryStore } from '~/history/history.store'
 import { useOfflineStore } from '~/offline/offline.store'
 import { useBookmarksStore } from '~/bookmarks/bookmarks.store'
+import { useDownloadsStore } from '~/downloads/downloads.store'
 import { suggest } from '~/history/omnibar-autocomplete'
 import { BookmarkButton } from '~/bookmarks/BookmarkButton'
 import { useAuthStore } from '~/auth/auth.store'
@@ -30,12 +31,13 @@ function newMsgId(): string {
 
 // ── Generic icon button used in the address bar action area ──────────────
 
-function NavBtn({ label, onClick, disabled, active, children, danger }: {
+function NavBtn({ label, onClick, disabled, active, children, danger, badge }: {
   label: string
   onClick: () => void
   disabled?: boolean
   active?: boolean
   danger?: boolean
+  badge?: boolean
   children: ReactNode
 }) {
   const [hover, setHover] = useState(false)
@@ -59,6 +61,7 @@ function NavBtn({ label, onClick, disabled, active, children, danger }: {
       onMouseLeave={() => setHover(false)}
       disabled={disabled}
       style={{
+        position: 'relative',
         width: 32,
         height: 32,
         display: 'inline-flex',
@@ -74,6 +77,21 @@ function NavBtn({ label, onClick, disabled, active, children, danger }: {
       }}
     >
       {children}
+      {badge && (
+        <span
+          aria-hidden
+          style={{
+            position: 'absolute',
+            top: 6,
+            right: 6,
+            width: 7,
+            height: 7,
+            borderRadius: '50%',
+            background: 'var(--accent)',
+            boxShadow: '0 0 0 2px var(--surface-1)',
+          }}
+        />
+      )}
     </button>
   )
 }
@@ -99,6 +117,10 @@ export function Omnibar() {
   const toggleHistory = useHistoryStore((s) => s.toggle)
   const toggleSaved = useOfflineStore((s) => s.toggle)
   const toggleBookmarks = useBookmarksStore((s) => s.toggle)
+  const toggleDownloads = useDownloadsStore((s) => s.toggle)
+  const activeDownloads = useDownloadsStore(
+    (s) => s.downloads.filter((d) => d.status === 'in-progress').length,
+  )
 
   const activeTab = tabs.find((t) => t.id === activeId)
   const [value, setValue] = useState(activeTab?.url ?? '')
@@ -391,6 +413,13 @@ export function Omnibar() {
         >
           <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden>
             <path d="M2 3 H14 V13 H2 Z M4 5 H12 M4 8 H12 M4 11 H8" stroke="currentColor" strokeWidth="1.2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </NavBtn>
+
+        <NavBtn label="Downloads" onClick={toggleDownloads} badge={activeDownloads > 0}>
+          <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden>
+            <path d="M8 2 V10 M5 7 L8 10 L11 7" stroke="currentColor" strokeWidth="1.4" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M3 13 H13" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
           </svg>
         </NavBtn>
 

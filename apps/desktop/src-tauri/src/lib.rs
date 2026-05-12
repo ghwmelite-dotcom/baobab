@@ -1,3 +1,4 @@
+mod downloads;
 mod tabs;
 
 use tauri::Manager;
@@ -25,6 +26,8 @@ pub fn run() {
             tabs::list_tabs,
             tabs::tab_go_back,
             tabs::tab_go_forward,
+            downloads::download_show_in_folder,
+            downloads::download_open_file,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Baobab");
