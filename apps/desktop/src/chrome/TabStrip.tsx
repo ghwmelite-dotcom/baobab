@@ -237,6 +237,30 @@ function TabPill({ tab, active, onSelect, onClose }: {
           </span>
         )}
         {tab.pinned && <span aria-hidden style={{ color: 'var(--accent)', fontSize: 8 }}>●</span>}
+        {/* Favicon — render only for real navigations. about:blank tabs
+            keep their "New Tab" label and skip the icon entirely. Engines
+            return a stale or 404 image for ~5% of hosts, so onError hides
+            the broken-image glyph rather than letting it bleed through. */}
+        {tab.faviconUrl && tab.url !== 'about:blank' && (
+          <img
+            src={tab.faviconUrl}
+            alt=""
+            width={16}
+            height={16}
+            loading="lazy"
+            decoding="async"
+            onError={(e) => {
+              ;(e.currentTarget as HTMLImageElement).style.display = 'none'
+            }}
+            style={{
+              width: 16,
+              height: 16,
+              flexShrink: 0,
+              borderRadius: 2,
+              objectFit: 'contain',
+            }}
+          />
+        )}
         <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
           {label}
         </span>

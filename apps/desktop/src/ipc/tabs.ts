@@ -1,8 +1,15 @@
 import { invoke } from '@tauri-apps/api/core'
+import { listen, type UnlistenFn } from '@tauri-apps/api/event'
 
 export interface IpcTabInfo {
   id: string
   url: string
+}
+
+export interface IpcTabLoaded {
+  id: string
+  url: string
+  title: string | null
 }
 
 export const ipcCreateTab = (
@@ -27,3 +34,7 @@ export const ipcTabGoBack = (tabId: string): Promise<void> =>
 
 export const ipcTabGoForward = (tabId: string): Promise<void> =>
   invoke('tab_go_forward', { tabId })
+
+export const onTabLoaded = (
+  cb: (payload: IpcTabLoaded) => void,
+): Promise<UnlistenFn> => listen<IpcTabLoaded>('tab://loaded', (e) => cb(e.payload))

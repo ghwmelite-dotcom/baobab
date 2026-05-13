@@ -32,6 +32,7 @@ export function App() {
   useEffect(() => {
     void refreshResidency()
     void useTabsStore.getState().hydrate()
+    void useTabsStore.getState().initListeners()
     void useDownloadsStore.getState().initListeners()
     const t = setInterval(() => void refreshResidency(), 60_000)
     return () => clearInterval(t)

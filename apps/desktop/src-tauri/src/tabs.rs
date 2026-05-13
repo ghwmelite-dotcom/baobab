@@ -1,10 +1,66 @@
+use std::collections::HashMap;
+use std::sync::Mutex;
+
 use serde::{Deserialize, Serialize};
-use tauri::{AppHandle, LogicalPosition, LogicalSize, Manager, WebviewUrl};
+use tauri::{AppHandle, Emitter, LogicalPosition, LogicalSize, Manager, WebviewUrl};
 
 use crate::downloads;
 
 const CHROME_HEIGHT: f64 = 36.0 + 40.0 + 56.0; // titlebar + tabstrip + omnibar
 const STATUS_HEIGHT: f64 = 28.0;
+
+// Cache the latest <title> reported by `on_document_title_changed` for each
+// webview label. WebView2 / WKWebView surface the title asynchronously and
+// can fire it both before and after `on_page_load(Finished)` — so we keep
+// the most recent value and ship it with whichever event lands first.
+static TAB_TITLES: Mutex<Option<HashMap<String, String>>> = Mutex::new(None);
+
+fn cache_title(label: &str, title: &str) {
+    if let Ok(mut guard) = TAB_TITLES.lock() {
+        let map = guard.get_or_insert_with(HashMap::new);
+        map.insert(label.to_string(), title.to_string());
+    }
+}
+
+fn lookup_title(label: &str) -> Option<String> {
+    TAB_TITLES
+        .lock()
+        .ok()
+        .and_then(|g| g.as_ref().and_then(|m| m.get(label).cloned()))
+        .filter(|s| !s.is_empty())
+}
+
+fn forget_title(label: &str) {
+    if let Ok(mut guard) = TAB_TITLES.lock() {
+        if let Some(map) = guard.as_mut() {
+            map.remove(label);
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct TabLoadedPayload {
+    id: String,
+    url: String,
+    title: Option<String>,
+}
+
+fn emit_tab_loaded<R: tauri::Runtime>(
+    emitter: &impl Emitter<R>,
+    label: &str,
+    url: String,
+    title: Option<String>,
+) {
+    let Some(id) = label.strip_prefix("tab-") else {
+        return;
+    };
+    let payload = TabLoadedPayload {
+        id: id.to_string(),
+        url,
+        title,
+    };
+    let _ = emitter.emit("tab://loaded", payload);
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TabInfo {
@@ -44,6 +100,35 @@ pub async fn create_tab(
         builder = builder.data_directory(dir);
     }
     let builder = downloads::attach(builder, app.clone());
+    // Capture the latest <title> reported by the engine so we can ship it
+    // with the next `tab://loaded` event. The renderer sets the document
+    // title asynchronously, so this hook may fire multiple times per nav.
+    let builder = builder.on_document_title_changed(|webview, title| {
+        let label = webview.label().to_string();
+        if !title.is_empty() {
+            cache_title(&label, &title);
+        }
+        let url = webview.url().map(|u| u.to_string()).unwrap_or_default();
+        emit_tab_loaded(
+            &webview,
+            &label,
+            url,
+            if title.is_empty() { None } else { Some(title) },
+        );
+    });
+    // Emit `tab://loaded` when the page finishes loading. Title may not be
+    // available yet (engines fire `document_title_changed` separately) — in
+    // that case we ship whatever the cache currently holds.
+    let builder = builder.on_page_load(|webview, payload| {
+        use tauri::webview::PageLoadEvent;
+        if payload.event() != PageLoadEvent::Finished {
+            return;
+        }
+        let label = webview.label().to_string();
+        let url = payload.url().to_string();
+        let title = lookup_title(&label);
+        emit_tab_loaded(&webview, &label, url, title);
+    });
     main.add_child(
         builder,
         LogicalPosition::new(0.0, CHROME_HEIGHT),
@@ -60,6 +145,7 @@ pub async fn close_tab(app: AppHandle, id: String) -> Result<(), String> {
     if let Some(wv) = app.get_webview(&label) {
         wv.close().map_err(|e| e.to_string())?;
     }
+    forget_title(&label);
     Ok(())
 }
 

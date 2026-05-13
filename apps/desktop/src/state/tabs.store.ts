@@ -7,9 +7,32 @@ import {
   ipcNavigateTab,
   ipcTabGoBack,
   ipcTabGoForward,
+  onTabLoaded,
+  type IpcTabLoaded,
 } from '~/ipc/tabs'
 import { useHistoryStore } from '~/history/history.store'
 import { persistence } from '~/state/persistence'
+
+/**
+ * Derive a 32×32 favicon URL from a navigation URL.
+ *
+ * Uses Google's s2 service — same pattern Chrome, Edge, Brave, and Arc
+ * use as a fallback when the page doesn't expose a usable
+ * `<link rel="icon">`. Returns `undefined` for opaque schemes (about:,
+ * data:, javascript:, file:) so we don't render placeholders for the
+ * New Tab Page or local files.
+ */
+export function faviconForUrl(url: string): string | undefined {
+  try {
+    const u = new URL(url)
+    if (u.protocol !== 'http:' && u.protocol !== 'https:') return undefined
+    const host = u.hostname
+    if (!host) return undefined
+    return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(host)}&sz=32`
+  } catch {
+    return undefined
+  }
+}
 
 interface HistoryCursor {
   depth: number
@@ -26,6 +49,8 @@ interface TabsState {
   // Per-tab navigation depth/max counter. Approximate: tracks IPC-driven
   // navigations only — in-page JS history.pushState / popstate won't sync.
   history: Record<string, HistoryCursor>
+  /** True once `tab://loaded` listener is registered. State (not module-level) so tests can reset it. */
+  tabLoadedListening: boolean
   openTab: (url: string, opts?: OpenTabOptions) => Promise<string>
   openIncognitoTab: (url: string) => Promise<string>
   closeTab: (id: string) => Promise<void>
@@ -38,6 +63,10 @@ interface TabsState {
   reorderTab: (id: string, toIndex: number) => void
   togglePin: (id: string) => void
   hydrate: () => Promise<void>
+  /** Apply a `tab://loaded` event payload to the matching tab. */
+  handleTabLoaded: (payload: IpcTabLoaded) => void
+  /** Idempotently subscribe to `tab://loaded` events from the backend. */
+  initListeners: () => Promise<void>
 }
 
 interface TabsSnapshot {
@@ -76,6 +105,7 @@ export const useTabsStore = create<TabsState>()((set, get) => ({
   tabs: [],
   activeId: null,
   history: {},
+  tabLoadedListening: false,
 
   openTab: async (url, opts) => {
     const id = nextId()
@@ -263,5 +293,34 @@ export const useTabsStore = create<TabsState>()((set, get) => ({
         }
       })
     }
+  },
+
+  handleTabLoaded: (payload) => {
+    set((s) => {
+      const idx = s.tabs.findIndex((t) => t.id === payload.id)
+      if (idx === -1) return s
+      const current = s.tabs[idx]
+      if (!current) return s
+      const incomingTitle = payload.title?.trim() ?? ''
+      const nextTitle = incomingTitle.length > 0 ? incomingTitle : current.title
+      const nextUrl = payload.url && payload.url.length > 0 ? payload.url : current.url
+      const favicon = faviconForUrl(nextUrl)
+      const updated: Tab = {
+        ...current,
+        title: nextTitle,
+        url: nextUrl,
+        loading: false,
+        lastVisitedAt: Date.now(),
+        ...(favicon ? { faviconUrl: favicon } : { faviconUrl: undefined }),
+      }
+      const tabs = [...s.tabs.slice(0, idx), updated, ...s.tabs.slice(idx + 1)]
+      return { tabs }
+    })
+  },
+
+  initListeners: async () => {
+    if (get().tabLoadedListening) return
+    set({ tabLoadedListening: true })
+    await onTabLoaded((p) => get().handleTabLoaded(p))
   },
 }))
