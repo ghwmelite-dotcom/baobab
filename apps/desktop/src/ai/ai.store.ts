@@ -14,18 +14,24 @@ export interface Conversation {
   updatedAt: number
 }
 
+export type AgentId = 'default' | 'bureaucracy'
+
 interface AiState {
   sidebarOpen: boolean
   conversations: Conversation[]
   activeConversationId: string | null
   messages: Record<string, ChatMessage[]>
   streaming: boolean
+  // Active vertical agent. 'default' routes through /api/ai/chat (streaming);
+  // named agents route through /api/agents/<id> with a single-shot response.
+  activeAgent: AgentId
   toggleSidebar: () => void
   setActive: (id: string | null) => void
   appendToken: (convId: string, msgId: string, token: string) => void
   pushMessage: (convId: string, msg: ChatMessage) => void
   setConversations: (cs: Conversation[]) => void
   setStreaming: (s: boolean) => void
+  setAgent: (id: AgentId) => void
 }
 
 export const useAiStore = create<AiState>()((set) => ({
@@ -34,6 +40,7 @@ export const useAiStore = create<AiState>()((set) => ({
   activeConversationId: null,
   messages: {},
   streaming: false,
+  activeAgent: 'default',
 
   toggleSidebar: () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),
   setActive: (id) => set({ activeConversationId: id }),
@@ -54,4 +61,5 @@ export const useAiStore = create<AiState>()((set) => ({
 
   setConversations: (cs) => set({ conversations: cs }),
   setStreaming: (streaming) => set({ streaming }),
+  setAgent: (id) => set({ activeAgent: id }),
 }))

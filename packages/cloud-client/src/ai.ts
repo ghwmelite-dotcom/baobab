@@ -29,6 +29,10 @@ export interface SearchResponse {
   results: Array<{ title: string; url: string }>
 }
 
+export interface BureaucracyResponse {
+  answer: string
+}
+
 export class AiClient {
   constructor(private readonly client: BaobabClient) {}
 
@@ -55,5 +59,9 @@ export class AiClient {
   }
   search(req: SearchRequest): Promise<SearchResponse> {
     return this.client.postJson('/api/ai/search', req)
+  }
+  // Vertical agents return a single complete answer rather than streaming.
+  bureaucracy(query: string): Promise<BureaucracyResponse> {
+    return this.client.postJson('/api/agents/bureaucracy', { query })
   }
 }

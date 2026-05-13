@@ -183,7 +183,13 @@
     "ariaInput": "Chat input",
     "send": "Send",
     "empty": "Reaching across the continent — say hi.",
-    "errorPrefix": "[error: {{error}}]"
+    "errorPrefix": "[error: {{error}}]",
+    "agentSelector": {
+      "default": "Default",
+      "bureaucracy": "Bureaucracy",
+      "ariaLabel": "Choose AI agent"
+    },
+    "bureaucracyHint": "Ask me about registering a business, getting a passport, KRA PIN, or other government processes in Ghana, Nigeria, Kenya, or South Africa."
   },
   "quickActions": {
     "ariaLabel": "Quick actions",
@@ -225,5 +231,19 @@
     },
     "exportAll": "Export everything as JSON",
     "footnote": "Your bookmarks, history, and saved articles live on Cloudflare's African edge — D1 for structured data, R2 for content. You can take everything with you any time."
+  },
+  "payments": {
+    "title": "Tip Baobab",
+    "subtitle": "Supporting the African AI browser via Flutterwave (M-Pesa, MoMo, cards, USSD).",
+    "amount": "Amount",
+    "currency": "Currency",
+    "email": "Email",
+    "name": "Name (optional)",
+    "payNow": "Pay now",
+    "creating": "Creating checkout…",
+    "closeLabel": "Close payment widget",
+    "tipButton": "Tip Baobab a coffee",
+    "tipButtonDescription": "Pay with Mobile Money, cards, or bank transfer. Powered by Flutterwave.",
+    "unconfigured": "Payments are in beta — keys aren't live yet on the server. Coming very soon."
   }
 }

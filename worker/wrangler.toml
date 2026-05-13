@@ -66,6 +66,14 @@ CODE_MODEL = "@cf/deepseek-ai/deepseek-r1-distill-qwen-32b"
 TRANSLATE_MODEL = "@cf/meta/m2m100-1.2b"
 TRANSLATE_MODEL_M2M = "@cf/meta/m2m100-1.2b"
 EMBEDDING_MODEL = "@cf/baai/bge-large-en-v1.5"
+# Flutterwave (Mobile Money pay-button). The secret key MUST be set via
+# `wrangler secret put FLUTTERWAVE_SECRET_KEY` — leaving it blank here is the
+# alpha default and triggers a friendly "payments_unconfigured" 503 in the
+# /api/payments/intent route. The public key can stay in [vars] (it's safe
+# to embed). Base URL is overridable for tests + sandbox.
+FLUTTERWAVE_PUBLIC_KEY = ""
+FLUTTERWAVE_SECRET_KEY = ""
+FLUTTERWAVE_BASE_URL = "https://api.flutterwave.com/v3"
 
 [triggers]
 crons = ["0 3 * * *"]

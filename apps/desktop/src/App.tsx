@@ -25,6 +25,7 @@ import { ipcHideTab, ipcShowTab } from './ipc/tabs'
 import { AuthGate } from './auth/AuthGate'
 import { AuthScreen } from './auth/AuthScreen'
 import { UpdateToast } from './updater/UpdateToast'
+import { PayWidget } from './payments/PayWidget'
 
 export function App() {
   useChromeShortcuts()
@@ -77,6 +78,7 @@ export function App() {
             }}
           >
             <AuthScreen />
+            <PayWidget />
             <SettingsScreen />
             <SovereigntyDashboard />
             <ReaderPanel />

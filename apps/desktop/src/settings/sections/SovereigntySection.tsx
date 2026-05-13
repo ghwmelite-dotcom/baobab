@@ -3,6 +3,7 @@ import { Button } from '@baobab/ui'
 import { useSovereigntyStore } from '~/state/sovereignty.store'
 import { useSettingsStore } from '~/settings/settings.store'
 import { useSovereigntyDashboardStore } from '~/sovereignty/dashboard.store'
+import { usePaymentsStore } from '~/payments/payments.store'
 import { strings } from '@baobab/brand'
 
 export function SovereigntySection() {
@@ -10,6 +11,7 @@ export function SovereigntySection() {
   const residency = useSovereigntyStore((s) => s.residency)
   const closeSettings = useSettingsStore((s) => s.close)
   const openDashboard = useSovereigntyDashboardStore((s) => s.openIt)
+  const openPayWidget = usePaymentsStore((s) => s.openWidget)
   return (
     <section style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <h2 style={{ margin: 0, fontSize: 16 }}>{t('settings.sovereignty.title')}</h2>
@@ -41,6 +43,21 @@ export function SovereigntySection() {
       <p style={{ margin: 0, fontSize: 12, color: 'var(--text-muted)' }}>
         {strings.tooltips.home} {t('settings.sovereignty.footer')}
       </p>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8 }}>
+        <Button
+          variant="secondary"
+          onClick={() => {
+            closeSettings()
+            openPayWidget()
+          }}
+        >
+          {t('payments.tipButton')}
+        </Button>
+        <p style={{ margin: 0, fontSize: 12, color: 'var(--text-muted)' }}>
+          {t('payments.tipButtonDescription')}
+        </p>
+      </div>
     </section>
   )
 }

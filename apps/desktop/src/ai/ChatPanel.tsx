@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAiStore } from './ai.store'
 import { aiClient } from './api'
+import { AgentSelector } from './AgentSelector'
 import { MessageBubble } from './MessageBubble'
 import { ModelSelector } from './ModelSelector'
 import { QuickActions } from './QuickActions'
@@ -22,6 +23,7 @@ export function ChatPanel() {
   const appendToken = useAiStore((s) => s.appendToken)
   const setStreaming = useAiStore((s) => s.setStreaming)
   const streaming = useAiStore((s) => s.streaming)
+  const activeAgent = useAiStore((s) => s.activeAgent)
   const messages = useAiStore((s) => (activeId ? (s.messages[activeId] ?? []) : []))
   const user = useAuthStore((s) => s.user)
   const openSignIn = useAuthStore((s) => s.openSignIn)
@@ -40,10 +42,31 @@ export function ChatPanel() {
     if (!activeId) setActive(convId)
     pushMessage(convId, userMsg)
 
-    const asstId = newMsgId()
-    pushMessage(convId, { id: asstId, role: 'assistant', content: '', model })
     setInput('')
     setStreaming(true)
+
+    // Vertical agents respond with a single complete answer (no SSE stream).
+    // Mirrors the summarize/search quick action flow: push a single assistant
+    // bubble with the full body once the request resolves.
+    if (activeAgent === 'bureaucracy') {
+      try {
+        const { answer } = await aiClient.bureaucracy(userContent)
+        pushMessage(convId, { id: newMsgId(), role: 'assistant', content: answer })
+      } catch (e) {
+        pushMessage(convId, {
+          id: newMsgId(),
+          role: 'assistant',
+          content: t('chat.errorPrefix', { error: e instanceof Error ? e.message : 'unknown' }),
+        })
+      } finally {
+        setStreaming(false)
+      }
+      return
+    }
+
+    // Default mode: streaming chat with token-by-token append.
+    const asstId = newMsgId()
+    pushMessage(convId, { id: asstId, role: 'assistant', content: '', model })
     try {
       for await (const { token } of aiClient.streamChat({
         message: userContent,
@@ -82,6 +105,19 @@ export function ChatPanel() {
         <strong style={{ fontSize: 13, flex: 1 }}>{t('chat.title')}</strong>
         <ModelSelector value={model} onChange={setModel} />
       </header>
+      <AgentSelector />
+      {activeAgent === 'bureaucracy' && (
+        <p
+          style={{
+            margin: '6px 12px 0',
+            fontSize: 11,
+            color: 'var(--text-muted)',
+            lineHeight: 1.4,
+          }}
+        >
+          {t('chat.bureaucracyHint')}
+        </p>
+      )}
       <QuickActions />
       <div style={{ flex: 1, overflow: 'auto', paddingBlock: 8 }}>
         {messages.length === 0 && (
