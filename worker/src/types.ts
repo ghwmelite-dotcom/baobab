@@ -37,13 +37,13 @@ export interface Env {
   OTP_TERMII_KEY?: string
   OTP_TERMII_FROM?: string
 
-  // Flutterwave (Mobile Money / cards / USSD / bank transfer).
+  // Paystack (cards / bank / USSD / Mobile Money / QR / bank transfer).
   // PUBLIC_KEY is safe to embed; SECRET_KEY must be set via
-  // `wrangler secret put FLUTTERWAVE_SECRET_KEY`. BASE_URL defaults to
-  // 'https://api.flutterwave.com/v3' but is overridable for tests + staging.
-  FLUTTERWAVE_PUBLIC_KEY?: string
-  FLUTTERWAVE_SECRET_KEY?: string
-  FLUTTERWAVE_BASE_URL?: string
+  // `wrangler secret put PAYSTACK_SECRET_KEY`. BASE_URL defaults to
+  // 'https://api.paystack.co' but is overridable for tests + staging.
+  PAYSTACK_PUBLIC_KEY?: string
+  PAYSTACK_SECRET_KEY?: string
+  PAYSTACK_BASE_URL?: string
 }
 
 export type AppContext = {

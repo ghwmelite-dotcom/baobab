@@ -5,7 +5,7 @@ import { payments } from '../src/routes/payments'
 
 // The vitest-pool-workers `env` import is a snapshot for the bound test
 // runtime — its values are immutable from the test side, so we can't flip
-// FLUTTERWAVE_SECRET_KEY at runtime through that handle. Two-pronged
+// PAYSTACK_SECRET_KEY at runtime through that handle. Two-pronged
 // strategy instead:
 //
 //   1. Default-config paths (no secret bound) → exercised via SELF.fetch,
@@ -13,13 +13,11 @@ import { payments } from '../src/routes/payments'
 //      that the unconfigured response shape is correct.
 //
 //   2. Configured paths → invoke the `payments` Hono sub-app directly with
-//      a hand-built Env where FLUTTERWAVE_SECRET_KEY is populated. This
+//      a hand-built Env where PAYSTACK_SECRET_KEY is populated. This
 //      runs the same handler code under the same Workers runtime, just
 //      bypassing the global env binding for the secret.
 
 function fakeEnv(overrides: Partial<Env>): Env {
-  // Cast through unknown: only the fields the payments route reads are
-  // populated; the rest of Env (DB, KV, etc.) is unused by these handlers.
   return overrides as unknown as Env
 }
 
@@ -52,39 +50,43 @@ describe('POST /payments/intent (configured)', () => {
     globalThis.fetch = originalFetch
   })
 
-  it('returns the Flutterwave checkout link when the secret is configured', async () => {
-    const fakeLink = 'https://checkout.flutterwave.com/v3/hosted/pay/abc123'
+  it('returns the Paystack authorization_url when the secret is configured', async () => {
+    const fakeLink = 'https://checkout.paystack.com/abc123'
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
-      expect(url).toBe('https://api.flutterwave.com/v3/payments')
+      expect(url).toBe('https://api.paystack.co/transaction/initialize')
       const headers = new Headers(init?.headers)
-      expect(headers.get('Authorization')).toBe('Bearer FLWSECK_TEST-fake')
+      expect(headers.get('Authorization')).toBe('Bearer sk_test_fake')
       const sentBody = JSON.parse(String(init?.body ?? '{}')) as {
-        tx_ref: string
+        email: string
         amount: number
         currency: string
-        customer: { email: string; name: string }
-        payment_options: string
-        customizations: { title: string; description: string }
+        reference: string
+        channels: string[]
+        callback_url: string
+        metadata: { custom_fields: Array<{ variable_name: string; value: string }> }
       }
-      expect(sentBody.amount).toBe(500)
+      // Amount is in subunit (kobo) — 500 NGN → 50_000 kobo.
+      expect(sentBody.amount).toBe(50_000)
       expect(sentBody.currency).toBe('NGN')
-      expect(sentBody.customer.email).toBe('tip@example.test')
-      expect(sentBody.customer.name).toBe('Ada Lovelace')
-      expect(sentBody.tx_ref.startsWith('baobab-')).toBe(true)
-      expect(sentBody.payment_options).toContain('mobilemoney')
-      expect(sentBody.payment_options).toContain('mpesa')
-      expect(sentBody.customizations.title).toBe('Tip Baobab')
-      return new Response(JSON.stringify({ status: 'success', data: { link: fakeLink } }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      })
+      expect(sentBody.email).toBe('tip@example.test')
+      expect(sentBody.reference.startsWith('baobab-')).toBe(true)
+      expect(sentBody.channels).toContain('mobile_money')
+      expect(sentBody.channels).toContain('ussd')
+      expect(sentBody.metadata.custom_fields.find((f) => f.variable_name === 'customer_name')?.value).toBe('Ada Lovelace')
+      return new Response(
+        JSON.stringify({
+          status: true,
+          data: { authorization_url: fakeLink, reference: sentBody.reference },
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } },
+      )
     }) as typeof fetch
     globalThis.fetch = fetchMock
 
     const env = fakeEnv({
-      FLUTTERWAVE_SECRET_KEY: 'FLWSECK_TEST-fake',
-      FLUTTERWAVE_BASE_URL: 'https://api.flutterwave.com/v3',
+      PAYSTACK_SECRET_KEY: 'sk_test_fake',
+      PAYSTACK_BASE_URL: 'https://api.paystack.co',
     })
     const r = await payments.fetch(
       new Request('http://baobab/intent', {
@@ -106,15 +108,15 @@ describe('POST /payments/intent (configured)', () => {
     expect(fetchMock).toHaveBeenCalledOnce()
   })
 
-  it('falls back to the default base URL when FLUTTERWAVE_BASE_URL is unset', async () => {
+  it('falls back to the default base URL when PAYSTACK_BASE_URL is unset', async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
       const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
-      expect(url).toBe('https://api.flutterwave.com/v3/payments')
-      return new Response(JSON.stringify({ data: { link: 'https://x' } }), { status: 200 })
+      expect(url).toBe('https://api.paystack.co/transaction/initialize')
+      return new Response(JSON.stringify({ data: { authorization_url: 'https://x' } }), { status: 200 })
     }) as typeof fetch
     globalThis.fetch = fetchMock
 
-    const env = fakeEnv({ FLUTTERWAVE_SECRET_KEY: 'FLWSECK_TEST-fake' })
+    const env = fakeEnv({ PAYSTACK_SECRET_KEY: 'sk_test_fake' })
     const r = await payments.fetch(
       new Request('http://baobab/intent', {
         method: 'POST',
@@ -127,7 +129,7 @@ describe('POST /payments/intent (configured)', () => {
   })
 
   it('returns 400 when amount is missing or non-positive', async () => {
-    const env = fakeEnv({ FLUTTERWAVE_SECRET_KEY: 'FLWSECK_TEST-fake' })
+    const env = fakeEnv({ PAYSTACK_SECRET_KEY: 'sk_test_fake' })
 
     const r = await payments.fetch(
       new Request('http://baobab/intent', {
@@ -151,7 +153,7 @@ describe('POST /payments/intent (configured)', () => {
   })
 
   it('returns 400 when currency or email is missing', async () => {
-    const env = fakeEnv({ FLUTTERWAVE_SECRET_KEY: 'FLWSECK_TEST-fake' })
+    const env = fakeEnv({ PAYSTACK_SECRET_KEY: 'sk_test_fake' })
 
     const r = await payments.fetch(
       new Request('http://baobab/intent', {
@@ -174,11 +176,11 @@ describe('POST /payments/intent (configured)', () => {
     expect(r2.status).toBe(400)
   })
 
-  it('returns 502 flutterwave_failed when the upstream call errors', async () => {
+  it('returns 502 paystack_failed when the upstream call errors', async () => {
     globalThis.fetch = vi.fn(
-      async () => new Response('{"status":"error","message":"bad key"}', { status: 401 }),
+      async () => new Response('{"status":false,"message":"bad key"}', { status: 401 }),
     ) as typeof fetch
-    const env = fakeEnv({ FLUTTERWAVE_SECRET_KEY: 'FLWSECK_TEST-fake' })
+    const env = fakeEnv({ PAYSTACK_SECRET_KEY: 'sk_test_fake' })
     const r = await payments.fetch(
       new Request('http://baobab/intent', {
         method: 'POST',
@@ -189,14 +191,14 @@ describe('POST /payments/intent (configured)', () => {
     )
     expect(r.status).toBe(502)
     const body = (await r.json()) as { error: string }
-    expect(body.error).toBe('flutterwave_failed')
+    expect(body.error).toBe('paystack_failed')
   })
 
-  it('returns 502 flutterwave_no_link when the upstream omits data.link', async () => {
+  it('returns 502 paystack_no_link when the upstream omits authorization_url', async () => {
     globalThis.fetch = vi.fn(
       async () => new Response(JSON.stringify({ data: {} }), { status: 200 }),
     ) as typeof fetch
-    const env = fakeEnv({ FLUTTERWAVE_SECRET_KEY: 'FLWSECK_TEST-fake' })
+    const env = fakeEnv({ PAYSTACK_SECRET_KEY: 'sk_test_fake' })
     const r = await payments.fetch(
       new Request('http://baobab/intent', {
         method: 'POST',
@@ -207,7 +209,7 @@ describe('POST /payments/intent (configured)', () => {
     )
     expect(r.status).toBe(502)
     const body = (await r.json()) as { error: string }
-    expect(body.error).toBe('flutterwave_no_link')
+    expect(body.error).toBe('paystack_no_link')
   })
 })
 
@@ -217,23 +219,22 @@ describe('GET /api/payments/verify/:txRef', () => {
     expect(r.status).toBe(503)
   })
 
-  it('returns the upstream transaction status when configured', async () => {
+  it('returns the upstream transaction status with amount converted to major units', async () => {
     globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
-      expect(url).toBe(
-        'https://api.flutterwave.com/v3/transactions/verify_by_reference?tx_ref=baobab-test-1',
-      )
+      expect(url).toBe('https://api.paystack.co/transaction/verify/baobab-test-1')
       const headers = new Headers(init?.headers)
-      expect(headers.get('Authorization')).toBe('Bearer FLWSECK_TEST-fake')
+      expect(headers.get('Authorization')).toBe('Bearer sk_test_fake')
+      // Paystack returns amount in subunit (kobo); 50_000 kobo = 500 NGN.
       return new Response(
-        JSON.stringify({ data: { status: 'successful', amount: 500, currency: 'NGN' } }),
+        JSON.stringify({ data: { status: 'success', amount: 50_000, currency: 'NGN' } }),
         { status: 200, headers: { 'Content-Type': 'application/json' } },
       )
     }) as typeof fetch
 
     const env = fakeEnv({
-      FLUTTERWAVE_SECRET_KEY: 'FLWSECK_TEST-fake',
-      FLUTTERWAVE_BASE_URL: 'https://api.flutterwave.com/v3',
+      PAYSTACK_SECRET_KEY: 'sk_test_fake',
+      PAYSTACK_BASE_URL: 'https://api.paystack.co',
     })
     const r = await payments.fetch(
       new Request('http://baobab/verify/baobab-test-1'),
@@ -241,16 +242,17 @@ describe('GET /api/payments/verify/:txRef', () => {
     )
     expect(r.status).toBe(200)
     const body = (await r.json()) as { status: string; amount?: number; currency?: string }
-    expect(body.status).toBe('successful')
+    expect(body.status).toBe('success')
+    // Worker converts subunit → major unit for the client.
     expect(body.amount).toBe(500)
     expect(body.currency).toBe('NGN')
   })
 
   it('returns 502 verify_failed on upstream error', async () => {
     globalThis.fetch = vi.fn(
-      async () => new Response('{"status":"error"}', { status: 401 }),
+      async () => new Response('{"status":false}', { status: 401 }),
     ) as typeof fetch
-    const env = fakeEnv({ FLUTTERWAVE_SECRET_KEY: 'FLWSECK_TEST-fake' })
+    const env = fakeEnv({ PAYSTACK_SECRET_KEY: 'sk_test_fake' })
     const r = await payments.fetch(new Request('http://baobab/verify/baobab-x'), env)
     expect(r.status).toBe(502)
   })

@@ -234,7 +234,7 @@
   },
   "payments": {
     "title": "Tip Baobab",
-    "subtitle": "Supporting the African AI browser via Flutterwave (M-Pesa, MoMo, cards, USSD).",
+    "subtitle": "Supporting the African AI browser via Paystack (cards, bank, USSD, Mobile Money, QR).",
     "amount": "Amount",
     "currency": "Currency",
     "email": "Email",
@@ -243,7 +243,7 @@
     "creating": "Creating checkout…",
     "closeLabel": "Close payment widget",
     "tipButton": "Tip Baobab a coffee",
-    "tipButtonDescription": "Pay with Mobile Money, cards, or bank transfer. Powered by Flutterwave.",
+    "tipButtonDescription": "Pay with cards, bank, USSD, Mobile Money, or QR. Powered by Paystack.",
     "unconfigured": "Payments are in beta — keys aren't live yet on the server. Coming very soon."
   }
 }

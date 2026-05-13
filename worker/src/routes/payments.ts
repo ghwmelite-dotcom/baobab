@@ -1,17 +1,19 @@
 import { Hono } from 'hono'
 import type { AppContext } from '../types'
 
-// Flutterwave payment-link API.
+// Paystack payment-link API.
 //
-// Flutterwave's "Standard" hosted checkout takes a POST to `/payments` with a
-// merchant-generated `tx_ref`. The response includes `data.link` — the URL we
-// pop in a new tab. Status is later confirmed via `/transactions/verify_by_reference`.
+// Paystack's hosted checkout takes a POST to `/transaction/initialize` with a
+// merchant-generated `reference`. The response includes `data.authorization_url`
+// — the URL we pop in a new tab. Status is later confirmed via
+// `/transaction/verify/:reference`. Amounts are passed in the SUBUNIT
+// (kobo for NGN, pesewas for GHS, cents for ZAR/KES/USD) — we multiply by 100.
 //
-// All routes guard on FLUTTERWAVE_SECRET_KEY: when unset (alpha default), we
+// All routes guard on PAYSTACK_SECRET_KEY: when unset (alpha default), we
 // return 503 `payments_unconfigured` so the desktop widget can render a
 // "coming soon" message instead of a 5xx.
 
-const DEFAULT_BASE_URL = 'https://api.flutterwave.com/v3'
+const DEFAULT_BASE_URL = 'https://api.paystack.co'
 
 interface IntentBody {
   amount?: unknown
@@ -44,77 +46,84 @@ payments.post('/intent', async (c) => {
   if (!currency) return c.json({ error: 'currency required' }, 400)
   if (!customerEmail) return c.json({ error: 'customer_email required' }, 400)
 
-  const secret = c.env.FLUTTERWAVE_SECRET_KEY
+  const secret = c.env.PAYSTACK_SECRET_KEY
   if (!secret) {
     return c.json(
       {
         error: 'payments_unconfigured',
         message:
-          'Flutterwave keys are not set on this worker. Set FLUTTERWAVE_SECRET_KEY via wrangler secret.',
+          'Paystack keys are not set on this worker. Set PAYSTACK_SECRET_KEY via wrangler secret.',
       },
       503,
     )
   }
 
-  const txRef = `baobab-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`
-  const baseUrl = c.env.FLUTTERWAVE_BASE_URL ?? DEFAULT_BASE_URL
+  const reference = `baobab-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`
+  const baseUrl = c.env.PAYSTACK_BASE_URL ?? DEFAULT_BASE_URL
+  // Paystack accepts amount in subunit (kobo/pesewas/cents). Round to handle
+  // floating-point drift on amounts like 9.99.
+  const amountSubunit = Math.round(amount * 100)
 
-  const res = await fetch(`${baseUrl}/payments`, {
+  const res = await fetch(`${baseUrl}/transaction/initialize`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${secret}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      tx_ref: txRef,
-      amount,
+      email: customerEmail,
+      amount: amountSubunit,
       currency,
-      payment_options: 'card,mobilemoney,ussd,mpesa,banktransfer',
+      reference,
+      // Channels — pass-through; Paystack auto-filters by currency support
+      // (e.g. mobile_money only applies to GHS/KES, ussd/bank_transfer to NGN).
+      channels: ['card', 'bank', 'ussd', 'mobile_money', 'bank_transfer', 'qr'],
       // Placeholder — once we ship a public landing page this becomes
-      // https://baobab.africa/payments/callback?tx_ref=...
-      redirect_url: 'https://baobab.africa/payments/callback',
-      customer: {
-        email: customerEmail,
-        name: customerName ?? 'Baobab Supporter',
-      },
-      customizations: {
-        title: 'Tip Baobab',
-        description: 'Support the African AI browser',
+      // https://baobab.africa/payments/callback?reference=...
+      callback_url: 'https://baobab.africa/payments/callback',
+      metadata: {
+        custom_fields: [
+          { display_name: 'Customer', variable_name: 'customer_name', value: customerName ?? 'Baobab Supporter' },
+          { display_name: 'Source', variable_name: 'source', value: 'baobab-desktop' },
+        ],
       },
     }),
   })
 
   if (!res.ok) {
     const errBody = await res.text()
-    return c.json({ error: 'flutterwave_failed', detail: errBody }, 502)
+    return c.json({ error: 'paystack_failed', detail: errBody }, 502)
   }
 
-  const data = (await res.json()) as { data?: { link?: string } }
-  const checkoutUrl = data?.data?.link
-  if (!checkoutUrl) return c.json({ error: 'flutterwave_no_link' }, 502)
-  return c.json({ checkoutUrl, txRef })
+  const data = (await res.json()) as { data?: { authorization_url?: string; reference?: string } }
+  const checkoutUrl = data?.data?.authorization_url
+  if (!checkoutUrl) return c.json({ error: 'paystack_no_link' }, 502)
+  // Echo whichever reference Paystack returns (in case they normalize ours).
+  const finalRef = data?.data?.reference ?? reference
+  return c.json({ checkoutUrl, txRef: finalRef })
 })
 
 payments.get('/verify/:txRef', async (c) => {
   const txRef = c.req.param('txRef')
-  const secret = c.env.FLUTTERWAVE_SECRET_KEY
+  const secret = c.env.PAYSTACK_SECRET_KEY
   if (!secret) {
     return c.json({ error: 'payments_unconfigured' }, 503)
   }
-  const baseUrl = c.env.FLUTTERWAVE_BASE_URL ?? DEFAULT_BASE_URL
-  const res = await fetch(
-    `${baseUrl}/transactions/verify_by_reference?tx_ref=${encodeURIComponent(txRef)}`,
-    {
-      headers: { Authorization: `Bearer ${secret}` },
-    },
-  )
+  const baseUrl = c.env.PAYSTACK_BASE_URL ?? DEFAULT_BASE_URL
+  const res = await fetch(`${baseUrl}/transaction/verify/${encodeURIComponent(txRef)}`, {
+    headers: { Authorization: `Bearer ${secret}` },
+  })
   if (!res.ok) return c.json({ error: 'verify_failed' }, 502)
   const data = (await res.json()) as {
     data?: { status?: string; amount?: number; currency?: string }
   }
+  // Paystack returns amount in subunit. Convert back to the major unit so the
+  // client doesn't have to know about the kobo/cent split.
+  const amountSubunit = data?.data?.amount
+  const amountMajor = typeof amountSubunit === 'number' ? amountSubunit / 100 : undefined
   return c.json({
     status: data?.data?.status ?? 'unknown',
-    amount: data?.data?.amount,
+    amount: amountMajor,
     currency: data?.data?.currency,
   })
 })

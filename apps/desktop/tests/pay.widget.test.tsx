@@ -60,7 +60,7 @@ beforeEach(() => {
 
 describe('PayWidget — happy path', () => {
   it('submits the form and opens the checkout URL in a new tab', async () => {
-    const checkoutUrl = 'https://checkout.flutterwave.com/v3/hosted/pay/abc123'
+    const checkoutUrl = 'https://checkout.paystack.com/abc123'
     mockIntent.mockResolvedValueOnce({ checkoutUrl, txRef: 'baobab-test-1' })
 
     render(<PayWidget />)
