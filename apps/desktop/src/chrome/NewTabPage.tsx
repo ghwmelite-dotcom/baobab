@@ -392,7 +392,7 @@ export function NewTabPage() {
       {/* Scroll container — content scrolls inside this layer while the
           gradient, grain, and tree above remain fixed to the viewport. */}
       <div
-        className="baobab-scroll"
+        className="baobab-scroll-hidden"
         style={{
           position: 'absolute',
           inset: 0,

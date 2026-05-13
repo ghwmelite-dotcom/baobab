@@ -63,6 +63,16 @@ button { font: inherit; }
   background-clip: padding-box;
 }
 
+/* Invisible-but-scrollable variant — used on the NewTabPage where the
+   scroll affordance is implied by the user (wheel/trackpad) and the
+   scrollbar would be visual noise on a landing page. */
+.baobab-scroll-hidden {
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.baobab-scroll-hidden::-webkit-scrollbar { display: none; width: 0; height: 0; }
+
 /* Animation keyframes used across the chrome. Respect prefers-reduced-motion
    (tokens.css already disables all animation/transition durations under that
    media query — these keyframes simply won't run). */
