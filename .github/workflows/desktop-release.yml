@@ -19,8 +19,12 @@ jobs:
         include:
           - os: windows-latest
             target: x86_64-pc-windows-msvc
-          - os: macos-14
-            target: aarch64-apple-darwin
+          # macOS dropped 2026-05-13 — its runner bills 10x against
+          # included minutes and we burned through the alpha account's
+          # CI budget. Restore by adding this block back once Apple
+          # Developer Program + signing certs are funded (see P0c C1):
+          #   - os: macos-14
+          #     target: aarch64-apple-darwin
           - os: ubuntu-22.04
             target: x86_64-unknown-linux-gnu
     runs-on: ${{ matrix.os }}
