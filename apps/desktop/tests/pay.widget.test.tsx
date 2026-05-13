@@ -77,7 +77,7 @@ describe('PayWidget — happy path', () => {
     await waitFor(() => expect(mockIntent).toHaveBeenCalledOnce())
     expect(mockIntent).toHaveBeenCalledWith({
       amount: 250,
-      currency: 'NGN',
+      currency: 'GHS',
       customer_email: 'tipper@example.test',
       customer_name: undefined,
     })

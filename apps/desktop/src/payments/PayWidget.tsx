@@ -5,9 +5,9 @@ import { useAuthStore } from '~/auth/auth.store'
 import { useTabsStore } from '~/state/tabs.store'
 import { usePaymentsStore } from './payments.store'
 
-// Currencies we surface in the demo. Order matters — NGN is the alpha
-// default to align with Flutterwave's primary market.
-const CURRENCIES = ['NGN', 'KES', 'GHS', 'ZAR', 'USD'] as const
+// Currencies we surface in the demo. Order matters — GHS is the alpha
+// default (Baobab's home market) and shows first in the picker.
+const CURRENCIES = ['GHS', 'NGN', 'KES', 'ZAR', 'USD'] as const
 type Currency = (typeof CURRENCIES)[number]
 
 const MIN_AMOUNT = 1
@@ -25,7 +25,7 @@ export function PayWidget() {
   // Form state — kept local so we don't pollute the store with input ticks.
   const prefillEmail = useMemo(() => useAuthStore.getState().user?.email ?? '', [])
   const [amount, setAmount] = useState<string>('500')
-  const [currency, setCurrency] = useState<Currency>('NGN')
+  const [currency, setCurrency] = useState<Currency>('GHS')
   const [email, setEmail] = useState<string>(prefillEmail)
   const [name, setName] = useState<string>('')
 
