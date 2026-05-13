@@ -24,6 +24,15 @@ import { useAiStore } from './ai/ai.store'
 import { ipcHideTab, ipcShowTab } from './ipc/tabs'
 import { AuthGate } from './auth/AuthGate'
 import { AuthScreen } from './auth/AuthScreen'
+import { useAuthStore } from './auth/auth.store'
+import { useSettingsStore } from './settings/settings.store'
+import { useReaderStore } from './reader/reader.store'
+import { useHistoryStore } from './history/history.store'
+import { useOfflineStore } from './offline/offline.store'
+import { useBookmarksStore } from './bookmarks/bookmarks.store'
+import { useSovereigntyDashboardStore } from './sovereignty/dashboard.store'
+import { useTranslateStore } from './translate/translate.store'
+import { usePaymentsStore } from './payments/payments.store'
 import { UpdateToast } from './updater/UpdateToast'
 import { PayWidget } from './payments/PayWidget'
 
@@ -49,14 +58,42 @@ export function App() {
   const sidebarOpen = useAiStore((s) => s.sidebarOpen)
   const canvasRight = sidebarOpen ? SIDEBAR_WIDTH : 0
 
+  // Tauri's child WebView2 windows are native HWNDs that always sit
+  // above the React DOM. When ANY overlay opens (Settings, Reader,
+  // History, etc.) we need to hide the active tab's webview, or the
+  // overlay renders BEHIND the page content. Hide also fires when the
+  // active tab is about:blank so the NewTabPage gradient shows
+  // instead of a white WebView default.
+  const settingsOpen = useSettingsStore((s) => s.open)
+  const readerOpen = useReaderStore((s) => s.open)
+  const historyOpen = useHistoryStore((s) => s.drawerOpen)
+  const bookmarksOpen = useBookmarksStore((s) => s.drawerOpen)
+  const offlineOpen = useOfflineStore((s) => s.drawerOpen)
+  const authOverlayOpen = useAuthStore((s) => s.signInOverlayOpen)
+  const sovereigntyOpen = useSovereigntyDashboardStore((s) => s.open)
+  const translateOpen = useTranslateStore((s) => s.open)
+  const paymentsOpen = usePaymentsStore((s) => s.widgetOpen)
+  const downloadsOpen = useDownloadsStore((s) => s.panelOpen)
+  const anyOverlayOpen =
+    settingsOpen ||
+    readerOpen ||
+    historyOpen ||
+    bookmarksOpen ||
+    offlineOpen ||
+    authOverlayOpen ||
+    sovereigntyOpen ||
+    translateOpen ||
+    paymentsOpen ||
+    downloadsOpen
+
   useEffect(() => {
     if (!activeId) return
-    if (showNtp) {
+    if (showNtp || anyOverlayOpen) {
       void ipcHideTab(activeId).catch(() => undefined)
     } else {
       void ipcShowTab(activeId).catch(() => undefined)
     }
-  }, [showNtp, activeId])
+  }, [showNtp, activeId, anyOverlayOpen])
 
   return (
     <ThemeProvider theme="dark">
