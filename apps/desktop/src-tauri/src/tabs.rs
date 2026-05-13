@@ -187,6 +187,24 @@ pub async fn hide_tab(app: AppHandle, id: String) -> Result<(), String> {
     Ok(())
 }
 
+// Hide every non-main child webview. Used when the canvas should show
+// the NewTabPage or an overlay, and no webview should be visible —
+// hide_tab(activeId) alone leaves any previously-shown tab's webview
+// dangling on top of React content.
+#[tauri::command]
+pub async fn hide_all_tabs(app: AppHandle) -> Result<(), String> {
+    let main = app
+        .get_window("main")
+        .ok_or_else(|| "main window not found".to_string())?;
+    for wv in main.webviews() {
+        if wv.label() == "main" {
+            continue;
+        }
+        let _ = wv.hide();
+    }
+    Ok(())
+}
+
 // Fire-and-forget: WebView2 silently no-ops if there's no entry to go to.
 // The TS side tracks an approximate depth/max counter to drive the UI enablement.
 #[tauri::command]

@@ -21,7 +21,7 @@ import { useChromeShortcuts } from './chrome/useChromeShortcuts'
 import { refreshResidency } from './state/health'
 import { useTabsStore } from './state/tabs.store'
 import { useAiStore } from './ai/ai.store'
-import { ipcHideTab, ipcShowTab } from './ipc/tabs'
+import { ipcHideAllTabs, ipcShowTab } from './ipc/tabs'
 import { AuthGate } from './auth/AuthGate'
 import { AuthScreen } from './auth/AuthScreen'
 import { useAuthStore } from './auth/auth.store'
@@ -89,8 +89,13 @@ export function App() {
   useEffect(() => {
     if (!activeId) return
     if (showNtp || anyOverlayOpen) {
-      void ipcHideTab(activeId).catch(() => undefined)
+      // Hide ALL webviews — hide_tab(activeId) alone leaves any
+      // previously-shown tab's webview dangling on top of React when
+      // the user switches to about:blank or opens an overlay.
+      void ipcHideAllTabs().catch(() => undefined)
     } else {
+      // show_tab already hides every other webview before showing the
+      // target, so we only need to call it for the active tab.
       void ipcShowTab(activeId).catch(() => undefined)
     }
   }, [showNtp, activeId, anyOverlayOpen])

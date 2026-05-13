@@ -24,6 +24,10 @@ export const ipcShowTab = (id: string): Promise<void> => invoke('show_tab', { id
 
 export const ipcHideTab = (id: string): Promise<void> => invoke('hide_tab', { id })
 
+// Hide every non-main child webview. Use when nothing should be visible —
+// e.g., switching to about:blank or opening a full-canvas overlay.
+export const ipcHideAllTabs = (): Promise<void> => invoke('hide_all_tabs')
+
 export const ipcNavigateTab = (id: string, url: string): Promise<void> =>
   invoke('navigate_tab', { id, url })
 

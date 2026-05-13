@@ -22,6 +22,7 @@ pub fn run() {
             tabs::close_tab,
             tabs::show_tab,
             tabs::hide_tab,
+            tabs::hide_all_tabs,
             tabs::navigate_tab,
             tabs::list_tabs,
             tabs::tab_go_back,
