@@ -5,4 +5,5 @@ export { AiClient, type ChatRequest, type SummarizeRequest, type SummarizeRespon
 export { OfflineClient, type OfflineArticle, type SaveOfflineRequest } from './offline'
 export { HistoryClient, type HistoryItem } from './history'
 export { BookmarksClient, type Bookmark, type BookmarkFolder } from './bookmarks'
+export { MeClient, type Inventory } from './me'
 export { parseSseStream, type SseEvent } from './sse'

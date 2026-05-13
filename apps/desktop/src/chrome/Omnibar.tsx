@@ -12,6 +12,7 @@ import { useOfflineStore } from '~/offline/offline.store'
 import { useBookmarksStore } from '~/bookmarks/bookmarks.store'
 import { useSettingsStore } from '~/settings/settings.store'
 import { useDownloadsStore } from '~/downloads/downloads.store'
+import { useTranslateStore } from '~/translate/translate.store'
 import { suggest } from '~/history/omnibar-autocomplete'
 import { BookmarkButton } from '~/bookmarks/BookmarkButton'
 import { useAuthStore } from '~/auth/auth.store'
@@ -122,6 +123,7 @@ export function Omnibar() {
   const toggleBookmarks = useBookmarksStore((s) => s.toggle)
   const toggleDownloads = useDownloadsStore((s) => s.toggle)
   const toggleSettings = useSettingsStore((s) => s.toggle)
+  const toggleTranslate = useTranslateStore((s) => s.toggle)
   const activeDownloads = useDownloadsStore(
     (s) => s.downloads.filter((d) => d.status === 'in-progress').length,
   )
@@ -418,6 +420,17 @@ export function Omnibar() {
         >
           <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden>
             <path d="M2 3 H14 V13 H2 Z M4 5 H12 M4 8 H12 M4 11 H8" stroke="currentColor" strokeWidth="1.2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </NavBtn>
+
+        {/* Translate — slide-down translation pad. Icon: "A → Aa" — Latin "A"
+            handing off to a Yoruba-style "Aa" with a tonal mark, visualising
+            the across-language motion at a single glance. */}
+        <NavBtn label={t('omnibar.translate')} onClick={toggleTranslate}>
+          <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden>
+            <text x="0.5" y="9" fontSize="6.5" fontFamily="serif" fontWeight="600" fill="currentColor">A</text>
+            <path d="M6 5.5 L9 5.5 M8.25 4.5 L9 5.5 L8.25 6.5" stroke="currentColor" strokeWidth="1" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+            <text x="9" y="14" fontSize="6.5" fontFamily="serif" fontWeight="600" fill="currentColor">Aa</text>
           </svg>
         </NavBtn>
 

@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useTabsStore } from '~/state/tabs.store'
 import { useAiStore } from '~/ai/ai.store'
 import { useSettingsStore } from '~/settings/settings.store'
+import { useTranslateStore } from '~/translate/translate.store'
 import { OS } from '~/platform/os'
 
 const NEW_TAB_DEFAULT_URL = 'about:blank'
@@ -56,6 +57,14 @@ export function useChromeShortcuts(): void {
       if (e.key === ',') {
         e.preventDefault()
         useSettingsStore.getState().toggle()
+        return
+      }
+      // Ctrl/Cmd + Shift + T → toggle Translation Pad. Browsers historically
+      // bind this to "reopen closed tab"; Baobab chooses translation instead
+      // because cross-language work is one of the core differentiators.
+      if (e.key.toLowerCase() === 't' && e.shiftKey) {
+        e.preventDefault()
+        useTranslateStore.getState().toggle()
         return
       }
     }

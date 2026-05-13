@@ -6,6 +6,8 @@ import { useSovereigntyStore } from '~/state/sovereignty.store'
 import { useAuthStore } from '~/auth/auth.store'
 import { useAiStore } from '~/ai/ai.store'
 import { useTabsStore } from '~/state/tabs.store'
+import { useDigestStore } from '~/digest/digest.store'
+import { DigestStrip } from '~/digest/DigestStrip'
 
 // ── Time-aware greeting ───────────────────────────────────────────────────
 
@@ -332,6 +334,13 @@ export function NewTabPage() {
     return () => clearInterval(id)
   }, [])
 
+  // Kick off the Continent Today digest fetch on first mount. The store
+  // guards against re-fetching once `loaded` is set, so re-mounts are cheap.
+  useEffect(() => {
+    const s = useDigestStore.getState()
+    if (!s.loaded && !s.loading) void s.fetch()
+  }, [])
+
   const greetingWord = t(`ntp.greeting.${greetingSlot}`)
   const isHome = residency.region === 'africa'
   const residencyLabel =
@@ -529,6 +538,11 @@ export function NewTabPage() {
             <CapabilityCard key={c.id} c={c} index={i} t={t} />
           ))}
         </div>
+
+        {/* Continent Today digest — daily AI-summarized headlines from a
+            curated set of African outlets. Renders below the capability grid
+            so the hero+actions remain the focal point above the fold. */}
+        <DigestStrip />
         </div>
       </div>
 

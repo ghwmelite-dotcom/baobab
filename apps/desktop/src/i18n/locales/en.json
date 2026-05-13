@@ -62,7 +62,13 @@
       }
     },
     "issue": "Issue {{number}} · {{location}}",
-    "issueLocationFallback": "The Edge"
+    "issueLocationFallback": "The Edge",
+    "digest": {
+      "heading": "Today on the continent",
+      "readOn": "Read on {{source}}",
+      "loading": "Fetching today's stories…",
+      "empty": "Stories will surface here once we've checked the wires."
+    }
   },
   "auth": {
     "title": "Sign in to {{app}}",
@@ -144,8 +150,31 @@
     "openSidebar": "Open AI sidebar",
     "hideSidebar": "Hide AI sidebar",
     "settings": "Settings",
+    "translate": "Translate",
     "searchingContinent": "Reaching across the continent…",
     "searchFailed": "Search failed: {{error}}"
+  },
+  "translate": {
+    "title": "Translate",
+    "sourcePlaceholder": "Type or paste text to translate",
+    "translatedPlaceholder": "Translation will appear here",
+    "translateBtn": "Translate",
+    "translatingBtn": "Translating…",
+    "swap": "Swap languages",
+    "speak": "Speak it",
+    "close": "Close translate pad",
+    "languages": {
+      "auto": "Detect language",
+      "en": "English",
+      "yo": "Yoruba",
+      "sw": "Swahili",
+      "ha": "Hausa",
+      "am": "Amharic",
+      "wo": "Wolof",
+      "zu": "Zulu",
+      "fr": "French",
+      "ar": "Arabic"
+    }
   },
   "chat": {
     "title": "Baobab AI",
@@ -183,5 +212,18 @@
     "yo": "Yoruba",
     "sw": "Swahili",
     "ha": "Hausa"
+  },
+  "sovereignty": {
+    "dashboardTitle": "Your sovereignty",
+    "dataLivesIn": "Your data lives in",
+    "openDashboard": "Open Sovereignty Dashboard",
+    "inventory": {
+      "bookmarks": "Bookmarks",
+      "history": "Sites visited",
+      "offlineArticles": "Saved articles",
+      "totalBytes": "Total storage"
+    },
+    "exportAll": "Export everything as JSON",
+    "footnote": "Your bookmarks, history, and saved articles live on Cloudflare's African edge — D1 for structured data, R2 for content. You can take everything with you any time."
   }
 }

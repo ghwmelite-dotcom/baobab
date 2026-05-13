@@ -13,8 +13,10 @@ import { HistoryPanel } from './history/HistoryPanel'
 import { BookmarksBar } from './bookmarks/BookmarksBar'
 import { BookmarksPanel } from './bookmarks/BookmarksPanel'
 import { DownloadsPanel } from './downloads/DownloadsPanel'
+import { TranslatePad } from './translate/TranslatePad'
 import { useDownloadsStore } from './downloads/downloads.store'
 import { SettingsScreen } from './settings/SettingsScreen'
+import { SovereigntyDashboard } from './sovereignty/SovereigntyDashboard'
 import { useChromeShortcuts } from './chrome/useChromeShortcuts'
 import { refreshResidency } from './state/health'
 import { useTabsStore } from './state/tabs.store'
@@ -76,11 +78,13 @@ export function App() {
           >
             <AuthScreen />
             <SettingsScreen />
+            <SovereigntyDashboard />
             <ReaderPanel />
             <HistoryPanel />
             <OfflineList />
             <BookmarksPanel />
             <DownloadsPanel />
+            <TranslatePad />
             {showNtp ? <NewTabPage /> : null}
             <UpdateToast />
           </div>
