@@ -143,7 +143,7 @@ function BaobabTree() {
         height: '92%',
         width: 'auto',
         color: 'var(--accent)',
-        opacity: 0.18,
+        opacity: 0.28,
         pointerEvents: 'none',
         transformOrigin: '70% 80%',
         animation: 'baobab-tree-breathe 9s ease-in-out infinite',
@@ -471,19 +471,19 @@ export function NewTabPage() {
         width: '100%',
         overflow: 'hidden',
         color: 'var(--text-primary)',
-        // Sahel sunrise: a layered painterly gradient that reads as dawn
-        // over the savannah. Top-right is a luminous amber sun; the
-        // lower band carries deep plum and burnt-sienna; the body sits
-        // in warm dusk. More vibrant than the previous near-black bg.
+        // Sahel sunrise — warm throughout, not just at the top. The
+        // previous gradient hit near-black by 70% and read as "thin
+        // amber strip on a void." This redo keeps the whole canvas
+        // saturated in dusk tones.
         background:
-          // Sun halo (top-right)
-          'radial-gradient(60% 50% at 85% 12%, rgba(251, 191, 36, 0.32) 0%, rgba(217, 119, 6, 0.18) 22%, rgba(217, 119, 6, 0.04) 50%, rgba(0,0,0,0) 70%), ' +
-          // Soft amber wash (mid)
-          'radial-gradient(120% 100% at 50% 40%, rgba(180, 83, 9, 0.18) 0%, rgba(120, 53, 15, 0.10) 35%, rgba(0,0,0,0) 70%), ' +
-          // Burnt plum (lower-left, anchoring depth)
-          'radial-gradient(80% 80% at 10% 92%, rgba(76, 29, 49, 0.55) 0%, rgba(45, 12, 24, 0.35) 35%, rgba(0,0,0,0) 65%), ' +
-          // Vertical band — warm dusk top to deep umber bottom
-          'linear-gradient(180deg, #2A1C0E 0%, #20140A 38%, #18100A 72%, #110906 100%)',
+          // Sun halo (top-right) — bright amber
+          'radial-gradient(70% 60% at 88% 10%, rgba(251, 191, 36, 0.45) 0%, rgba(217, 119, 6, 0.28) 22%, rgba(180, 83, 9, 0.12) 50%, rgba(0,0,0,0) 78%), ' +
+          // Mid-canvas amber wash — warms the body
+          'radial-gradient(140% 110% at 50% 55%, rgba(180, 83, 9, 0.32) 0%, rgba(140, 60, 20, 0.20) 30%, rgba(76, 29, 49, 0.08) 60%, rgba(0,0,0,0) 85%), ' +
+          // Lower-left plum anchor — depth, not darkness
+          'radial-gradient(90% 90% at 12% 88%, rgba(120, 35, 60, 0.42) 0%, rgba(76, 29, 49, 0.28) 35%, rgba(50, 22, 35, 0.10) 65%, rgba(0,0,0,0) 90%), ' +
+          // Vertical base — warm coffee top, warm umber bottom (no near-black)
+          'linear-gradient(180deg, #3A2614 0%, #4A2F18 22%, #3D2614 50%, #2E1C0F 78%, #251612 100%)',
       }}
     >
       {/* Sun-ray fan — soft painterly rays from the top-right corner.
@@ -496,7 +496,7 @@ export function NewTabPage() {
           baobab tree on the right. */}
       <SankofaWatermark />
 
-      {/* Horizon band — a thin warm earth strip across the bottom,
+      {/* Horizon band — a warm earth strip across the bottom,
           evoking the line where savannah meets sky at sunrise. */}
       <div
         aria-hidden
@@ -505,10 +505,10 @@ export function NewTabPage() {
           left: 0,
           right: 0,
           bottom: 0,
-          height: 64,
+          height: 96,
           pointerEvents: 'none',
           background:
-            'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(76, 29, 49, 0.22) 55%, rgba(120, 53, 15, 0.35) 100%)',
+            'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(120, 53, 15, 0.28) 40%, rgba(160, 70, 28, 0.42) 80%, rgba(180, 83, 9, 0.48) 100%)',
         }}
       />
 
