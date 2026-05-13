@@ -22,6 +22,110 @@ function getGreetingSlot(): GreetingSlot {
   return 'lamplight'
 }
 
+// ── Sun-ray fan (top-right) ───────────────────────────────────────────────
+// Soft painterly rays radiating from the top-right corner — adds tooth to
+// the otherwise-flat sky band without making the page busy. Very low
+// opacity; reads as light, not as illustration.
+
+function SunRays() {
+  return (
+    <svg
+      viewBox="0 0 800 500"
+      preserveAspectRatio="xMaxYMin slice"
+      aria-hidden
+      style={{
+        position: 'absolute',
+        top: 0,
+        right: 0,
+        width: '70%',
+        height: '60%',
+        pointerEvents: 'none',
+        opacity: 0.55,
+        mixBlendMode: 'screen',
+      }}
+    >
+      <defs>
+        <radialGradient id="sun-core" cx="78%" cy="14%" r="35%">
+          <stop offset="0%" stopColor="#FDE68A" stopOpacity="0.85" />
+          <stop offset="20%" stopColor="#FBBF24" stopOpacity="0.45" />
+          <stop offset="55%" stopColor="#D97706" stopOpacity="0.18" />
+          <stop offset="100%" stopColor="#92400E" stopOpacity="0" />
+        </radialGradient>
+        <linearGradient id="ray" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#FBBF24" stopOpacity="0.45" />
+          <stop offset="60%" stopColor="#D97706" stopOpacity="0.08" />
+          <stop offset="100%" stopColor="#92400E" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      {/* Sun core glow */}
+      <circle cx="624" cy="70" r="180" fill="url(#sun-core)" />
+      {/* Sun rays — sparse, fan-shaped */}
+      <g fill="url(#ray)" opacity="0.6">
+        <path d="M 624 70 L 280 320 L 250 360 Z" />
+        <path d="M 624 70 L 360 380 L 330 420 Z" />
+        <path d="M 624 70 L 440 440 L 410 480 Z" />
+        <path d="M 624 70 L 520 480 L 500 500 Z" />
+        <path d="M 624 70 L 200 240 L 180 260 Z" />
+        <path d="M 624 70 L 120 180 L 100 200 Z" />
+      </g>
+    </svg>
+  )
+}
+
+// ── Sankofa watermark (Adinkra symbol) ────────────────────────────────────
+// "Sankofa" — the bird that looks backward to retrieve what is good. A
+// fitting watermark for "the browser that grew here." Stylized
+// single-stroke composition, very low opacity, anchored mid-left so it
+// balances the baobab tree on the right.
+
+function SankofaWatermark() {
+  return (
+    <svg
+      viewBox="0 0 200 200"
+      aria-hidden
+      style={{
+        position: 'absolute',
+        left: '-6%',
+        top: '24%',
+        height: '54%',
+        width: 'auto',
+        pointerEvents: 'none',
+        opacity: 0.06,
+        color: 'var(--accent-light)',
+      }}
+    >
+      {/* Stylized Sankofa: a bird with its head turned 180° backward,
+          holding an egg in its beak. Drawn as a single continuous shape
+          to read as a glyph rather than an illustration. */}
+      <path
+        d="M 100 30
+           C 130 30, 160 50, 165 85
+           C 168 105, 160 125, 145 140
+           L 155 150
+           C 165 158, 170 170, 168 180
+           L 155 178
+           C 145 170, 135 162, 125 158
+           C 115 155, 105 156, 100 160
+           C 95 164, 95 172, 100 178
+           C 105 184, 115 186, 125 184
+           L 122 195
+           C 110 198, 95 196, 85 188
+           C 75 180, 70 168, 72 156
+           C 75 138, 88 124, 105 118
+           C 92 115, 80 105, 76 90
+           C 72 70, 78 50, 92 38
+           C 94 35, 97 32, 100 30 Z
+           M 102 78
+           C 110 78, 116 84, 116 92
+           C 116 100, 110 106, 102 106
+           C 94 106, 88 100, 88 92
+           C 88 84, 94 78, 102 78 Z"
+        fill="currentColor"
+      />
+    </svg>
+  )
+}
+
 // ── Baobab tree silhouette (hand-drawn line art) ──────────────────────────
 // Stylized "tree that grew upside down" — broad trunk, wide bare crown.
 // Single-stroke composition, organic curves. Bottom-right of NTP, breathes.
@@ -367,18 +471,53 @@ export function NewTabPage() {
         width: '100%',
         overflow: 'hidden',
         color: 'var(--text-primary)',
+        // Sahel sunrise: a layered painterly gradient that reads as dawn
+        // over the savannah. Top-right is a luminous amber sun; the
+        // lower band carries deep plum and burnt-sienna; the body sits
+        // in warm dusk. More vibrant than the previous near-black bg.
         background:
-          'radial-gradient(120% 80% at 88% 18%, rgba(217, 119, 6, 0.12) 0%, rgba(217, 119, 6, 0.04) 28%, rgba(0,0,0,0) 65%), ' +
-          'radial-gradient(80% 60% at 10% 92%, rgba(20, 14, 8, 0.55) 0%, rgba(0,0,0,0) 60%), ' +
-          'linear-gradient(180deg, var(--canvas) 0%, #110d09 100%)',
+          // Sun halo (top-right)
+          'radial-gradient(60% 50% at 85% 12%, rgba(251, 191, 36, 0.32) 0%, rgba(217, 119, 6, 0.18) 22%, rgba(217, 119, 6, 0.04) 50%, rgba(0,0,0,0) 70%), ' +
+          // Soft amber wash (mid)
+          'radial-gradient(120% 100% at 50% 40%, rgba(180, 83, 9, 0.18) 0%, rgba(120, 53, 15, 0.10) 35%, rgba(0,0,0,0) 70%), ' +
+          // Burnt plum (lower-left, anchoring depth)
+          'radial-gradient(80% 80% at 10% 92%, rgba(76, 29, 49, 0.55) 0%, rgba(45, 12, 24, 0.35) 35%, rgba(0,0,0,0) 65%), ' +
+          // Vertical band — warm dusk top to deep umber bottom
+          'linear-gradient(180deg, #2A1C0E 0%, #20140A 38%, #18100A 72%, #110906 100%)',
       }}
     >
+      {/* Sun-ray fan — soft painterly rays from the top-right corner.
+          SVG with radial light cones at low opacity; gives the sky tooth. */}
+      <SunRays />
+
+      {/* Adinkra Sankofa watermark — "return and get it." The mythical
+          backward-looking bird, fitting for "the browser that grew here."
+          Very low opacity, large, anchored on the left to balance the
+          baobab tree on the right. */}
+      <SankofaWatermark />
+
+      {/* Horizon band — a thin warm earth strip across the bottom,
+          evoking the line where savannah meets sky at sunrise. */}
+      <div
+        aria-hidden
+        style={{
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          bottom: 0,
+          height: 64,
+          pointerEvents: 'none',
+          background:
+            'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(76, 29, 49, 0.22) 55%, rgba(120, 53, 15, 0.35) 100%)',
+        }}
+      />
+
       {/* Film-grain noise — gives the canvas tooth */}
       <div
         aria-hidden
         style={{
           position: 'absolute', inset: 0, pointerEvents: 'none',
-          opacity: 0.06, mixBlendMode: 'overlay',
+          opacity: 0.08, mixBlendMode: 'overlay',
           backgroundImage:
             "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.5 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>\")",
         }}
