@@ -143,6 +143,7 @@
     "saved": "Saved",
     "openSidebar": "Open AI sidebar",
     "hideSidebar": "Hide AI sidebar",
+    "settings": "Settings",
     "searchingContinent": "Reaching across the continent…",
     "searchFailed": "Search failed: {{error}}"
   },

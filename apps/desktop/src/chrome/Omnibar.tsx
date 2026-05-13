@@ -10,6 +10,7 @@ import { useReaderStore } from '~/reader/reader.store'
 import { useHistoryStore } from '~/history/history.store'
 import { useOfflineStore } from '~/offline/offline.store'
 import { useBookmarksStore } from '~/bookmarks/bookmarks.store'
+import { useSettingsStore } from '~/settings/settings.store'
 import { useDownloadsStore } from '~/downloads/downloads.store'
 import { suggest } from '~/history/omnibar-autocomplete'
 import { BookmarkButton } from '~/bookmarks/BookmarkButton'
@@ -120,6 +121,7 @@ export function Omnibar() {
   const toggleSaved = useOfflineStore((s) => s.toggle)
   const toggleBookmarks = useBookmarksStore((s) => s.toggle)
   const toggleDownloads = useDownloadsStore((s) => s.toggle)
+  const toggleSettings = useSettingsStore((s) => s.toggle)
   const activeDownloads = useDownloadsStore(
     (s) => s.downloads.filter((d) => d.status === 'in-progress').length,
   )
@@ -451,6 +453,13 @@ export function Omnibar() {
           <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden>
             <path d="M8 2 L9.6 5.6 L13 6.5 L9.6 7.4 L8 11 L6.4 7.4 L3 6.5 L6.4 5.6 Z" fill="currentColor" />
             <path d="M11.5 11 L12 12.5 L13.5 13 L12 13.5 L11.5 15 L11 13.5 L9.5 13 L11 12.5 Z" fill="currentColor" opacity="0.7" />
+          </svg>
+        </NavBtn>
+
+        <NavBtn label={t('omnibar.settings')} onClick={toggleSettings}>
+          <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden>
+            <circle cx="8" cy="8" r="2.2" stroke="currentColor" strokeWidth="1.3" fill="none" />
+            <path d="M8 1.5 V3.2 M8 12.8 V14.5 M14.5 8 H12.8 M3.2 8 H1.5 M12.6 3.4 L11.4 4.6 M4.6 11.4 L3.4 12.6 M12.6 12.6 L11.4 11.4 M4.6 4.6 L3.4 3.4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
           </svg>
         </NavBtn>
       </div>
