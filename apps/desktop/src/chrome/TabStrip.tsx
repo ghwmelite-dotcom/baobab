@@ -8,7 +8,10 @@ import type { Tab } from '@baobab/core'
 
 const win = () => getCurrentWindow()
 
-const TAB_MIN_WIDTH = 110
+// Tab pills shrink with flex:1 1 0 down to TAB_MIN_WIDTH. Chrome's
+// floor is ~32px (favicon-only). 60px leaves a sliver of title
+// alongside the favicon; past that the strip horizontally scrolls.
+const TAB_MIN_WIDTH = 60
 const TAB_MAX_WIDTH = 220
 const CHROME_BAR_HEIGHT = 38
 
@@ -347,6 +350,7 @@ export function TabStrip() {
 
       {/* Tabs */}
       <div
+        className="baobab-scroll-hidden"
         style={{
           display: 'flex',
           alignItems: 'flex-end',
@@ -354,7 +358,8 @@ export function TabStrip() {
           height: '100%',
           flex: 1,
           paddingInline: 4,
-          overflow: 'hidden',
+          overflowX: 'auto',
+          overflowY: 'hidden',
         }}
       >
         <div

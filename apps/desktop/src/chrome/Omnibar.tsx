@@ -318,6 +318,17 @@ export function Omnibar() {
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 e.preventDefault()
+                // Ctrl/Cmd+Enter → classic "wrap with www. + .com" — works
+                // when the user has typed a bare token like "github" and
+                // wants a quick navigation to the .com variant.
+                const primary = OS === 'macos' ? e.metaKey : e.ctrlKey
+                if (primary && value.trim() && !value.includes('://') && !value.includes('.')) {
+                  const wrapped = `https://www.${value.trim()}.com`
+                  setValue(wrapped)
+                  if (activeId) void navigate(activeId, wrapped)
+                  else void openTab(wrapped)
+                  return
+                }
                 void submit()
               }
               if (e.key === 'Escape') (e.target as HTMLInputElement).blur()
