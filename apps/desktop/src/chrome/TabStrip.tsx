@@ -316,14 +316,31 @@ export function TabStrip() {
 
   const isMac = OS === 'macos'
 
-  // When the active tab changes (Ctrl+1..9, click on a partially-visible
-  // tab, new tab created with the strip overflowed), bring it into view
-  // so the user doesn't lose track of it.
+  // Tab-strip scroll behaviour, branched by what changed:
+  //   - Tab count grew → a new tab was appended at the rightmost end.
+  //     Explicitly scroll the strip to its right edge so the user sees
+  //     the new tab unambiguously at the end. scrollIntoView('nearest')
+  //     can leave the viewport ambiguously positioned mid-strip.
+  //   - activeId changed without a count change → scrollIntoView the
+  //     active pill (e.g. Ctrl+1..9 or click on an older tab).
   const scrollRef = useRef<HTMLDivElement>(null)
+  const prevTabCountRef = useRef(tabs.length)
   useEffect(() => {
-    if (!activeId || !scrollRef.current) return
+    if (!scrollRef.current) return
+    const grew = tabs.length > prevTabCountRef.current
+    prevTabCountRef.current = tabs.length
+
+    if (grew) {
+      const c = scrollRef.current
+      // Defer to next paint so the new tab's width contributes to scrollWidth.
+      requestAnimationFrame(() => {
+        c.scrollTo({ left: c.scrollWidth, behavior: 'smooth' })
+      })
+      return
+    }
+
+    if (!activeId) return
     const el = scrollRef.current.querySelector<HTMLElement>(`[data-tab-id="${CSS.escape(activeId)}"]`)
-    // jsdom doesn't implement scrollIntoView; guard so unit tests don't blow up.
     if (el && typeof el.scrollIntoView === 'function') {
       el.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' })
     }
