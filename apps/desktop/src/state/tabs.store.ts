@@ -131,7 +131,13 @@ export const useTabsStore = create<TabsState>()((set, get) => ({
       }
     })
     await ipcCreateTab(id, url, incognito)
-    await ipcShowTab(id)
+    // Only un-hide the freshly-created webview when it has real content.
+    // about:blank tabs stay hidden so the NewTabPage gradient is the only
+    // thing visible. App.tsx's show/hide effect already reveals the
+    // webview when the user navigates this tab to a real URL.
+    if (url !== 'about:blank') {
+      await ipcShowTab(id)
+    }
     if (url !== 'about:blank' && !incognito) {
       void useHistoryStore.getState().recordVisit(url)
     }
