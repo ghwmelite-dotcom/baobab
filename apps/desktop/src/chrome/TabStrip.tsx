@@ -489,7 +489,13 @@ export function TabStrip() {
           <MaskGlyph size={14} />
         </button>
       </div>
-      <div data-tauri-drag-region style={{ flex: '1 0 16px', minWidth: 16, height: '100%' }} />
+      {/* The tabs scroll zone has flex: 1 1 0 — giving the drag region
+          ALSO flex grow makes them split leftover space, so tabs only
+          fill half the strip. Pin this to a fixed minimum so the tabs
+          zone takes all the remaining width. The header itself has
+          data-tauri-drag-region so empty space inside the tabs zone
+          (when few tabs) still drags the window. */}
+      <div data-tauri-drag-region style={{ flex: '0 0 16px', width: 16, height: '100%' }} />
 
       {/* Right: residency chip + window controls (Windows/Linux) */}
       <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, paddingInline: isMac ? '0 12px' : '0 0', height: '100%' }}>
