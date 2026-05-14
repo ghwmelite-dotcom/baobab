@@ -1,4 +1,4 @@
-import { useState, type CSSProperties, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { useTabsStore } from '~/state/tabs.store'
 import { useSovereigntyStore } from '~/state/sovereignty.store'
 import { OS } from '~/platform/os'
@@ -182,6 +182,7 @@ function TabPill({ tab, active, onSelect, onClose }: {
   return (
     <div
       role="listitem"
+      data-tab-id={tab.id}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       style={{
@@ -314,6 +315,19 @@ export function TabStrip() {
 
   const isMac = OS === 'macos'
 
+  // When the active tab changes (Ctrl+1..9, click on a partially-visible
+  // tab, new tab created with the strip overflowed), bring it into view
+  // so the user doesn't lose track of it.
+  const scrollRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!activeId || !scrollRef.current) return
+    const el = scrollRef.current.querySelector<HTMLElement>(`[data-tab-id="${CSS.escape(activeId)}"]`)
+    // jsdom doesn't implement scrollIntoView; guard so unit tests don't blow up.
+    if (el && typeof el.scrollIntoView === 'function') {
+      el.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' })
+    }
+  }, [activeId, tabs.length])
+
   return (
     <header
       data-tauri-drag-region
@@ -348,15 +362,18 @@ export function TabStrip() {
         <div data-tauri-drag-region style={{ width: 12, height: '100%' }} />
       )}
 
-      {/* Tabs */}
+      {/* Tabs scroll zone — only the tab pills can scroll horizontally.
+          The new-tab + private-tab buttons sit OUTSIDE so they're always
+          reachable even when many tabs overflow the strip. */}
       <div
+        ref={scrollRef}
         className="baobab-scroll-hidden"
         style={{
           display: 'flex',
           alignItems: 'flex-end',
-          gap: 2,
           height: '100%',
-          flex: 1,
+          flex: '1 1 0',
+          minWidth: 0,
           paddingInline: 4,
           overflowX: 'auto',
           overflowY: 'hidden',
@@ -382,6 +399,10 @@ export function TabStrip() {
             />
           ))}
         </div>
+      </div>
+
+      {/* Fixed-zone buttons + drag region — always visible. */}
+      <div style={{ display: 'inline-flex', alignItems: 'flex-end', height: '100%', gap: 2, paddingInline: 4, flexShrink: 0 }}>
         <button
           type="button"
           onClick={() => void openTab('about:blank')}
@@ -390,7 +411,6 @@ export function TabStrip() {
           style={{
             height: 28,
             width: 28,
-            marginLeft: tabs.length > 0 ? 4 : 0,
             background: 'transparent',
             border: 'none',
             borderRadius: 6,
@@ -422,7 +442,6 @@ export function TabStrip() {
           style={{
             height: 28,
             width: 28,
-            marginLeft: 2,
             background: 'transparent',
             border: 'none',
             borderRadius: 6,
@@ -444,8 +463,8 @@ export function TabStrip() {
         >
           <MaskGlyph size={14} />
         </button>
-        <div data-tauri-drag-region style={{ flex: 1, minWidth: 16, height: '100%' }} />
       </div>
+      <div data-tauri-drag-region style={{ flex: '1 0 16px', minWidth: 16, height: '100%' }} />
 
       {/* Right: residency chip + window controls (Windows/Linux) */}
       <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, paddingInline: isMac ? '0 12px' : '0 0', height: '100%' }}>
