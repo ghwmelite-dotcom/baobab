@@ -2,7 +2,7 @@ import { Hono } from 'hono'
 import { authMiddleware } from '../middleware/auth'
 import { rateLimit } from '../middleware/rate-limit'
 import { newId, getUserById } from '../lib/db'
-import { runChat, runChatStream, pickModel, embedQuery, type ChatMessage } from '../services/ai'
+import { runChat, runChatStream, runChatJson, pickModel, embedQuery, extractJson, type ChatMessage } from '../services/ai'
 import { AFRICAN_SOURCES_SEED, rerank } from '../services/search-rank'
 import type { AppContext } from '../types'
 
@@ -150,14 +150,16 @@ ai.post('/summarize', async (c) => {
   const user = await getUserById(c.env.DB, c.get('userId')!)
   const model = pickModel(c.env, { model: c.env.SUMMARIZE_MODEL, lowBw: !!user?.low_bandwidth_mode })
 
-  let reply: string
+  const summarizePrompt =
+    'You are a summarizer. Reply with a JSON object and NOTHING ELSE. No preamble. No code fence.\n' +
+    'Schema: {"summary":"3-sentence summary","key_points":["point","point","point"],"est_read_time":N}\n' +
+    'est_read_time is the read time in minutes (integer).\n\n' +
+    'Example OUTPUT: {"summary":"The page describes X, Y, and Z.","key_points":["X is...","Y is...","Z is..."],"est_read_time":3}'
+
+  let raw: string
   try {
-    reply = await runChat(c.env, model, [
-      {
-        role: 'system',
-        content:
-          'Summarize the page content into a 3-sentence summary, then list 3-5 key points as a JSON array. Output strict JSON: {"summary":"...","key_points":["..."],"est_read_time":N}',
-      },
+    raw = await runChat(c.env, model, [
+      { role: 'system', content: summarizePrompt },
       { role: 'user', content: text },
     ])
   } catch (e) {
@@ -166,13 +168,10 @@ ai.post('/summarize', async (c) => {
       502,
     )
   }
+  const extracted = extractJson<{ summary: string; key_points: string[]; est_read_time: number }>(raw)
 
-  let parsed: { summary: string; key_points: string[]; est_read_time: number }
-  try {
-    parsed = JSON.parse(reply.replace(/^```json\s*|\s*```$/g, ''))
-  } catch {
-    parsed = { summary: reply.slice(0, 500), key_points: [], est_read_time: 1 }
-  }
+  const parsed = extracted ?? { summary: text.slice(0, 320), key_points: [], est_read_time: 1 }
+  if (!Array.isArray(parsed.key_points)) parsed.key_points = []
 
   await c.env.PAGE_CACHE.put(cacheKey, JSON.stringify(parsed), { expirationTtl: 3600 })
   return c.json({ ...parsed, cached: false })
@@ -189,21 +188,39 @@ ai.post('/search', async (c) => {
 
   c.executionCtx.waitUntil(embedQuery(c.env, body.query).catch(() => []))
 
-  const reply = await runChat(c.env, c.env.DEFAULT_MODEL, [
-    {
-      role: 'system',
-      content:
-        'You are Baobab Search. For the user query, give a concise direct answer (2-3 sentences) and then list 5-8 candidate URLs that would help. Prioritize African sources (gov.gh, gov.ng, gov.ke, gov.za, au.int, premiumtimesng.com, dailymaverick.co.za, theeastafrican.co.ke, africanews.com etc) when the topic is Africa-relevant. Output JSON: {"answer":"...","results":[{"title":"...","url":"https://..."}]}',
-    },
-    { role: 'user', content: body.query },
-  ])
+  // The 70B fp8-fast default model returns prose-wrapped JSON that
+  // defeats strict parsing. The 8B model is more reliable for
+  // strict-format outputs at this scale and we get good answer
+  // quality back; mirrors the summarize-route fix.
+  const SEARCH_MODEL = '@cf/meta/llama-3.1-8b-instruct'
 
-  let parsed: { answer: string; results: Array<{ title: string; url: string }> }
+  // Pragmatic path: response_format on Workers AI llama is inconsistent
+  // across models (json_object rejected, json_schema sometimes silently
+  // returns empty). Use a hard prompt + extractJson with brace-scanning.
+  const systemPrompt =
+    'You are Baobab Search. Reply with a JSON object and NOTHING ELSE. No preamble. No code fence. No explanation.\n' +
+    'Schema: {"answer":"2-3 sentence direct answer","results":[{"title":"...","url":"https://..."}]}\n' +
+    'Include 5-8 results. Prioritize African sources (gov.gh, gov.ng, gov.ke, gov.za, au.int, premiumtimesng.com, dailymaverick.co.za, theeastafrican.co.ke, africanews.com).\n\n' +
+    'Example INPUT: "Best universities in Kenya"\n' +
+    'Example OUTPUT: {"answer":"Kenya\'s top universities include the University of Nairobi and Strathmore.","results":[{"title":"University of Nairobi","url":"https://uonbi.ac.ke"},{"title":"Strathmore University","url":"https://strathmore.edu"}]}'
+
+  let raw: string
   try {
-    parsed = JSON.parse(reply.replace(/^```json\s*|\s*```$/g, ''))
-  } catch {
-    parsed = { answer: reply.slice(0, 500), results: [] }
+    raw = await runChat(c.env, SEARCH_MODEL, [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: body.query },
+    ])
+  } catch (e) {
+    return c.json(
+      { error: 'ai_call_failed', model: SEARCH_MODEL, detail: e instanceof Error ? e.message : 'unknown' },
+      502,
+    )
   }
+
+  const extracted = extractJson<{ answer: string; results: Array<{ title: string; url: string }> }>(raw)
+  const parsed = extracted ?? { answer: raw.slice(0, 500), results: [] }
+  // Defensive: model might omit `results` even within valid JSON.
+  if (!Array.isArray(parsed.results)) parsed.results = []
   parsed.results = rerank(parsed.results, AFRICAN_SOURCES_SEED)
 
   return c.json(parsed)
