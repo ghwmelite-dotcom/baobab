@@ -405,6 +405,13 @@ export function TabStrip() {
             alignItems: 'flex-end',
             gap: 2,
             height: '100%',
+            // CRITICAL: flex:1 + minWidth:0 makes this list fill the scroll
+            // container's width, so the TabPill children at `flex: 1 1 0`
+            // have a defined parent width to distribute. Without these the
+            // list sizes to content (each tab at max-width 220) and the
+            // strip overflows instead of shrinking tabs to fit.
+            flex: 1,
+            minWidth: 0,
           }}
         >
           {tabs.map((t) => (
