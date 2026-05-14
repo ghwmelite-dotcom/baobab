@@ -25,13 +25,15 @@ describe('tabs store', () => {
     expect(ipc.ipcCreateTab).toHaveBeenCalledOnce()
   })
 
-  it('inserts new tab to right of active tab', async () => {
+  it('appends new tabs at the end of the strip', async () => {
     const a = await useTabsStore.getState().openTab('https://a.com')
     const b = await useTabsStore.getState().openTab('https://b.com')
     useTabsStore.getState().setActive(a)
+    // Even with `a` active, the new tab `c` lands at the end (after b),
+    // not next to a. Firefox-style behaviour, by user preference.
     const c = await useTabsStore.getState().openTab('https://c.com')
     const ids = useTabsStore.getState().tabs.map((t) => t.id)
-    expect(ids).toEqual([a, c, b])
+    expect(ids).toEqual([a, b, c])
   })
 
   it('closes tabs and falls back to neighbor as active', async () => {

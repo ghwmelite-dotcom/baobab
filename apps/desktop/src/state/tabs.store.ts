@@ -121,11 +121,12 @@ export const useTabsStore = create<TabsState>()((set, get) => ({
       ...(incognito ? { incognito: true } : {}),
     }
     set((s) => {
-      const activeIdx = s.tabs.findIndex((t) => t.id === s.activeId)
-      const insertAt = activeIdx === -1 ? s.tabs.length : activeIdx + 1
-      const tabs = [...s.tabs.slice(0, insertAt), tab, ...s.tabs.slice(insertAt)]
+      // Append at the END of the strip (Firefox-style) rather than inserting
+      // next to the active tab (Chrome-style). User preference: new tabs
+      // should always appear to the right of every existing tab so the
+      // strip grows predictably.
       return {
-        tabs,
+        tabs: [...s.tabs, tab],
         activeId: id,
         history: { ...s.history, [id]: { depth: 0, max: 0 } },
       }
