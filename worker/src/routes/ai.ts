@@ -97,6 +97,25 @@ async function sha256(s: string): Promise<string> {
   return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, '0')).join('')
 }
 
+// Strip script/style blocks + tags, collapse whitespace, drop noise like
+// long URLs and base64 payloads. Keeps the model focused on real prose.
+function htmlToText(html: string): string {
+  return html
+    .replace(/<script[\s\S]*?<\/script>/gi, '')
+    .replace(/<style[\s\S]*?<\/style>/gi, '')
+    .replace(/<noscript[\s\S]*?<\/noscript>/gi, '')
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
 ai.post('/summarize', async (c) => {
   const body = await c.req.json<{ url?: string; html_content?: string }>()
   if (!body.url) return c.json({ error: 'url required' }, 400)
@@ -105,24 +124,48 @@ ai.post('/summarize', async (c) => {
   const cached = await c.env.PAGE_CACHE.get(cacheKey)
   if (cached) return c.json({ ...JSON.parse(cached), cached: true })
 
-  let html = body.html_content
-  if (!html) {
-    const fetched = await fetch(body.url, { headers: { 'User-Agent': 'BaobabBot/1.0 (+https://baobab.africa)' } })
-    if (!fetched.ok) return c.json({ error: 'failed to fetch url' }, 502)
-    html = (await fetched.text()).slice(0, 6000)
+  let rawHtml = body.html_content
+  if (!rawHtml) {
+    try {
+      const fetched = await fetch(body.url, {
+        headers: { 'User-Agent': 'BaobabBot/1.0 (+https://baobab.africa)' },
+      })
+      if (!fetched.ok) {
+        return c.json({ error: 'failed_to_fetch_url', status: fetched.status }, 502)
+      }
+      rawHtml = await fetched.text()
+    } catch (e) {
+      return c.json({ error: 'fetch_threw', detail: e instanceof Error ? e.message : 'unknown' }, 502)
+    }
+  }
+
+  // Strip markup so the model isn't trying to make sense of <script> blobs.
+  // 4000 chars of plain prose is plenty for a 3-sentence summary; the
+  // smaller window also keeps us well under any model context budget.
+  const text = htmlToText(rawHtml).slice(0, 4000)
+  if (text.length < 40) {
+    return c.json({ error: 'page_has_no_text', length: text.length }, 422)
   }
 
   const user = await getUserById(c.env.DB, c.get('userId')!)
   const model = pickModel(c.env, { model: c.env.SUMMARIZE_MODEL, lowBw: !!user?.low_bandwidth_mode })
 
-  const reply = await runChat(c.env, model, [
-    {
-      role: 'system',
-      content:
-        'Summarize the page content into a 3-sentence summary, then list 3-5 key points as a JSON array. Output strict JSON: {"summary":"...","key_points":["..."],"est_read_time":N}',
-    },
-    { role: 'user', content: html.slice(0, 6000) },
-  ])
+  let reply: string
+  try {
+    reply = await runChat(c.env, model, [
+      {
+        role: 'system',
+        content:
+          'Summarize the page content into a 3-sentence summary, then list 3-5 key points as a JSON array. Output strict JSON: {"summary":"...","key_points":["..."],"est_read_time":N}',
+      },
+      { role: 'user', content: text },
+    ])
+  } catch (e) {
+    return c.json(
+      { error: 'ai_call_failed', model, detail: e instanceof Error ? e.message : 'unknown' },
+      502,
+    )
+  }
 
   let parsed: { summary: string; key_points: string[]; est_read_time: number }
   try {

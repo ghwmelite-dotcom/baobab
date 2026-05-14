@@ -73,6 +73,11 @@ jobs:
         with:
           projectPath: apps/desktop
           tagName: ${{ github.ref_name }}
+          # Tauri 2 updater: latest.json points at the NSIS installer for
+          # Windows (we don't ship .msi). createUpdaterArtifacts in
+          # tauri.conf.json is what actually triggers latest.json
+          # generation; this flag just steers the Windows URL choice.
+          updaterJsonPreferNsis: true
           releaseName: 'Baobab Desktop · ${{ github.ref_name }}'
           releaseBody: |
             Public version held at **0.1.0** while we iterate on the
