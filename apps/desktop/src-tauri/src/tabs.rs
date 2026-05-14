@@ -91,6 +91,11 @@ pub async fn create_tab(
     let webview_url = WebviewUrl::External(url.parse().map_err(|e: url::ParseError| e.to_string())?);
 
     let mut builder = tauri::webview::WebviewBuilder::new(&label, webview_url);
+    // Paint the webview's pre-content background to match the NewTabPage's
+    // bottom gradient stop (#251612). Even if a webview shows momentarily
+    // before the React-side hide kicks in, it blends with the canvas
+    // instead of flashing the WebView2 default white.
+    builder = builder.background_color(tauri::webview::Color(0x25, 0x16, 0x12, 0xFF));
     // Private browsing: point this webview at an ephemeral per-tab data
     // directory under $TEMP so cookies / localStorage / IndexedDB never
     // bleed back to the persistent profile. The OS reaps $TEMP eventually;
