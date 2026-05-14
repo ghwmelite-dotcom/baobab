@@ -16,55 +16,27 @@ function isPrimaryMod(e: KeyboardEvent): boolean {
 
 export function useChromeShortcuts(): void {
   useEffect(() => {
+    const isMac = OS === 'macos'
     const onKey = (e: KeyboardEvent) => {
       const tabsStore = useTabsStore.getState()
       const primary = isPrimaryMod(e)
+      const key = e.key.toLowerCase()
 
-      // ── F5 (reload, no modifier required on any OS) ────────────────────
+      // ── Shortcuts that DON'T use the primary modifier ─────────────────
+      // These are handled BEFORE the primary-mod gate so they work on
+      // both Windows (Ctrl) and macOS (Cmd) consistently.
+
+      // F5 → reload (universal)
       if (e.key === 'F5' && !primary) {
         e.preventDefault()
-        const { activeId, tabs, navigate } = tabsStore
-        const active = tabs.find((t) => t.id === activeId)
-        if (active && active.url && active.url !== 'about:blank') {
-          void navigate(active.id, active.url)
-        }
+        reloadActive(tabsStore)
         return
       }
 
-      // ── Alt + Left / Right (back / forward, no primary mod) ────────────
-      if (!primary && e.altKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
-        e.preventDefault()
-        const { activeId, goBack, goForward } = tabsStore
-        if (activeId) {
-          if (e.key === 'ArrowLeft') void goBack(activeId)
-          else void goForward(activeId)
-        }
-        return
-      }
-
-      if (!primary) return
-
-      // ── Tab management ────────────────────────────────────────────────
-      // Ctrl/Cmd + T → new tab
-      if (e.key.toLowerCase() === 't' && !e.shiftKey) {
-        e.preventDefault()
-        void tabsStore.openTab(NEW_TAB_DEFAULT_URL)
-        return
-      }
-      // Ctrl/Cmd + Shift + N → new private tab
-      if (e.key.toLowerCase() === 'n' && e.shiftKey) {
-        e.preventDefault()
-        void tabsStore.openIncognitoTab(NEW_TAB_DEFAULT_URL)
-        return
-      }
-      // Ctrl/Cmd + W → close active tab
-      if (e.key.toLowerCase() === 'w' && !e.shiftKey) {
-        e.preventDefault()
-        if (tabsStore.activeId) void tabsStore.closeTab(tabsStore.activeId)
-        return
-      }
-      // Ctrl + Tab → next, Ctrl + Shift + Tab → previous
-      if (e.key === 'Tab') {
+      // Tab switching: ALWAYS Ctrl+Tab, even on Mac. Cmd+Tab is the
+      // macOS app switcher (OS-level) — never reaches us. Browsers on
+      // Mac all use Ctrl+Tab for next tab.
+      if (e.ctrlKey && !e.metaKey && e.key === 'Tab') {
         e.preventDefault()
         const { tabs, activeId } = tabsStore
         if (tabs.length === 0) return
@@ -75,7 +47,48 @@ export function useChromeShortcuts(): void {
         if (next) tabsStore.setActive(next.id)
         return
       }
-      // Ctrl/Cmd + 1..8 → switch to tab N (1-indexed). Ctrl/Cmd + 9 → last tab.
+
+      // Back / Forward — multiple conventions:
+      //  - Alt + Left/Right (Win convention, works on Mac too with Option)
+      //  - Cmd + [ / Cmd + ] (Safari convention; Mac users expect these)
+      if (!primary && e.altKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+        e.preventDefault()
+        navHistory(tabsStore, e.key === 'ArrowLeft' ? 'back' : 'forward')
+        return
+      }
+      if (isMac && primary && (e.key === '[' || e.key === ']')) {
+        e.preventDefault()
+        navHistory(tabsStore, e.key === '[' ? 'back' : 'forward')
+        return
+      }
+
+      if (!primary) return
+
+      // ── From here on: primary modifier (Cmd on Mac, Ctrl on Win/Linux)
+      // is required. Avoid macOS OS-level bindings: Cmd+H (hide), Cmd+M
+      // (minimize), Cmd+Q (quit), Cmd+Space (Spotlight), Cmd+Tab (app
+      // switcher). All of those are intercepted by the OS before they
+      // reach us — using them as shortcuts would silently fail on Mac.
+
+      // Ctrl/Cmd + T → new tab
+      if (key === 't' && !e.shiftKey) {
+        e.preventDefault()
+        void tabsStore.openTab(NEW_TAB_DEFAULT_URL)
+        return
+      }
+      // Ctrl/Cmd + Shift + N → new private tab
+      if (key === 'n' && e.shiftKey) {
+        e.preventDefault()
+        void tabsStore.openIncognitoTab(NEW_TAB_DEFAULT_URL)
+        return
+      }
+      // Ctrl/Cmd + W → close active tab
+      if (key === 'w' && !e.shiftKey) {
+        e.preventDefault()
+        if (tabsStore.activeId) void tabsStore.closeTab(tabsStore.activeId)
+        return
+      }
+      // Ctrl/Cmd + 1..8 → switch to tab N; 9 → last tab
       if (/^[1-9]$/.test(e.key) && !e.shiftKey) {
         e.preventDefault()
         const { tabs } = tabsStore
@@ -86,61 +99,55 @@ export function useChromeShortcuts(): void {
         return
       }
 
-      // ── Navigation ────────────────────────────────────────────────────
       // Ctrl/Cmd + R → reload active tab
-      if (e.key.toLowerCase() === 'r' && !e.shiftKey) {
+      if (key === 'r' && !e.shiftKey) {
         e.preventDefault()
-        const { activeId, tabs, navigate } = tabsStore
-        const active = tabs.find((t) => t.id === activeId)
-        if (active && active.url && active.url !== 'about:blank') {
-          void navigate(active.id, active.url)
-        }
+        reloadActive(tabsStore)
         return
       }
 
-      // ── Side panels ───────────────────────────────────────────────────
-      // Ctrl/Cmd + \ → toggle AI sidebar
+      // Side panels
       if (e.key === '\\') {
         e.preventDefault()
         useAiStore.getState().toggleSidebar()
         return
       }
-      // Ctrl/Cmd + , → toggle settings overlay
       if (e.key === ',') {
         e.preventDefault()
         useSettingsStore.getState().toggle()
         return
       }
-      // Ctrl/Cmd + Shift + T → toggle Translation Pad. Browsers historically
-      // bind this to "reopen closed tab"; Baobab chooses translation instead
-      // because cross-language work is one of the core differentiators.
-      if (e.key.toLowerCase() === 't' && e.shiftKey) {
+      // Ctrl/Cmd + Shift + T → Translation Pad (replacing "reopen closed
+      // tab" convention because cross-language work is a core diff for us)
+      if (key === 't' && e.shiftKey) {
         e.preventDefault()
         useTranslateStore.getState().toggle()
         return
       }
-      // Ctrl/Cmd + H → history panel
-      if (e.key.toLowerCase() === 'h' && !e.shiftKey) {
+
+      // History: Cmd+H is taken by macOS "Hide app" — use Cmd+Y on Mac
+      // (Chrome / Safari convention); Ctrl+H elsewhere.
+      const historyKey = isMac ? 'y' : 'h'
+      if (key === historyKey && !e.shiftKey) {
         e.preventDefault()
         useHistoryStore.getState().toggle()
         return
       }
-      // Ctrl/Cmd + J → downloads panel
-      if (e.key.toLowerCase() === 'j' && !e.shiftKey) {
+
+      // Downloads: Cmd+Shift+J on Mac matches Chrome; Ctrl+J on Win/Linux.
+      if (isMac ? (key === 'j' && e.shiftKey) : (key === 'j' && !e.shiftKey)) {
         e.preventDefault()
         useDownloadsStore.getState().toggle()
         return
       }
-      // Ctrl/Cmd + Shift + O → bookmarks panel (Ctrl+B is reserved for the
-      // bookmarks BAR convention in some browsers; we don't have a separate
-      // bar so Shift+O reaches the panel directly)
-      if (e.key.toLowerCase() === 'o' && e.shiftKey) {
+      // Ctrl/Cmd + Shift + O → bookmarks panel
+      if (key === 'o' && e.shiftKey) {
         e.preventDefault()
         useBookmarksStore.getState().toggle()
         return
       }
       // Ctrl/Cmd + D → bookmark the active tab
-      if (e.key.toLowerCase() === 'd' && !e.shiftKey) {
+      if (key === 'd' && !e.shiftKey) {
         e.preventDefault()
         const { activeId, tabs } = tabsStore
         const active = tabs.find((t) => t.id === activeId)
@@ -153,4 +160,22 @@ export function useChromeShortcuts(): void {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [])
+}
+
+function reloadActive(tabsStore: ReturnType<typeof useTabsStore.getState>): void {
+  const { activeId, tabs, navigate } = tabsStore
+  const active = tabs.find((t) => t.id === activeId)
+  if (active && active.url && active.url !== 'about:blank') {
+    void navigate(active.id, active.url)
+  }
+}
+
+function navHistory(
+  tabsStore: ReturnType<typeof useTabsStore.getState>,
+  dir: 'back' | 'forward',
+): void {
+  const { activeId, goBack, goForward } = tabsStore
+  if (!activeId) return
+  if (dir === 'back') void goBack(activeId)
+  else void goForward(activeId)
 }
