@@ -9,9 +9,9 @@ import type { Tab } from '@baobab/core'
 const win = () => getCurrentWindow()
 
 // Tab pills shrink with flex:1 1 0 down to TAB_MIN_WIDTH. Chrome's
-// floor is ~32px (favicon-only). 60px leaves a sliver of title
-// alongside the favicon; past that the strip horizontally scrolls.
-const TAB_MIN_WIDTH = 60
+// floor is ~32px (favicon-only). 40px lets ~20 tabs fit on a 1280px
+// window before any overflow; past that the strip horizontally scrolls.
+const TAB_MIN_WIDTH = 40
 const TAB_MAX_WIDTH = 220
 const CHROME_BAR_HEIGHT = 38
 
@@ -217,8 +217,9 @@ function TabPill({ tab, active, onSelect, onClose }: {
           height: '100%',
           display: 'flex',
           alignItems: 'center',
-          gap: 8,
-          paddingInline: '12px 6px',
+          gap: 6,
+          paddingInline: '8px 4px',
+          minWidth: 0,
           background: 'transparent',
           border: 'none',
           color: 'inherit',
