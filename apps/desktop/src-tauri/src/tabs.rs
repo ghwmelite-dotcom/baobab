@@ -90,7 +90,7 @@ pub async fn create_tab(
     let label = tab_label(&id);
     let webview_url = WebviewUrl::External(url.parse().map_err(|e: url::ParseError| e.to_string())?);
 
-    let mut builder = tauri::webview::WebviewBuilder::new(label, webview_url);
+    let mut builder = tauri::webview::WebviewBuilder::new(&label, webview_url);
     // Private browsing: point this webview at an ephemeral per-tab data
     // directory under $TEMP so cookies / localStorage / IndexedDB never
     // bleed back to the persistent profile. The OS reaps $TEMP eventually;
@@ -135,6 +135,15 @@ pub async fn create_tab(
         LogicalSize::new(logical_w, (logical_h - CHROME_HEIGHT - STATUS_HEIGHT).max(0.0)),
     )
     .map_err(|e| e.to_string())?;
+
+    // Webviews are added visible by default. Hide immediately so the React
+    // side controls visibility — otherwise newly-created about:blank tabs
+    // flash their default white page on top of the NewTabPage, and tabs
+    // hydrated from persistence at launch leak through every overlay
+    // until the show/hide effect catches up.
+    if let Some(wv) = app.get_webview(&label) {
+        let _ = wv.hide();
+    }
 
     Ok(TabInfo { id, url })
 }
