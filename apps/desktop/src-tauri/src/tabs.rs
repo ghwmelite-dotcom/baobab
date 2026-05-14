@@ -6,8 +6,14 @@ use tauri::{AppHandle, Emitter, LogicalPosition, LogicalSize, Manager, WebviewUr
 
 use crate::downloads;
 
-const CHROME_HEIGHT: f64 = 36.0 + 40.0 + 56.0; // titlebar + tabstrip + omnibar
-const STATUS_HEIGHT: f64 = 28.0;
+// Current chrome layout (post-r9 redesign): tab bar (38) + address bar (48)
+// = 86px. The old constant was 132px from the 3-row chrome and was making
+// every webview render 46px too low, leaving a black strip above the page.
+// Bookmarks bar (28px) is rendered conditionally above main but not added
+// here; if/when bookmarks exist we'll need to compute this dynamically.
+const CHROME_HEIGHT: f64 = 38.0 + 48.0;
+// Status bar was removed in P0c; the webview now extends to the bottom edge.
+const STATUS_HEIGHT: f64 = 0.0;
 
 // Cache the latest <title> reported by `on_document_title_changed` for each
 // webview label. WebView2 / WKWebView surface the title asynchronously and
@@ -91,11 +97,10 @@ pub async fn create_tab(
     let webview_url = WebviewUrl::External(url.parse().map_err(|e: url::ParseError| e.to_string())?);
 
     let mut builder = tauri::webview::WebviewBuilder::new(&label, webview_url);
-    // Paint the webview's pre-content background to match the NewTabPage's
-    // bottom gradient stop (#251612). Even if a webview shows momentarily
-    // before the React-side hide kicks in, it blends with the canvas
-    // instead of flashing the WebView2 default white.
-    builder = builder.background_color(tauri::webview::Color(0x25, 0x16, 0x12, 0xFF));
+    // Webview pre-content background stays at the WebView2 default (white).
+    // Painting it dark to mask hide-leak symptoms turned out to bleed into
+    // real pages that detect dark mode from the bg colour (e.g. Google's
+    // Gmail landing page). The right fix is making the hide reliable.
     // Private browsing: point this webview at an ephemeral per-tab data
     // directory under $TEMP so cookies / localStorage / IndexedDB never
     // bleed back to the persistent profile. The OS reaps $TEMP eventually;
