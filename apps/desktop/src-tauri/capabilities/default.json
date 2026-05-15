@@ -1,8 +1,8 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Capabilities for the Baobab main window",
-  "windows": ["main", "tab-*"],
+  "description": "Capabilities for Baobab windows (picker + per-profile + guest + tab webviews)",
+  "windows": ["main", "tab-*", "profile-*", "picker", "guest-*"],
   "permissions": [
     "core:default",
     "core:webview:allow-create-webview",
