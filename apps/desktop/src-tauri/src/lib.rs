@@ -1,4 +1,5 @@
 mod downloads;
+mod migration;
 mod profiles;
 mod tabs;
 mod windows;
