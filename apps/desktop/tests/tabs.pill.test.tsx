@@ -40,6 +40,25 @@ vi.mock('@tauri-apps/api/window', () => ({
   }),
 }))
 
+vi.mock('~/profiles/useProfile', () => ({
+  useProfile: () => ({
+    id: 'p1',
+    name: 'Test Profile',
+    fruitColor: 'mango' as const,
+    avatarLetter: 'T',
+    createdAt: '',
+    lastUsedAt: '',
+    cloudLink: null,
+    userDataDirName: 'p1',
+  }),
+}))
+
+vi.mock('~/profiles/profile.api', () => ({
+  profileApi: {
+    openPickerWindow: vi.fn(async () => undefined),
+  },
+}))
+
 // ── Component imports (after mocks) ──────────────────────────────────────
 
 import { TabStrip } from '~/chrome/TabStrip'

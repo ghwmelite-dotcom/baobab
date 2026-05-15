@@ -5,6 +5,9 @@ import { OS } from '~/platform/os'
 import { strings } from '@baobab/brand'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import type { Tab } from '@baobab/core'
+import { useProfile } from '~/profiles/useProfile'
+import { profileApi } from '~/profiles/profile.api'
+import { FRUIT_HEX } from '~/profiles/fruitColors'
 
 const win = () => getCurrentWindow()
 
@@ -303,6 +306,39 @@ function TabPill({ tab, active, onSelect, onClose }: {
   )
 }
 
+// ── Avatar button — reopens the profile picker ────────────────────────────
+
+function AvatarButton() {
+  const p = useProfile()
+  if (!p) return null
+  const { from, to } = FRUIT_HEX[p.fruitColor]
+  return (
+    <button
+      type="button"
+      aria-label={`Switch profile (current: ${p.name})`}
+      onClick={() => void profileApi.openPickerWindow()}
+      style={{
+        width: 28,
+        height: 28,
+        borderRadius: '50%',
+        background: `radial-gradient(circle at 30% 30%, ${from}, ${to})`,
+        border: '1.5px solid rgba(255,255,255,0.7)',
+        color: 'white',
+        fontSize: 12,
+        fontWeight: 700,
+        cursor: 'pointer',
+        marginLeft: 8,
+        flexShrink: 0,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      {p.avatarLetter}
+    </button>
+  )
+}
+
 // ── Tab bar (chrome bar) ─────────────────────────────────────────────────
 
 export function TabStrip() {
@@ -488,6 +524,7 @@ export function TabStrip() {
         >
           <MaskGlyph size={14} />
         </button>
+        <AvatarButton />
       </div>
       {/* The tabs scroll zone has flex: 1 1 0 — giving the drag region
           ALSO flex grow makes them split leftover space, so tabs only
