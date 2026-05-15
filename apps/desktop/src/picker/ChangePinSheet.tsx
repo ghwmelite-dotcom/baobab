@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { profileApi, type Profile } from '~/profiles/profile.api'
 import { PinInput } from './PinInput'
 
@@ -17,18 +17,39 @@ export function ChangePinSheet({ open, mode, profile, onClose }: Props) {
   const [confirmPin, setConfirmPin] = useState('')
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState<string | null>(null)
+  const [lockSecs, setLockSecs] = useState<number | null>(null)
+
+  function reset() {
+    setCurrentPin(''); setNewPin(''); setConfirmPin(''); setErr(null); setBusy(false); setLockSecs(null)
+  }
+
+  // Tick down lockout countdown.
+  useEffect(() => {
+    if (lockSecs === null) return
+    if (lockSecs <= 0) { setLockSecs(null); return }
+    const t = setTimeout(() => setLockSecs(lockSecs - 1), 1000)
+    return () => clearTimeout(t)
+  }, [lockSecs])
+
+  // Reset state on close (handles backdrop dismiss).
+  useEffect(() => {
+    if (!open) reset()
+  }, [open])
 
   if (!open || !profile) return null
 
   const requiresCurrent = mode !== 'set'  // 'set' only valid when profile has no PIN; rendered by caller
   const requiresNew = mode !== 'remove'
 
+  const locked = lockSecs !== null && lockSecs > 0
   const currentValid = !requiresCurrent || currentPin.length === 4
   const newValid = !requiresNew || (newPin.length === 4 && newPin === confirmPin)
-  const canSubmit = currentValid && newValid && !busy
+  const canSubmit = currentValid && newValid && !busy && !locked
 
-  function reset() {
-    setCurrentPin(''); setNewPin(''); setConfirmPin(''); setErr(null); setBusy(false)
+  function fmt(secs: number) {
+    const m = Math.floor(secs / 60)
+    const s = secs % 60
+    return `${m}:${s.toString().padStart(2, '0')}`
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -47,7 +68,10 @@ export function ChangePinSheet({ open, mode, profile, onClose }: Props) {
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
       if (msg === 'wrong_pin') setErr('Current PIN is wrong.')
-      else if (msg.startsWith('locked:')) setErr(`Too many wrong attempts. Try again later.`)
+      else if (msg.startsWith('locked:')) {
+        const secs = parseInt(msg.slice('locked:'.length), 10)
+        setLockSecs(isNaN(secs) ? 30 : secs)
+      }
       else setErr(msg)
     } finally {
       setBusy(false)
@@ -79,25 +103,30 @@ export function ChangePinSheet({ open, mode, profile, onClose }: Props) {
         {requiresCurrent && (
           <div>
             <div style={{ fontSize: 12, color: '#3c1810', marginBottom: 4 }}>Current PIN</div>
-            <PinInput value={currentPin} onChange={setCurrentPin} autoFocus disabled={busy} />
+            <PinInput value={currentPin} onChange={setCurrentPin} autoFocus disabled={busy || locked} />
           </div>
         )}
         {requiresNew && (
           <>
             <div>
               <div style={{ fontSize: 12, color: '#3c1810', marginBottom: 4 }}>New PIN</div>
-              <PinInput value={newPin} onChange={setNewPin} disabled={busy} />
+              <PinInput value={newPin} onChange={setNewPin} disabled={busy || locked} />
             </div>
             <div>
               <div style={{ fontSize: 12, color: '#3c1810', marginBottom: 4 }}>Confirm new PIN</div>
-              <PinInput value={confirmPin} onChange={setConfirmPin} disabled={busy} />
+              <PinInput value={confirmPin} onChange={setConfirmPin} disabled={busy || locked} />
             </div>
             {newPin.length === 4 && confirmPin.length === 4 && newPin !== confirmPin && (
               <div role="alert" style={{ color: '#a23a1f', fontSize: 12 }}>PINs don&apos;t match.</div>
             )}
           </>
         )}
-        {err && <div role="alert" style={{ color: '#a23a1f', fontSize: 13 }}>{err}</div>}
+        {locked && (
+          <div role="alert" style={{ color: '#a23a1f', fontSize: 13 }}>
+            Too many wrong attempts. Try again in {fmt(lockSecs!)}
+          </div>
+        )}
+        {err && !locked && <div role="alert" style={{ color: '#a23a1f', fontSize: 13 }}>{err}</div>}
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
           <button type="button" onClick={() => { reset(); onClose() }} disabled={busy}
             style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid rgba(60,30,15,0.3)', background: 'transparent', cursor: 'pointer' }}>
