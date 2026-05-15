@@ -4,6 +4,8 @@ import { ProfileGrid } from './ProfileGrid'
 import { NewProfileSheet } from './NewProfileSheet'
 import { UnlockSheet } from './UnlockSheet'
 import { ChangePinSheet } from './ChangePinSheet'
+import { RenameSheet } from './RenameSheet'
+import { ConfirmDeleteSheet } from './ConfirmDeleteSheet'
 import { usePickerData } from './usePickerData'
 
 export function PickerApp() {
@@ -20,23 +22,20 @@ export function PickerApp() {
   const unlockTarget = usePickerData((s) => s.unlockTarget)
   const clearUnlockTarget = usePickerData((s) => s.clearUnlockTarget)
 
+  const setPin = usePickerData((s) => s.setPin)
+  const removePin = usePickerData((s) => s.removePin)
+
   const [sheetOpen, setSheetOpen] = useState(false)
   const [pinSheet, setPinSheet] = useState<{ mode: 'set' | 'change' | 'remove'; profileId: string } | null>(null)
+  const [renameTarget, setRenameTarget] = useState<string | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
 
   useEffect(() => { void hydrate() }, [hydrate])
 
-  async function handleRename(id: string) {
-    const p = profiles.find((x) => x.id === id); if (!p) return
-    const next = window.prompt('Rename profile', p.name)
-    if (next && next.trim()) await renameAction(id, next.trim())
-  }
-  async function handleDelete(id: string) {
-    const p = profiles.find((x) => x.id === id); if (!p) return
-    if (window.confirm(`Delete profile "${p.name}"? This wipes its data.`)) await deleteAction(id)
-  }
-
   const unlockingProfile = profiles.find((p) => p.id === unlockTarget) ?? null
   const pinSheetProfile = pinSheet ? profiles.find((p) => p.id === pinSheet.profileId) ?? null : null
+  const renameProfile = renameTarget ? profiles.find((p) => p.id === renameTarget) ?? null : null
+  const deleteProfile = deleteTarget ? profiles.find((p) => p.id === deleteTarget) ?? null : null
 
   return (
     <div style={{
@@ -60,8 +59,8 @@ export function PickerApp() {
           <ProfileGrid
             profiles={profiles}
             onSelect={(id) => void select(id)}
-            onRename={handleRename}
-            onDelete={handleDelete}
+            onRename={(id) => setRenameTarget(id)}
+            onDelete={(id) => setDeleteTarget(id)}
             onAdd={() => setSheetOpen(true)}
             onGuest={() => void openGuest()}
             onSetPin={(id) => setPinSheet({ mode: 'set', profileId: id })}
@@ -90,7 +89,26 @@ export function PickerApp() {
         onCreate={(name, color, pin) => create(name, color, pin)}
       />
       <UnlockSheet open={!!unlockTarget} profile={unlockingProfile} onClose={clearUnlockTarget} />
-      <ChangePinSheet open={!!pinSheet} mode={pinSheet?.mode ?? 'set'} profile={pinSheetProfile} onClose={() => setPinSheet(null)} />
+      <ChangePinSheet
+        open={!!pinSheet}
+        mode={pinSheet?.mode ?? 'set'}
+        profile={pinSheetProfile}
+        onClose={() => setPinSheet(null)}
+        onSetPin={setPin}
+        onRemovePin={removePin}
+      />
+      <RenameSheet
+        open={!!renameTarget}
+        profile={renameProfile}
+        onClose={() => setRenameTarget(null)}
+        onRename={renameAction}
+      />
+      <ConfirmDeleteSheet
+        open={!!deleteTarget}
+        profile={deleteProfile}
+        onClose={() => setDeleteTarget(null)}
+        onDelete={deleteAction}
+      />
     </div>
   )
 }

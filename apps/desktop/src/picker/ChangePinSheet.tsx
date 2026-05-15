@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { profileApi, type Profile } from '~/profiles/profile.api'
+import type { Profile } from '~/profiles/profile.api'
 import { PinInput } from './PinInput'
 
 type Mode = 'set' | 'change' | 'remove'
@@ -9,9 +9,11 @@ interface Props {
   mode: Mode
   profile: Profile | null
   onClose: () => void
+  onSetPin: (id: string, newPin: string, currentPin?: string) => Promise<void>
+  onRemovePin: (id: string, currentPin: string) => Promise<void>
 }
 
-export function ChangePinSheet({ open, mode, profile, onClose }: Props) {
+export function ChangePinSheet({ open, mode, profile, onClose, onSetPin, onRemovePin }: Props) {
   const [currentPin, setCurrentPin] = useState('')
   const [newPin, setNewPin] = useState('')
   const [confirmPin, setConfirmPin] = useState('')
@@ -58,11 +60,11 @@ export function ChangePinSheet({ open, mode, profile, onClose }: Props) {
     setBusy(true); setErr(null)
     try {
       if (mode === 'set') {
-        await profileApi.setPin(profile.id, newPin)
+        await onSetPin(profile.id, newPin)
       } else if (mode === 'change') {
-        await profileApi.setPin(profile.id, newPin, currentPin)
+        await onSetPin(profile.id, newPin, currentPin)
       } else {
-        await profileApi.removePin(profile.id, currentPin)
+        await onRemovePin(profile.id, currentPin)
       }
       reset(); onClose()
     } catch (e) {
