@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import type { MeResponse } from '@baobab/cloud-client'
 import { client, authClient } from './api'
-import { persistence, profileScoped } from '~/state/persistence'
+import { profileScoped } from '~/state/persistence'
 
 type Status = 'idle' | 'authing' | 'authed' | 'error'
 type Scoped = ReturnType<typeof profileScoped>
@@ -41,6 +41,11 @@ async function persistTokens(access: string, refresh: string): Promise<void> {
 async function clearTokens(): Promise<void> {
   await scope().delete('auth.accessToken')
   await scope().delete('auth.refreshToken')
+}
+
+/** Persist a refreshed access token under the active profile-scoped key. */
+export async function persistAccessTokenScoped(token: string): Promise<void> {
+  await scope().set('auth.accessToken', token)
 }
 
 export const useAuthStore = create<AuthState>()((set) => ({

@@ -3,20 +3,20 @@ import { render, screen, waitFor } from '@testing-library/react'
 
 vi.mock('@tauri-apps/api/core')
 
+const authSetProfileId = vi.fn()
 vi.mock('~/auth/auth.store', () => {
-  const setProfileId = vi.fn()
   const useAuthStore = Object.assign(
     () => undefined,
-    { getState: () => ({ setProfileId }), setState: () => undefined },
+    { getState: () => ({ setProfileId: authSetProfileId }), setState: () => undefined },
   )
   return { useAuthStore }
 })
 
+const tabsSetProfileId = vi.fn()
 vi.mock('~/state/tabs.store', () => {
-  const setProfileId = vi.fn()
   const useTabsStore = Object.assign(
     () => undefined,
-    { getState: () => ({ setProfileId }), setState: () => undefined },
+    { getState: () => ({ setProfileId: tabsSetProfileId }), setState: () => undefined },
   )
   return { useTabsStore }
 })
@@ -31,7 +31,11 @@ function Probe() {
   return <div data-testid="probe">{p ? `${p.id}|${p.name}` : 'no-profile'}</div>
 }
 
-beforeEach(() => { invokeMock.mockReset() })
+beforeEach(() => {
+  invokeMock.mockReset()
+  authSetProfileId.mockReset()
+  tabsSetProfileId.mockReset()
+})
 
 describe('ProfileProvider', () => {
   it('renders the profile resolved from current_profile_id', async () => {
@@ -47,6 +51,8 @@ describe('ProfileProvider', () => {
 
     render(<ProfileProvider><Probe /></ProfileProvider>)
     await waitFor(() => expect(screen.getByTestId('probe').textContent).toBe('abc|Akua'))
+    expect(authSetProfileId).toHaveBeenCalledWith('abc')
+    expect(tabsSetProfileId).toHaveBeenCalledWith('abc')
   })
 
   it('falls back to guest sentinel when window is guest', async () => {
@@ -58,5 +64,7 @@ describe('ProfileProvider', () => {
 
     render(<ProfileProvider><Probe /></ProfileProvider>)
     await waitFor(() => expect(screen.getByTestId('probe').textContent).toBe('guest|Guest'))
+    expect(authSetProfileId).toHaveBeenCalledWith('guest')
+    expect(tabsSetProfileId).toHaveBeenCalledWith('guest')
   })
 })

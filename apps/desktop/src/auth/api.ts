@@ -5,14 +5,13 @@ const baseUrl = import.meta.env.VITE_BAOBAB_API_URL ?? 'https://baobab-api.ohcsg
 export const client: BaobabClient = new BaobabClient({
   baseUrl,
   onUnauthorized: async (): Promise<string | null> => {
-    const { useAuthStore } = await import('./auth.store')
-    const { persistence } = await import('~/state/persistence')
+    const { useAuthStore, persistAccessTokenScoped } = await import('./auth.store')
     const refreshToken = useAuthStore.getState().refreshToken
     if (!refreshToken) return null
     try {
       const r = await authClient.refresh(refreshToken)
       useAuthStore.setState({ accessToken: r.access })
-      await persistence.set('auth.accessToken', r.access)
+      await persistAccessTokenScoped(r.access)
       return r.access
     } catch {
       return null
