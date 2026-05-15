@@ -12,6 +12,25 @@ export function GroveTree({ size = 108 }: { size?: number }) {
       aria-label="Baobab tree"
       style={{ display: 'block', filter: 'drop-shadow(0 6px 14px rgba(60,20,10,0.25))' }}
     >
+      <style>{`
+        @keyframes bb-fruit-glow-a { 0%, 100% { opacity: 0.18; } 50% { opacity: 0.55; } }
+        @keyframes bb-fruit-glow-b { 0%, 100% { opacity: 0.16; } 50% { opacity: 0.48; } }
+        @keyframes bb-fruit-glow-c { 0%, 100% { opacity: 0.20; } 50% { opacity: 0.50; } }
+        @keyframes bb-fleck-twinkle { 0%, 100% { opacity: 0.20; } 50% { opacity: 0.65; } }
+        .bb-glow-a   { animation: bb-fruit-glow-a 2.6s ease-in-out infinite; transform-origin: center; transform-box: fill-box; }
+        .bb-glow-b   { animation: bb-fruit-glow-b 3.2s ease-in-out -1.1s infinite; transform-origin: center; transform-box: fill-box; }
+        .bb-glow-c   { animation: bb-fruit-glow-c 2.9s ease-in-out -0.6s infinite; transform-origin: center; transform-box: fill-box; }
+        .bb-fleck-1  { animation: bb-fleck-twinkle 2.2s ease-in-out infinite; }
+        .bb-fleck-2  { animation: bb-fleck-twinkle 3.4s ease-in-out -1.4s infinite; }
+        .bb-fleck-3  { animation: bb-fleck-twinkle 2.7s ease-in-out -0.8s infinite; }
+        .bb-fleck-4  { animation: bb-fleck-twinkle 3.0s ease-in-out -2.0s infinite; }
+        .bb-fleck-5  { animation: bb-fleck-twinkle 2.4s ease-in-out -0.4s infinite; }
+        @media (prefers-reduced-motion: reduce) {
+          .bb-glow-a, .bb-glow-b, .bb-glow-c, .bb-fleck-1, .bb-fleck-2, .bb-fleck-3, .bb-fleck-4, .bb-fleck-5 {
+            animation: none !important;
+          }
+        }
+      `}</style>
       <defs>
         <radialGradient id="bb-canopy" cx="38%" cy="42%" r="68%">
           <stop offset="0%" stopColor="#3d6b50" />
@@ -66,13 +85,13 @@ export function GroveTree({ size = 108 }: { size?: number }) {
         fill="url(#bb-canopy)"
       />
 
-      {/* Subtle leaf flecks on canopy */}
-      <g opacity="0.4">
-        <circle cx="36" cy="36" r="2.5" fill="#4d8060" />
-        <circle cx="74" cy="32" r="2" fill="#4d8060" />
-        <circle cx="88" cy="50" r="2.5" fill="#4d8060" />
-        <circle cx="48" cy="56" r="2" fill="#4d8060" />
-        <circle cx="22" cy="48" r="1.8" fill="#4d8060" />
+      {/* Subtle leaf flecks on canopy — twinkle on independent rhythms */}
+      <g>
+        <circle className="bb-fleck-1" cx="36" cy="36" r="2.5" fill="#4d8060" />
+        <circle className="bb-fleck-2" cx="74" cy="32" r="2"   fill="#4d8060" />
+        <circle className="bb-fleck-3" cx="88" cy="50" r="2.5" fill="#4d8060" />
+        <circle className="bb-fleck-4" cx="48" cy="56" r="2"   fill="#4d8060" />
+        <circle className="bb-fleck-5" cx="22" cy="48" r="1.8" fill="#4d8060" />
       </g>
 
       {/* Trunk — flared baobab silhouette */}
@@ -94,14 +113,14 @@ export function GroveTree({ size = 108 }: { size?: number }) {
         <path d="M 70 70 C 72 84, 74 98, 74 110" />
       </g>
 
-      {/* Glowing fruits on canopy */}
+      {/* Glowing fruits on canopy — halos pulse on their own rhythms */}
       <g>
         <circle cx="34" cy="44" r="4.5" fill="url(#bb-fruit-orange)" />
-        <circle cx="34" cy="44" r="6" fill="#ff8a5b" opacity="0.18" />
-        <circle cx="58" cy="22" r="4" fill="url(#bb-fruit-yellow)" />
-        <circle cx="58" cy="22" r="5.5" fill="#ffd86f" opacity="0.20" />
+        <circle className="bb-glow-a" cx="34" cy="44" r="6"   fill="#ff8a5b" />
+        <circle cx="58" cy="22" r="4"   fill="url(#bb-fruit-yellow)" />
+        <circle className="bb-glow-c" cx="58" cy="22" r="5.5" fill="#ffd86f" />
         <circle cx="82" cy="38" r="4.5" fill="url(#bb-fruit-green)" />
-        <circle cx="82" cy="38" r="6" fill="#b8d96f" opacity="0.16" />
+        <circle className="bb-glow-b" cx="82" cy="38" r="6"   fill="#b8d96f" />
         <circle cx="72" cy="58" r="3.5" fill="url(#bb-fruit-orange)" />
         <circle cx="44" cy="62" r="3.5" fill="url(#bb-fruit-yellow)" />
       </g>

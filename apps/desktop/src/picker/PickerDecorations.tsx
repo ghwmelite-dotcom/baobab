@@ -56,19 +56,19 @@ export function PickerDecorations() {
         }
       `}</style>
 
-      <Sun  style={{ top: 60,  left: 36, width: 56, height: 56, opacity: 0.35, animation: 'bb-spin-ccw 42s linear infinite' }} />
-      <Star4 style={{ top: 86, right: 64, width: 38, height: 38, opacity: 0.34, color: '#8a3a1f', animation: 'bb-pulse 4.2s ease-in-out infinite' }} />
-      <Leaf style={{ top: 220, left: 28, width: 42, height: 64, opacity: 0.30, color: '#5a7a2f', animation: 'bb-leaf-sway 5.5s ease-in-out infinite' }} />
-      <Hex filled style={{ top: 188, right: 32, width: 36, height: 36, opacity: 0.34, color: '#c4881f', animation: 'bb-float 4.8s ease-in-out infinite' }} />
-      <Hex style={{ top: 250, right: 60, width: 22, height: 22, opacity: 0.42, color: '#8a3a1f', animation: 'bb-float 5.4s ease-in-out -1.5s infinite' }} />
-      <Tri style={{ top: 360, left: 60, width: 28, height: 28, opacity: 0.30, color: '#a23a1f', animation: 'bb-tri-rock 7.2s ease-in-out infinite' }} />
-      <Dots style={{ top: 380, right: 28, width: 56, height: 26, opacity: 0.34, color: '#5a8a3a', animation: 'bb-pulse 3.6s ease-in-out -0.6s infinite' }} />
-      <Wave style={{ bottom: 110, left: 40, width: 76, height: 14, opacity: 0.28, color: '#fff8ee', animation: 'bb-drift-x 6s ease-in-out infinite' }} />
-      <Curl style={{ bottom: 130, right: 56, width: 36, height: 36, opacity: 0.30, color: '#fff8ee', animation: 'bb-curl-drift 8s ease-in-out infinite' }} />
+      <Sun  style={{ top: 60,  left: 36, width: 56, height: 56, opacity: 0.35, animation: 'bb-spin-ccw 22s linear infinite' }} />
+      <Star4 style={{ top: 86, right: 64, width: 38, height: 38, opacity: 0.34, color: '#8a3a1f', animation: 'bb-pulse 2.4s ease-in-out infinite' }} />
+      <Leaf style={{ top: 220, left: 28, width: 42, height: 64, opacity: 0.30, color: '#5a7a2f', animation: 'bb-leaf-sway 3.2s ease-in-out infinite' }} />
+      <Hex filled style={{ top: 188, right: 32, width: 36, height: 36, opacity: 0.34, color: '#c4881f', animation: 'bb-float 2.8s ease-in-out infinite' }} />
+      <Hex style={{ top: 250, right: 60, width: 22, height: 22, opacity: 0.42, color: '#8a3a1f', animation: 'bb-float 3.2s ease-in-out -0.9s infinite' }} />
+      <Tri style={{ top: 360, left: 60, width: 28, height: 28, opacity: 0.30, color: '#a23a1f', animation: 'bb-tri-rock 4.4s ease-in-out infinite' }} />
+      <Dots style={{ top: 380, right: 28, width: 56, height: 26, opacity: 0.34, color: '#5a8a3a', animation: 'bb-pulse 2.0s ease-in-out -0.4s infinite' }} />
+      <Wave style={{ bottom: 110, left: 40, width: 76, height: 14, opacity: 0.28, color: '#fff8ee', animation: 'bb-drift-x 3.6s ease-in-out infinite' }} />
+      <Curl style={{ bottom: 130, right: 56, width: 36, height: 36, opacity: 0.30, color: '#fff8ee', animation: 'bb-curl-drift 4.8s ease-in-out infinite' }} />
 
-      <Speck style={{ top: 168, left: 168,  width: 8, height: 8, opacity: 0.24, color: '#fff8ee', animation: 'bb-twinkle 3.2s ease-in-out infinite' }} />
-      <Speck style={{ top: 320, right: 200, width: 6, height: 6, opacity: 0.32, color: '#fff8ee', animation: 'bb-twinkle 4.1s ease-in-out -1.5s infinite' }} />
-      <Speck style={{ bottom: 200, left: 220, width: 7, height: 7, opacity: 0.26, color: '#3c1810', animation: 'bb-twinkle 2.8s ease-in-out -0.9s infinite' }} />
+      <Speck style={{ top: 168, left: 168,  width: 8, height: 8, opacity: 0.24, color: '#fff8ee', animation: 'bb-twinkle 1.8s ease-in-out infinite' }} />
+      <Speck style={{ top: 320, right: 200, width: 6, height: 6, opacity: 0.32, color: '#fff8ee', animation: 'bb-twinkle 2.4s ease-in-out -0.8s infinite' }} />
+      <Speck style={{ bottom: 200, left: 220, width: 7, height: 7, opacity: 0.26, color: '#3c1810', animation: 'bb-twinkle 1.6s ease-in-out -0.5s infinite' }} />
     </div>
   )
 }
