@@ -30,6 +30,14 @@ pub fn run() {
             tabs::tab_go_forward,
             downloads::download_show_in_folder,
             downloads::download_open_file,
+            profiles::cmd_list_profiles,
+            profiles::cmd_get_picker_prefs,
+            profiles::cmd_create_profile,
+            profiles::cmd_rename_profile,
+            profiles::cmd_update_profile_color,
+            profiles::cmd_delete_profile,
+            profiles::cmd_set_show_on_startup,
+            profiles::cmd_record_profile_used,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Baobab");

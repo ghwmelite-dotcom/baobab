@@ -529,3 +529,69 @@ mod cloud_link_tests {
         assert!(load(dir.path()).unwrap().profiles[0].cloud_link.is_none());
     }
 }
+
+use tauri::{AppHandle, Manager};
+
+fn app_data_root(app: &AppHandle) -> Result<PathBuf, String> {
+    app.path()
+        .app_data_dir()
+        .map_err(|e| e.to_string())
+        // The Tauri-resolved app data dir already includes the identifier
+        // (e.g. .../africa.baobab.desktop). We then nest a "baobab" dir
+        // inside it via profiles_json_path/save/etc. so the layout reads:
+        //   <appdata>/africa.baobab.desktop/baobab/profiles.json
+}
+
+#[tauri::command]
+pub async fn cmd_list_profiles(app: AppHandle) -> Result<Vec<Profile>, String> {
+    let root = app_data_root(&app)?;
+    Ok(load(&root)?.profiles)
+}
+
+#[tauri::command]
+pub async fn cmd_get_picker_prefs(app: AppHandle) -> Result<PickerPrefs, String> {
+    let root = app_data_root(&app)?;
+    Ok(load(&root)?.picker_prefs)
+}
+
+#[tauri::command]
+pub async fn cmd_create_profile(app: AppHandle, name: String, fruit_color: Option<FruitColor>) -> Result<Profile, String> {
+    let root = app_data_root(&app)?;
+    create_profile(&root, name, fruit_color)
+}
+
+#[tauri::command]
+pub async fn cmd_rename_profile(app: AppHandle, id: String, name: String) -> Result<(), String> {
+    let root = app_data_root(&app)?;
+    rename_profile(&root, &id, name)
+}
+
+#[tauri::command]
+pub async fn cmd_update_profile_color(app: AppHandle, id: String, color: FruitColor) -> Result<(), String> {
+    let root = app_data_root(&app)?;
+    update_profile_color(&root, &id, color)
+}
+
+#[tauri::command]
+pub async fn cmd_delete_profile(app: AppHandle, id: String) -> Result<(), String> {
+    let root = app_data_root(&app)?;
+    // Refuse if any window for this profile is currently open.
+    for (label, _) in app.webview_windows() {
+        if label == format!("profile-{id}") {
+            return Err("close all windows for this profile first".to_string());
+        }
+    }
+    delete_profile(&root, &id)
+}
+
+#[tauri::command]
+pub async fn cmd_set_show_on_startup(app: AppHandle, value: bool) -> Result<(), String> {
+    let root = app_data_root(&app)?;
+    set_show_on_startup(&root, value)
+}
+
+#[tauri::command]
+pub async fn cmd_record_profile_used(app: AppHandle, id: String) -> Result<(), String> {
+    let root = app_data_root(&app)?;
+    record_profile_used(&root, &id)
+}
