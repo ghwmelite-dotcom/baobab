@@ -9,6 +9,14 @@ function getStore(): Promise<Store> {
   return storePromise
 }
 
+// Keys NOT scoped to a profile — picker preferences, updater state, etc.
+export const GLOBAL_KEYS: readonly string[] = [
+  'picker.showOnStartup',
+  'picker.lastUsedProfileId',
+  'updater.lastCheckAt',
+  'updater.dismissedVersion',
+]
+
 export const persistence = {
   async get<T>(key: string): Promise<T | undefined> {
     const s = await getStore()
@@ -25,4 +33,19 @@ export const persistence = {
     await s.delete(key)
     await s.save()
   },
+}
+
+export function profileScoped(profileId: string) {
+  const prefix = `profile.${profileId}.`
+  return {
+    get<T>(key: string): Promise<T | undefined> {
+      return persistence.get<T>(prefix + key)
+    },
+    set<T>(key: string, value: T): Promise<void> {
+      return persistence.set<T>(prefix + key, value)
+    },
+    delete(key: string): Promise<void> {
+      return persistence.delete(prefix + key)
+    },
+  }
 }
