@@ -1,9 +1,10 @@
 import { create } from 'zustand'
 import type { MeResponse } from '@baobab/cloud-client'
 import { client, authClient } from './api'
-import { persistence } from '~/state/persistence'
+import { persistence, profileScoped } from '~/state/persistence'
 
 type Status = 'idle' | 'authing' | 'authed' | 'error'
+type Scoped = ReturnType<typeof profileScoped>
 
 interface AuthState {
   accessToken: string | null
@@ -12,6 +13,7 @@ interface AuthState {
   status: Status
   error: string | null
   signInOverlayOpen: boolean
+  setProfileId: (profileId: string) => void
   hydrate: () => Promise<void>
   signupEmail: (email: string, password: string) => Promise<void>
   loginEmail: (email: string, password: string) => Promise<void>
@@ -24,14 +26,21 @@ interface AuthState {
   closeSignIn: () => void
 }
 
+let currentScope: Scoped | null = null
+
+function scope(): Scoped {
+  if (!currentScope) throw new Error('auth.store: setProfileId() must be called before accessing profile-scoped storage')
+  return currentScope
+}
+
 async function persistTokens(access: string, refresh: string): Promise<void> {
-  await persistence.set('auth.accessToken', access)
-  await persistence.set('auth.refreshToken', refresh)
+  await scope().set('auth.accessToken', access)
+  await scope().set('auth.refreshToken', refresh)
 }
 
 async function clearTokens(): Promise<void> {
-  await persistence.delete('auth.accessToken')
-  await persistence.delete('auth.refreshToken')
+  await scope().delete('auth.accessToken')
+  await scope().delete('auth.refreshToken')
 }
 
 export const useAuthStore = create<AuthState>()((set) => ({
@@ -42,12 +51,16 @@ export const useAuthStore = create<AuthState>()((set) => ({
   error: null,
   signInOverlayOpen: false,
 
+  setProfileId: (profileId) => {
+    currentScope = profileScoped(profileId)
+  },
+
   openSignIn: () => set({ signInOverlayOpen: true }),
   closeSignIn: () => set({ signInOverlayOpen: false }),
 
   hydrate: async () => {
-    const a = await persistence.get<string>('auth.accessToken')
-    const r = await persistence.get<string>('auth.refreshToken')
+    const a = await scope().get<string>('auth.accessToken')
+    const r = await scope().get<string>('auth.refreshToken')
     if (a && r) {
       client.setAccessToken(a)
       try {

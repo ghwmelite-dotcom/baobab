@@ -3,6 +3,15 @@ import { render, screen, waitFor } from '@testing-library/react'
 
 vi.mock('@tauri-apps/api/core')
 
+vi.mock('~/auth/auth.store', () => {
+  const setProfileId = vi.fn()
+  const useAuthStore = Object.assign(
+    () => undefined,
+    { getState: () => ({ setProfileId }), setState: () => undefined },
+  )
+  return { useAuthStore }
+})
+
 import { ProfileProvider, useProfile } from '~/profiles/ProfileContext'
 import * as tauriCore from '@tauri-apps/api/core'
 

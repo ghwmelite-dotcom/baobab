@@ -1,12 +1,21 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-vi.mock('~/state/persistence', () => ({
-  persistence: {
+vi.mock('~/state/persistence', () => {
+  const persistence = {
     get: vi.fn(),
     set: vi.fn(),
     delete: vi.fn(),
-  },
-}))
+  }
+  const profileScoped = (profileId: string) => {
+    const prefix = `profile.${profileId}.`
+    return {
+      get: <T>(key: string) => persistence.get<T>(prefix + key),
+      set: <T>(key: string, value: T) => persistence.set(prefix + key, value),
+      delete: (key: string) => persistence.delete(prefix + key),
+    }
+  }
+  return { persistence, profileScoped }
+})
 
 vi.mock('~/auth/api', () => {
   return {
@@ -29,6 +38,7 @@ import { persistence } from '~/state/persistence'
 beforeEach(() => {
   vi.clearAllMocks()
   useAuthStore.setState({ accessToken: null, refreshToken: null, user: null, status: 'idle', error: null })
+  useAuthStore.getState().setProfileId('test-profile')
 })
 
 describe('auth store', () => {
@@ -38,8 +48,8 @@ describe('auth store', () => {
     expect(s.accessToken).toBe('a')
     expect(s.refreshToken).toBe('r')
     expect(s.user?.email).toBe('a@b.com')
-    expect(persistence.set).toHaveBeenCalledWith('auth.accessToken', 'a')
-    expect(persistence.set).toHaveBeenCalledWith('auth.refreshToken', 'r')
+    expect(persistence.set).toHaveBeenCalledWith('profile.test-profile.auth.accessToken', 'a')
+    expect(persistence.set).toHaveBeenCalledWith('profile.test-profile.auth.refreshToken', 'r')
     expect(s.status).toBe('authed')
   })
 
@@ -54,7 +64,7 @@ describe('auth store', () => {
     const s = useAuthStore.getState()
     expect(s.accessToken).toBeNull()
     expect(s.user).toBeNull()
-    expect(persistence.delete).toHaveBeenCalledWith('auth.accessToken')
-    expect(persistence.delete).toHaveBeenCalledWith('auth.refreshToken')
+    expect(persistence.delete).toHaveBeenCalledWith('profile.test-profile.auth.accessToken')
+    expect(persistence.delete).toHaveBeenCalledWith('profile.test-profile.auth.refreshToken')
   })
 })
