@@ -1,6 +1,7 @@
 mod downloads;
 mod profiles;
 mod tabs;
+mod windows;
 
 use tauri::Manager;
 
@@ -33,6 +34,7 @@ pub fn run() {
             profiles::cmd_delete_profile,
             profiles::cmd_set_show_on_startup,
             profiles::cmd_record_profile_used,
+            windows::open_profile_window,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Baobab");
