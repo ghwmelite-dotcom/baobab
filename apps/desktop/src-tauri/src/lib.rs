@@ -12,6 +12,7 @@ pub fn run() {
         .plugin(tauri_plugin_store::Builder::default().build())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
+        .manage(crate::pin_attempts::PinAttempts::new())
         .setup(|app| {
             use tauri::Manager;
             let handle = app.handle().clone();
@@ -32,7 +33,7 @@ pub fn run() {
                 tauri::async_runtime::block_on(windows::open_picker_window(handle.clone()))
                     .map_err(|e| e.to_string())?;
             } else if let Some(p) = file.profiles.first() {
-                tauri::async_runtime::block_on(windows::open_profile_window(handle.clone(), p.id.clone()))
+                tauri::async_runtime::block_on(windows::build_profile_window(&handle, &p.id))
                     .map_err(|e| e.to_string())?;
             } else {
                 tauri::async_runtime::block_on(windows::open_picker_window(handle.clone()))

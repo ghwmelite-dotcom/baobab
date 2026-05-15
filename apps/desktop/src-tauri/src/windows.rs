@@ -1,5 +1,7 @@
 use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindowBuilder};
 
+use crate::pin;
+use crate::pin_attempts::{AttemptResult, PinAttempts};
 use crate::profiles;
 
 pub const PICKER_LABEL: &str = "picker";
@@ -9,16 +11,71 @@ pub fn profile_window_label(profile_id: &str) -> String {
     format!("profile-{profile_id}")
 }
 
-#[tauri::command]
-pub async fn open_profile_window(app: AppHandle, profile_id: String) -> Result<(), String> {
-    let label = profile_window_label(&profile_id);
+/// Build a profile window and record usage. Called after PIN is verified (or
+/// skipped for auto-launch on startup). Extracted so the startup code in
+/// `lib.rs` can call it without needing a `State<'_>` handle.
+pub async fn build_profile_window(app: &AppHandle, profile_id: &str) -> Result<(), String> {
+    let label = profile_window_label(profile_id);
+    let url = WebviewUrl::App(format!("index.html?profileId={profile_id}").into());
+    WebviewWindowBuilder::new(app, &label, url)
+        .title("Baobab")
+        .inner_size(1280.0, 800.0)
+        .min_inner_size(800.0, 500.0)
+        .decorations(false)
+        .resizable(true)
+        .center()
+        .build()
+        .map_err(|e| e.to_string())?;
 
-    if let Some(win) = app.get_webview_window(&label) {
-        win.set_focus().map_err(|e| e.to_string())?;
+    if let Ok(root) = app.path().app_data_dir() {
+        let _ = profiles::record_profile_used(&root, profile_id);
+    }
+
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn open_profile_window(
+    app: AppHandle,
+    attempts: tauri::State<'_, PinAttempts>,
+    profile_id: String,
+    pin: Option<String>,
+) -> Result<(), String> {
+    let label = profile_window_label(&profile_id);
+    // A window already open belongs to a session that already proved knowledge
+    // of the PIN — focusing it is fine without re-checking.
+    if let Some(existing) = app.get_webview_window(&label) {
+        existing.set_focus().map_err(|e| e.to_string())?;
         return Ok(());
     }
 
-    let url = WebviewUrl::App(format!("index.html?profileId={profile_id}").into());
+    let root = app
+        .path()
+        .app_data_dir()
+        .map_err(|e| e.to_string())?;
+    let file = profiles::load(&root)?;
+    let profile = file
+        .profiles
+        .iter()
+        .find(|p| p.id == profile_id)
+        .ok_or("profile_not_found")?;
+
+    if let Some(hash) = &profile.pin_hash {
+        // Rate-limit check first.
+        if let AttemptResult::Locked { remaining_seconds } = attempts.check(&profile_id) {
+            return Err(format!("locked:{}", remaining_seconds));
+        }
+        let supplied = pin.as_deref().ok_or("pin_required")?;
+        if !pin::verify_pin(hash, supplied).map_err(|e| e.to_string())? {
+            if let Some(secs) = attempts.record_wrong(&profile_id) {
+                return Err(format!("locked:{}", secs));
+            }
+            return Err("wrong_pin".into());
+        }
+        attempts.record_correct(&profile_id);
+    }
+
+    let url = WebviewUrl::App(format!("index.html?profileId={}", profile_id).into());
     WebviewWindowBuilder::new(&app, &label, url)
         .title("Baobab")
         .inner_size(1280.0, 800.0)
@@ -29,11 +86,7 @@ pub async fn open_profile_window(app: AppHandle, profile_id: String) -> Result<(
         .build()
         .map_err(|e| e.to_string())?;
 
-    // Record the profile as used (best-effort; ignore error)
-    if let Ok(root) = app.path().app_data_dir() {
-        let _ = profiles::record_profile_used(&root, &profile_id);
-    }
-
+    let _ = profiles::record_profile_used(&root, &profile_id);
     Ok(())
 }
 
