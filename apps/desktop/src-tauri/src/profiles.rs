@@ -430,3 +430,54 @@ mod delete_tests {
         assert!(!load(dir.path()).unwrap().picker_prefs.show_on_startup);
     }
 }
+
+pub fn set_show_on_startup(app_data_root: &Path, value: bool) -> Result<(), String> {
+    let mut file = load(app_data_root)?;
+    file.picker_prefs.show_on_startup = value;
+    save(app_data_root, &file)
+}
+
+pub fn record_profile_used(app_data_root: &Path, id: &str) -> Result<(), String> {
+    let mut file = load(app_data_root)?;
+    let p = file.profiles.iter_mut().find(|p| p.id == id).ok_or("profile not found")?;
+    p.last_used_at = now_iso();
+    file.picker_prefs.last_used_profile_id = Some(id.to_string());
+    save(app_data_root, &file)
+}
+
+pub fn resolve_user_data_dir(app_data_root: &Path, profile: &Profile) -> PathBuf {
+    app_data_root.join("baobab").join("profiles").join(&profile.id).join(&profile.user_data_dir_name)
+}
+
+#[cfg(test)]
+mod prefs_tests {
+    use super::*;
+    use tempfile::tempdir;
+
+    #[test]
+    fn set_show_on_startup_persists() {
+        let dir = tempdir().unwrap();
+        set_show_on_startup(dir.path(), true).unwrap();
+        assert!(load(dir.path()).unwrap().picker_prefs.show_on_startup);
+    }
+
+    #[test]
+    fn record_profile_used_updates_pointer_and_timestamp() {
+        let dir = tempdir().unwrap();
+        let p = create_profile(dir.path(), "Akua".to_string(), None).unwrap();
+        let before = p.last_used_at.clone();
+        std::thread::sleep(std::time::Duration::from_millis(10));
+        record_profile_used(dir.path(), &p.id).unwrap();
+        let f = load(dir.path()).unwrap();
+        assert_eq!(f.picker_prefs.last_used_profile_id.as_deref(), Some(p.id.as_str()));
+        assert_ne!(f.profiles[0].last_used_at, before);
+    }
+
+    #[test]
+    fn resolve_user_data_dir_builds_correct_path() {
+        let dir = tempdir().unwrap();
+        let p = create_profile(dir.path(), "Akua".to_string(), None).unwrap();
+        let got = resolve_user_data_dir(dir.path(), &p);
+        assert!(got.ends_with(PathBuf::from("baobab").join("profiles").join(&p.id).join("userdata")));
+    }
+}
