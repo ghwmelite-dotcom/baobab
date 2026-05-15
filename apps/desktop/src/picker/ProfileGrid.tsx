@@ -8,13 +8,16 @@ interface Props {
   onDelete: (id: string) => void
   onAdd: () => void
   onGuest: () => void
+  onSetPin: (id: string) => void
+  onChangePin: (id: string) => void
+  onRemovePin: (id: string) => void
 }
 
-export function ProfileGrid({ profiles, onSelect, onRename, onDelete, onAdd, onGuest }: Props) {
+export function ProfileGrid({ profiles, onSelect, onRename, onDelete, onAdd, onGuest, onSetPin, onChangePin, onRemovePin }: Props) {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 120px)', gap: 16, justifyContent: 'center' }}>
       {profiles.map((p) => (
-        <ProfileTile key={p.id} profile={p} onSelect={onSelect} onRename={onRename} onDelete={onDelete} />
+        <ProfileTile key={p.id} profile={p} onSelect={onSelect} onRename={onRename} onDelete={onDelete} onSetPin={onSetPin} onChangePin={onChangePin} onRemovePin={onRemovePin} />
       ))}
       <button
         type="button" aria-label="Create new profile" onClick={onAdd}

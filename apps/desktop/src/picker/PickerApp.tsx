@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { GroveTree } from './GroveTree'
 import { ProfileGrid } from './ProfileGrid'
 import { NewProfileSheet } from './NewProfileSheet'
+import { UnlockSheet } from './UnlockSheet'
+import { ChangePinSheet } from './ChangePinSheet'
 import { usePickerData } from './usePickerData'
 
 export function PickerApp() {
@@ -15,8 +17,11 @@ export function PickerApp() {
   const toggleShow = usePickerData((s) => s.toggleShowOnStartup)
   const select = usePickerData((s) => s.select)
   const openGuest = usePickerData((s) => s.openGuest)
+  const unlockTarget = usePickerData((s) => s.unlockTarget)
+  const clearUnlockTarget = usePickerData((s) => s.clearUnlockTarget)
 
   const [sheetOpen, setSheetOpen] = useState(false)
+  const [pinSheet, setPinSheet] = useState<{ mode: 'set' | 'change' | 'remove'; profileId: string } | null>(null)
 
   useEffect(() => { void hydrate() }, [hydrate])
 
@@ -29,6 +34,9 @@ export function PickerApp() {
     const p = profiles.find((x) => x.id === id); if (!p) return
     if (window.confirm(`Delete profile "${p.name}"? This wipes its data.`)) await deleteAction(id)
   }
+
+  const unlockingProfile = profiles.find((p) => p.id === unlockTarget) ?? null
+  const pinSheetProfile = pinSheet ? profiles.find((p) => p.id === pinSheet.profileId) ?? null : null
 
   return (
     <div style={{
@@ -56,6 +64,9 @@ export function PickerApp() {
             onDelete={handleDelete}
             onAdd={() => setSheetOpen(true)}
             onGuest={() => void openGuest()}
+            onSetPin={(id) => setPinSheet({ mode: 'set', profileId: id })}
+            onChangePin={(id) => setPinSheet({ mode: 'change', profileId: id })}
+            onRemovePin={(id) => setPinSheet({ mode: 'remove', profileId: id })}
           />
         </div>
       </div>
@@ -78,6 +89,8 @@ export function PickerApp() {
         onClose={() => setSheetOpen(false)}
         onCreate={(name, color, pin) => create(name, color, pin)}
       />
+      <UnlockSheet open={!!unlockTarget} profile={unlockingProfile} onClose={clearUnlockTarget} />
+      <ChangePinSheet open={!!pinSheet} mode={pinSheet?.mode ?? 'set'} profile={pinSheetProfile} onClose={() => setPinSheet(null)} />
     </div>
   )
 }

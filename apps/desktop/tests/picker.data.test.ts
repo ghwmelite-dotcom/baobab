@@ -60,7 +60,7 @@ describe('usePickerData', () => {
 })
 
 const lockedProfile = (id: string, name: string) => ({
-  id, name, fruitColor: 'mango' as const, avatarLetter: name[0],
+  id, name, fruitColor: 'mango' as const, avatarLetter: name[0] ?? '',
   createdAt: 'x', lastUsedAt: 'x', cloudLink: null, userDataDirName: 'u',
   pinRequired: true,
 })
