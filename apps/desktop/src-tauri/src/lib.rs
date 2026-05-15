@@ -10,12 +10,7 @@ pub fn run() {
         .plugin(tauri_plugin_store::Builder::default().build())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
-        .setup(|app| {
-            #[cfg(debug_assertions)]
-            {
-                let main = app.get_webview_window("main").expect("main window");
-                main.open_devtools();
-            }
+        .setup(|_app| {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![

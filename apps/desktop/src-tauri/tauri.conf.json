@@ -11,20 +11,7 @@
   },
   "app": {
     "withGlobalTauri": false,
-    "windows": [
-      {
-        "label": "main",
-        "title": "Baobab",
-        "width": 1280,
-        "height": 800,
-        "minWidth": 800,
-        "minHeight": 500,
-        "decorations": false,
-        "transparent": false,
-        "resizable": true,
-        "center": true
-      }
-    ],
+    "windows": [],
     "security": {
       "csp": "default-src 'self'; img-src 'self' data: https:; font-src 'self' data: https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; connect-src 'self' https://api.baobab.africa https://baobab-api.ohcsghana-main.workers.dev http://localhost:8787 ws://localhost:1421"
     }
