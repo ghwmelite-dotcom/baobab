@@ -359,3 +359,74 @@ mod rename_color_tests {
         assert_eq!(f.profiles[0].fruit_color, FruitColor::Indigo);
     }
 }
+
+/// Delete a profile from registry and remove its data directory.
+/// Callers (the Tauri command layer) must ensure no profile window is open
+/// for this id before calling — this function does not enforce that.
+pub fn delete_profile(app_data_root: &Path, id: &str) -> Result<(), String> {
+    let mut file = load(app_data_root)?;
+    let before = file.profiles.len();
+    file.profiles.retain(|p| p.id != id);
+    if file.profiles.len() == before {
+        return Err("profile not found".to_string());
+    }
+    if file.picker_prefs.last_used_profile_id.as_deref() == Some(id) {
+        file.picker_prefs.last_used_profile_id = None;
+    }
+    if file.profiles.len() < 2 {
+        file.picker_prefs.show_on_startup = false;
+    }
+    save(app_data_root, &file)?;
+    let profile_dir = app_data_root.join("baobab").join("profiles").join(id);
+    if profile_dir.exists() {
+        std::fs::remove_dir_all(&profile_dir).map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+mod delete_tests {
+    use super::*;
+    use tempfile::tempdir;
+
+    #[test]
+    fn delete_removes_from_registry_and_disk() {
+        let dir = tempdir().unwrap();
+        let p = create_profile(dir.path(), "Akua".to_string(), None).unwrap();
+        let profile_dir = dir.path().join("baobab").join("profiles").join(&p.id);
+        assert!(profile_dir.exists());
+
+        delete_profile(dir.path(), &p.id).unwrap();
+        assert_eq!(load(dir.path()).unwrap().profiles.len(), 0);
+        assert!(!profile_dir.exists());
+    }
+
+    #[test]
+    fn delete_unknown_id_errors() {
+        let dir = tempdir().unwrap();
+        assert!(delete_profile(dir.path(), "nope").is_err());
+    }
+
+    #[test]
+    fn deleting_last_used_clears_pointer() {
+        let dir = tempdir().unwrap();
+        let p = create_profile(dir.path(), "Akua".to_string(), None).unwrap();
+        let mut f = load(dir.path()).unwrap();
+        f.picker_prefs.last_used_profile_id = Some(p.id.clone());
+        save(dir.path(), &f).unwrap();
+
+        delete_profile(dir.path(), &p.id).unwrap();
+        assert_eq!(load(dir.path()).unwrap().picker_prefs.last_used_profile_id, None);
+    }
+
+    #[test]
+    fn dropping_below_two_disables_show_on_startup() {
+        let dir = tempdir().unwrap();
+        let p1 = create_profile(dir.path(), "Akua".to_string(), None).unwrap();
+        let _p2 = create_profile(dir.path(), "Kofi".to_string(), None).unwrap();
+        assert!(load(dir.path()).unwrap().picker_prefs.show_on_startup);
+
+        delete_profile(dir.path(), &p1.id).unwrap();
+        assert!(!load(dir.path()).unwrap().picker_prefs.show_on_startup);
+    }
+}
