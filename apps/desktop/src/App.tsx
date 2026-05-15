@@ -15,6 +15,7 @@ import { BookmarksPanel } from './bookmarks/BookmarksPanel'
 import { DownloadsPanel } from './downloads/DownloadsPanel'
 import { TranslatePad } from './translate/TranslatePad'
 import { useDownloadsStore } from './downloads/downloads.store'
+import { useProfile } from './profiles/useProfile'
 import { SettingsScreen } from './settings/SettingsScreen'
 import { SovereigntyDashboard } from './sovereignty/SovereigntyDashboard'
 import { useChromeShortcuts } from './chrome/useChromeShortcuts'
@@ -38,6 +39,8 @@ import { PayWidget } from './payments/PayWidget'
 
 export function App() {
   useChromeShortcuts()
+  const profile = useProfile()
+
   useEffect(() => {
     void refreshResidency()
     void useTabsStore.getState().hydrate()
@@ -99,6 +102,10 @@ export function App() {
       void ipcShowTab(activeId).catch(() => undefined)
     }
   }, [showNtp, activeId, anyOverlayOpen])
+
+  if (!profile) {
+    return <div style={{ padding: 24, color: 'rgba(255,255,255,0.7)' }}>Loading profile…</div>
+  }
 
   return (
     <ThemeProvider theme="dark">
