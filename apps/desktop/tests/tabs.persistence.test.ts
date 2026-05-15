@@ -3,19 +3,22 @@ import type { Tab } from '@baobab/core'
 
 const { store } = vi.hoisted(() => ({ store: new Map<string, unknown>() }))
 
-vi.mock('~/state/persistence', () => ({
-  persistence: {
-    get: vi.fn(async <T,>(key: string): Promise<T | undefined> => {
-      return store.has(key) ? (store.get(key) as T) : undefined
-    }),
-    set: vi.fn(async <T,>(key: string, value: T): Promise<void> => {
-      store.set(key, value)
-    }),
-    delete: vi.fn(async (key: string): Promise<void> => {
-      store.delete(key)
-    }),
-  },
-}))
+vi.mock('~/state/persistence', () => {
+  const persistence = {
+    get: vi.fn((key: string) => Promise.resolve(store.has(key) ? store.get(key) : undefined)),
+    set: vi.fn((key: string, value: unknown) => { store.set(key, value); return Promise.resolve() }),
+    delete: vi.fn((key: string) => { store.delete(key); return Promise.resolve() }),
+  }
+  const profileScoped = (profileId: string) => {
+    const prefix = `profile.${profileId}.`
+    return {
+      get: (key: string) => persistence.get(prefix + key),
+      set: (key: string, value: unknown) => persistence.set(prefix + key, value),
+      delete: (key: string) => persistence.delete(prefix + key),
+    }
+  }
+  return { persistence, profileScoped }
+})
 
 vi.mock('~/ipc/tabs', () => ({
   ipcCreateTab: vi.fn(async () => undefined),
@@ -32,7 +35,8 @@ interface TabsSnapshot {
   activeId: string | null
 }
 
-const SNAPSHOT_KEY = 'tabs.snapshot'
+const PROFILE_ID = 'test-profile'
+const SNAPSHOT_KEY = `profile.${PROFILE_ID}.tabs.snapshot`
 
 async function flushDebounce(): Promise<void> {
   await new Promise((r) => setTimeout(r, 350))
@@ -41,6 +45,7 @@ async function flushDebounce(): Promise<void> {
 beforeEach(() => {
   store.clear()
   useTabsStore.setState({ tabs: [], activeId: null })
+  useTabsStore.getState().setProfileId(PROFILE_ID)
   vi.clearAllMocks()
 })
 

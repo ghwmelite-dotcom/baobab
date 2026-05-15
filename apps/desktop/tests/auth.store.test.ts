@@ -9,8 +9,8 @@ vi.mock('~/state/persistence', () => {
   const profileScoped = (profileId: string) => {
     const prefix = `profile.${profileId}.`
     return {
-      get: <T>(key: string) => persistence.get<T>(prefix + key),
-      set: <T>(key: string, value: T) => persistence.set(prefix + key, value),
+      get: (key: string) => persistence.get(prefix + key),
+      set: (key: string, value: unknown) => persistence.set(prefix + key, value),
       delete: (key: string) => persistence.delete(prefix + key),
     }
   }

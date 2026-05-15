@@ -5,13 +5,22 @@ const tabsMocks = vi.hoisted(() => ({
   openTab: vi.fn(async () => 't1'),
 }))
 
-vi.mock('~/state/persistence', () => ({
-  persistence: {
-    get: vi.fn(async () => undefined),
-    set: vi.fn(async () => undefined),
-    delete: vi.fn(async () => undefined),
-  },
-}))
+vi.mock('~/state/persistence', () => {
+  const persistence = {
+    get: vi.fn((_key: string) => Promise.resolve(undefined)),
+    set: vi.fn((_key: string, _value: unknown) => Promise.resolve()),
+    delete: vi.fn((_key: string) => Promise.resolve()),
+  }
+  const profileScoped = (profileId: string) => {
+    const prefix = `profile.${profileId}.`
+    return {
+      get: (key: string) => persistence.get(prefix + key),
+      set: (key: string, value: unknown) => persistence.set(prefix + key, value),
+      delete: (key: string) => persistence.delete(prefix + key),
+    }
+  }
+  return { persistence, profileScoped }
+})
 
 vi.mock('~/auth/api', () => ({
   authClient: {},

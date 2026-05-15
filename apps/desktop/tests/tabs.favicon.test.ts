@@ -21,6 +21,24 @@ vi.mock('~/ipc/tabs', () => ({
   ),
 }))
 
+vi.mock('~/state/persistence', () => {
+  const store = new Map<string, unknown>()
+  const persistence = {
+    get: vi.fn((key: string) => Promise.resolve(store.get(key))),
+    set: vi.fn((key: string, value: unknown) => { store.set(key, value); return Promise.resolve() }),
+    delete: vi.fn((key: string) => { store.delete(key); return Promise.resolve() }),
+  }
+  const profileScoped = (profileId: string) => {
+    const prefix = `profile.${profileId}.`
+    return {
+      get: (key: string) => persistence.get(prefix + key),
+      set: (key: string, value: unknown) => persistence.set(prefix + key, value),
+      delete: (key: string) => persistence.delete(prefix + key),
+    }
+  }
+  return { persistence, profileScoped }
+})
+
 import { useTabsStore, faviconForUrl } from '~/state/tabs.store'
 import * as ipc from '~/ipc/tabs'
 
@@ -31,6 +49,7 @@ function emitLoaded(payload: { id: string; url: string; title: string | null }):
 beforeEach(() => {
   hoisted.listeners.length = 0
   useTabsStore.setState({ tabs: [], activeId: null, history: {}, tabLoadedListening: false })
+  useTabsStore.getState().setProfileId('test-profile')
   vi.clearAllMocks()
 })
 

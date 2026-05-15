@@ -11,7 +11,16 @@ import {
   type IpcTabLoaded,
 } from '~/ipc/tabs'
 import { useHistoryStore } from '~/history/history.store'
-import { persistence } from '~/state/persistence'
+import { profileScoped } from '~/state/persistence'
+
+type Scoped = ReturnType<typeof profileScoped>
+
+let tabsScope: Scoped | null = null
+
+function scope(): Scoped {
+  if (!tabsScope) throw new Error('tabs.store: setProfileId() must be called before accessing profile-scoped storage')
+  return tabsScope
+}
 
 /**
  * Derive a 32×32 favicon URL from a navigation URL.
@@ -51,6 +60,7 @@ interface TabsState {
   history: Record<string, HistoryCursor>
   /** True once `tab://loaded` listener is registered. State (not module-level) so tests can reset it. */
   tabLoadedListening: boolean
+  setProfileId: (id: string) => void
   openTab: (url: string, opts?: OpenTabOptions) => Promise<string>
   openIncognitoTab: (url: string) => Promise<string>
   closeTab: (id: string) => Promise<void>
@@ -93,11 +103,13 @@ function isValidSnapshot(v: unknown): v is TabsSnapshot {
 
 function scheduleSave(state: TabsState): void {
   if (hydrating) return
+  if (!tabsScope) return
   if (saveTimer) clearTimeout(saveTimer)
   saveTimer = setTimeout(() => {
     saveTimer = null
+    if (!tabsScope) return
     const tabs = state.tabs.filter((t) => !t.incognito)
-    void persistence.set<TabsSnapshot>(SNAPSHOT_KEY, { tabs, activeId: state.activeId })
+    void scope().set<TabsSnapshot>(SNAPSHOT_KEY, { tabs, activeId: state.activeId })
   }, 300)
 }
 
@@ -106,6 +118,10 @@ export const useTabsStore = create<TabsState>()((set, get) => ({
   activeId: null,
   history: {},
   tabLoadedListening: false,
+
+  setProfileId: (id) => {
+    tabsScope = profileScoped(id)
+  },
 
   openTab: async (url, opts) => {
     const id = nextId()
@@ -263,7 +279,7 @@ export const useTabsStore = create<TabsState>()((set, get) => ({
   hydrate: async () => {
     hydrating = true
     try {
-      const snap = await persistence.get<TabsSnapshot>(SNAPSHOT_KEY)
+      const snap = await scope().get<TabsSnapshot>(SNAPSHOT_KEY)
       if (isValidSnapshot(snap)) {
         const idMap = new Map<string, string>()
         for (const saved of snap.tabs) {

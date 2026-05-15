@@ -12,6 +12,15 @@ vi.mock('~/auth/auth.store', () => {
   return { useAuthStore }
 })
 
+vi.mock('~/state/tabs.store', () => {
+  const setProfileId = vi.fn()
+  const useTabsStore = Object.assign(
+    () => undefined,
+    { getState: () => ({ setProfileId }), setState: () => undefined },
+  )
+  return { useTabsStore }
+})
+
 import { ProfileProvider, useProfile } from '~/profiles/ProfileContext'
 import * as tauriCore from '@tauri-apps/api/core'
 
