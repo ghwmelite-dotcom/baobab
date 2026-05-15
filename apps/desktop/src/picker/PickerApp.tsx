@@ -32,29 +32,37 @@ export function PickerApp() {
 
   return (
     <div style={{
-      minHeight: '100vh',
+      position: 'relative',
+      height: '100vh',
+      overflow: 'hidden',
       background: 'linear-gradient(180deg, #fde7c4 0%, #f4b878 30%, #d97a3a 65%, #6b2814 100%)',
-      display: 'flex', flexDirection: 'column', alignItems: 'center',
-      padding: '48px 24px 24px',
     }}>
-      <GroveTree size={96} />
-      <h1 style={{ color: '#3c1810', fontSize: 24, margin: '16px 0 4px' }}>Who's using Baobab?</h1>
-      <p style={{ color: 'rgba(60,24,16,0.7)', fontSize: 13, margin: 0 }}>
-        {profiles.length} {profiles.length === 1 ? 'profile' : 'profiles'} in this grove
-      </p>
-      <div style={{ marginTop: 32 }}>
-        <ProfileGrid
-          profiles={profiles}
-          onSelect={(id) => void select(id)}
-          onRename={handleRename}
-          onDelete={handleDelete}
-          onAdd={() => setSheetOpen(true)}
-          onGuest={() => void openGuest()}
-        />
+      <div style={{
+        height: '100%',
+        overflowY: 'auto',
+        display: 'flex', flexDirection: 'column', alignItems: 'center',
+        padding: '32px 24px 64px',
+      }}>
+        <GroveTree size={72} />
+        <h1 style={{ color: '#3c1810', fontSize: 22, margin: '12px 0 4px' }}>Who's using Baobab?</h1>
+        <p style={{ color: 'rgba(60,24,16,0.7)', fontSize: 12, margin: 0 }}>
+          {profiles.length} {profiles.length === 1 ? 'profile' : 'profiles'} in this grove
+        </p>
+        <div style={{ marginTop: 24 }}>
+          <ProfileGrid
+            profiles={profiles}
+            onSelect={(id) => void select(id)}
+            onRename={handleRename}
+            onDelete={handleDelete}
+            onAdd={() => setSheetOpen(true)}
+            onGuest={() => void openGuest()}
+          />
+        </div>
       </div>
       <label style={{
-        position: 'absolute', bottom: 16, left: 16,
-        color: 'rgba(255,250,240,0.95)', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8,
+        position: 'absolute', bottom: 12, left: 16,
+        color: 'rgba(255,250,240,0.95)', fontSize: 12, display: 'flex', alignItems: 'center', gap: 6,
+        pointerEvents: 'auto',
       }}>
         <input
           type="checkbox"
@@ -64,7 +72,7 @@ export function PickerApp() {
         />
         Show on startup
       </label>
-      {error && <div role="alert" style={{ position: 'absolute', bottom: 16, right: 16, color: '#fff8ee' }}>{error}</div>}
+      {error && <div role="alert" style={{ position: 'absolute', bottom: 12, right: 16, color: '#fff8ee', fontSize: 12 }}>{error}</div>}
       <NewProfileSheet
         open={sheetOpen}
         onClose={() => setSheetOpen(false)}

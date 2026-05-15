@@ -47,8 +47,8 @@ pub async fn open_picker_window(app: AppHandle) -> Result<(), String> {
     let url = WebviewUrl::App("picker.html".into());
     WebviewWindowBuilder::new(&app, PICKER_LABEL, url)
         .title("Baobab \u{2014} Profiles")
-        .inner_size(960.0, 720.0)
-        .min_inner_size(640.0, 560.0)
+        .inner_size(640.0, 480.0)
+        .min_inner_size(480.0, 400.0)
         .decorations(false)
         .resizable(true)
         .center()
