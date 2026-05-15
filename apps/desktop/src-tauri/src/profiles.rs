@@ -31,6 +31,38 @@ pub struct Profile {
     pub pin_hash: Option<String>,
 }
 
+/// JSON-facing view of a profile. Omits `pin_hash` so it never crosses the IPC boundary;
+/// exposes `pin_required: bool` so the frontend can render a lock badge.
+#[derive(Debug, Clone, Serialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct ProfileView {
+    pub id: String,
+    pub name: String,
+    pub fruit_color: FruitColor,
+    pub avatar_letter: String,
+    pub created_at: String,
+    pub last_used_at: String,
+    pub cloud_link: Option<CloudLink>,
+    pub user_data_dir_name: String,
+    pub pin_required: bool,
+}
+
+impl From<&Profile> for ProfileView {
+    fn from(p: &Profile) -> Self {
+        Self {
+            id: p.id.clone(),
+            name: p.name.clone(),
+            fruit_color: p.fruit_color.clone(),
+            avatar_letter: p.avatar_letter.clone(),
+            created_at: p.created_at.clone(),
+            last_used_at: p.last_used_at.clone(),
+            cloud_link: p.cloud_link.clone(),
+            user_data_dir_name: p.user_data_dir_name.clone(),
+            pin_required: p.pin_hash.is_some(),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct PickerPrefs {
@@ -224,6 +256,47 @@ mod tests {
         assert!(json.contains("\"schemaVersion\""), "got: {}", json);
         assert!(json.contains("\"pickerPrefs\""), "got: {}", json);
         assert!(json.contains("\"showOnStartup\""), "got: {}", json);
+    }
+}
+
+#[cfg(test)]
+mod view_tests {
+    use super::*;
+
+    #[test]
+    fn view_strips_pin_hash_from_serialization() {
+        let p = Profile {
+            id: "abc".into(),
+            name: "Akua".into(),
+            fruit_color: FruitColor::Mango,
+            avatar_letter: "A".into(),
+            created_at: "x".into(),
+            last_used_at: "x".into(),
+            cloud_link: None,
+            user_data_dir_name: "userdata".into(),
+            pin_hash: Some("pbkdf2-sha256$100000$AAAA$BBBB".into()),
+        };
+        let view = ProfileView::from(&p);
+        let json = serde_json::to_string(&view).unwrap();
+        assert!(!json.contains("pinHash"), "DTO must not leak pin_hash: {}", json);
+        assert!(!json.contains("pbkdf2"), "DTO must not leak hash material: {}", json);
+        assert!(json.contains("\"pinRequired\":true"), "got: {}", json);
+    }
+
+    #[test]
+    fn view_pin_required_false_when_no_hash() {
+        let p = Profile {
+            id: "abc".into(),
+            name: "Akua".into(),
+            fruit_color: FruitColor::Mango,
+            avatar_letter: "A".into(),
+            created_at: "x".into(),
+            last_used_at: "x".into(),
+            cloud_link: None,
+            user_data_dir_name: "userdata".into(),
+            pin_hash: None,
+        };
+        assert_eq!(ProfileView::from(&p).pin_required, false);
     }
 }
 
