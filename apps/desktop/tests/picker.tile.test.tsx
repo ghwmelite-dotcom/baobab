@@ -5,6 +5,7 @@ import { ProfileTile } from '~/picker/ProfileTile'
 const profile = {
   id: 'p1', name: 'Akua', fruitColor: 'mango' as const, avatarLetter: 'A',
   createdAt: 'x', lastUsedAt: 'x', cloudLink: null, userDataDirName: 'u',
+  pinRequired: false,
 }
 
 describe('ProfileTile', () => {

@@ -1,27 +1,35 @@
 import { useState } from 'react'
 import { FRUIT_COLOR_ORDER, FRUIT_HEX, type FruitColor } from '~/profiles/fruitColors'
+import { PinInput } from './PinInput'
 
 interface Props {
   open: boolean
   onClose: () => void
-  onCreate: (name: string, color: FruitColor) => Promise<void>
+  onCreate: (name: string, color: FruitColor, pin?: string) => Promise<void>
 }
 
 export function NewProfileSheet({ open, onClose, onCreate }: Props) {
   const [name, setName] = useState('')
   const [color, setColor] = useState<FruitColor>('mango')
+  const [lock, setLock] = useState(false)
+  const [pin, setPin] = useState('')
+  const [confirmPin, setConfirmPin] = useState('')
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState<string | null>(null)
 
   if (!open) return null
 
+  const pinValid = !lock || (pin.length === 4 && pin === confirmPin)
+  const canSubmit = name.trim().length > 0 && pinValid && !busy
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!name.trim() || busy) return
+    if (!canSubmit) return
     setBusy(true); setErr(null)
     try {
-      await onCreate(name.trim(), color)
-      setName(''); setColor('mango'); onClose()
+      await onCreate(name.trim(), color, lock ? pin : undefined)
+      setName(''); setColor('mango'); setLock(false); setPin(''); setConfirmPin('')
+      onClose()
     } catch (e) {
       setErr(e instanceof Error ? e.message : 'create failed')
     } finally { setBusy(false) }
@@ -73,14 +81,42 @@ export function NewProfileSheet({ open, onClose, onCreate }: Props) {
             ))}
           </div>
         </div>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#3c1810', fontSize: 13 }}>
+          <input
+            type="checkbox"
+            checked={lock}
+            onChange={(e) => setLock(e.target.checked)}
+            aria-label="Lock this profile with a PIN"
+          />
+          Lock this profile with a 4-digit PIN
+        </label>
+        {lock && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <p style={{ color: 'rgba(60,24,16,0.75)', fontSize: 12, margin: 0, lineHeight: 1.4 }}>
+              Anyone using this computer will need the PIN to open this profile. If you forget it,
+              you&apos;ll need to delete the profile to start over. The PIN does not encrypt your data on disk.
+            </p>
+            <div>
+              <div style={{ fontSize: 12, color: '#3c1810', marginBottom: 4 }}>PIN</div>
+              <PinInput value={pin} onChange={setPin} />
+            </div>
+            <div>
+              <div style={{ fontSize: 12, color: '#3c1810', marginBottom: 4 }}>Confirm PIN</div>
+              <PinInput value={confirmPin} onChange={setConfirmPin} />
+            </div>
+            {pin.length === 4 && confirmPin.length === 4 && pin !== confirmPin && (
+              <div role="alert" style={{ color: '#a23a1f', fontSize: 12 }}>PINs don&apos;t match.</div>
+            )}
+          </div>
+        )}
         {err && <div role="alert" style={{ color: '#a23a1f', fontSize: 13 }}>{err}</div>}
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
           <button type="button" onClick={onClose} disabled={busy}
             style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid rgba(60,30,15,0.3)', background: 'transparent', cursor: 'pointer' }}>
             Cancel
           </button>
-          <button type="submit" disabled={busy || !name.trim()}
-            style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: '#3c1810', color: 'white', cursor: 'pointer' }}>
+          <button type="submit" disabled={!canSubmit}
+            style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: '#3c1810', color: 'white', cursor: canSubmit ? 'pointer' : 'not-allowed', opacity: canSubmit ? 1 : 0.5 }}>
             {busy ? 'Creating…' : 'Create'}
           </button>
         </div>

@@ -8,7 +8,7 @@ interface PickerState {
   loading: boolean
   error: string | null
   hydrate: () => Promise<void>
-  create: (name: string, color?: FruitColor) => Promise<void>
+  create: (name: string, color?: FruitColor, pin?: string) => Promise<void>
   rename: (id: string, name: string) => Promise<void>
   delete: (id: string) => Promise<void>
   toggleShowOnStartup: (value: boolean) => Promise<void>
@@ -32,8 +32,8 @@ export const usePickerData = create<PickerState>((set, get) => ({
     }
   },
 
-  create: async (name, color) => {
-    await profileApi.create(name, color)
+  create: async (name, color, pin) => {
+    await profileApi.create(name, color, pin)
     await get().hydrate()
   },
 

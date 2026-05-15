@@ -15,6 +15,7 @@ export const GUEST_PROFILE: Profile = {
   lastUsedAt: '',
   cloudLink: null,
   userDataDirName: '',
+  pinRequired: false,
 }
 
 export function ProfileProvider({ children }: { children: ReactNode }) {

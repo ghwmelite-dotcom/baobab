@@ -12,6 +12,7 @@ const invokeMock = invoke as ReturnType<typeof vi.fn>
 const sample = (id: string, name: string) => ({
   id, name, fruitColor: 'mango' as const, avatarLetter: name[0],
   createdAt: 'x', lastUsedAt: 'x', cloudLink: null, userDataDirName: 'u',
+  pinRequired: false,
 })
 
 beforeEach(() => {
@@ -43,7 +44,7 @@ describe('PickerApp', () => {
     await waitFor(() => screen.getByText('Akua'))
     fireEvent.click(screen.getByRole('button', { name: /open akua/i }))
     await waitFor(() => {
-      expect(invokeMock).toHaveBeenCalledWith('open_profile_window', { profileId: 'p1' })
+      expect(invokeMock).toHaveBeenCalledWith('open_profile_window', { profileId: 'p1', pin: null })
     })
   })
 

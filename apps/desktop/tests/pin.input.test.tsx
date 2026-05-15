@@ -12,8 +12,8 @@ describe('PinInput', () => {
     const onChange = vi.fn()
     render(<PinInput value="" onChange={onChange} />)
     const boxes = screen.getAllByRole('textbox') as HTMLInputElement[]
-    boxes[0].focus()
-    fireEvent.change(boxes[0], { target: { value: '1' } })
+    boxes[0]!.focus()
+    fireEvent.change(boxes[0]!, { target: { value: '1' } })
     expect(onChange).toHaveBeenCalledWith('1')
     // Test rerender with the new value to drive focus advance.
   })
@@ -22,7 +22,7 @@ describe('PinInput', () => {
     const onChange = vi.fn()
     render(<PinInput value="" onChange={onChange} />)
     const boxes = screen.getAllByRole('textbox') as HTMLInputElement[]
-    fireEvent.change(boxes[0], { target: { value: 'a' } })
+    fireEvent.change(boxes[0]!, { target: { value: 'a' } })
     expect(onChange).not.toHaveBeenCalled()
   })
 
@@ -45,8 +45,8 @@ describe('PinInput', () => {
     const onChange = vi.fn()
     render(<PinInput value="12" onChange={onChange} />)
     const boxes = screen.getAllByRole('textbox') as HTMLInputElement[]
-    boxes[2].focus()
-    fireEvent.keyDown(boxes[2], { key: 'Backspace' })
+    boxes[2]!.focus()
+    fireEvent.keyDown(boxes[2]!, { key: 'Backspace' })
     expect(onChange).toHaveBeenCalledWith('1')
   })
 

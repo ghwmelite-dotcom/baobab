@@ -76,7 +76,7 @@ export function PickerApp() {
       <NewProfileSheet
         open={sheetOpen}
         onClose={() => setSheetOpen(false)}
-        onCreate={(name, color) => create(name, color)}
+        onCreate={(name, color, pin) => create(name, color, pin)}
       />
     </div>
   )
