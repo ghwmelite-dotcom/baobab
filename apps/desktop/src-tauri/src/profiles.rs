@@ -656,6 +656,88 @@ mod cloud_link_tests {
     }
 }
 
+pub fn set_profile_pin(
+    app_data_root: &Path,
+    id: &str,
+    new_pin: &str,
+    current_pin: Option<&str>,
+) -> Result<(), String> {
+    let mut file = load(app_data_root)?;
+    let p = file.profiles.iter_mut().find(|p| p.id == id).ok_or("profile not found")?;
+    // If a PIN is already set, the caller must prove they know it.
+    if let Some(existing) = &p.pin_hash {
+        let supplied = current_pin.ok_or("current_pin_required")?;
+        if !crate::pin::verify_pin(existing, supplied)? {
+            return Err("wrong_pin".into());
+        }
+    }
+    p.pin_hash = Some(crate::pin::hash_pin(new_pin)?);
+    save(app_data_root, &file)
+}
+
+pub fn remove_profile_pin(
+    app_data_root: &Path,
+    id: &str,
+    current_pin: &str,
+) -> Result<(), String> {
+    let mut file = load(app_data_root)?;
+    let p = file.profiles.iter_mut().find(|p| p.id == id).ok_or("profile not found")?;
+    let existing = p.pin_hash.as_ref().ok_or("no_pin_set")?;
+    if !crate::pin::verify_pin(existing, current_pin)? {
+        return Err("wrong_pin".into());
+    }
+    p.pin_hash = None;
+    save(app_data_root, &file)
+}
+
+#[cfg(test)]
+mod pin_management_tests {
+    use super::*;
+    use tempfile::tempdir;
+
+    #[test]
+    fn set_pin_on_unlocked_profile_no_current_required() {
+        let dir = tempdir().unwrap();
+        let p = create_profile(dir.path(), "Akua".to_string(), None, None).unwrap();
+        set_profile_pin(dir.path(), &p.id, "1234", None).unwrap();
+        let f = load(dir.path()).unwrap();
+        assert!(f.profiles[0].pin_hash.is_some());
+    }
+
+    #[test]
+    fn set_pin_on_locked_profile_requires_current() {
+        let dir = tempdir().unwrap();
+        let p = create_profile(dir.path(), "Akua".to_string(), None, Some("1234".to_string())).unwrap();
+        // Without current_pin → error
+        assert!(set_profile_pin(dir.path(), &p.id, "5678", None).is_err());
+        // Wrong current_pin → error
+        assert!(set_profile_pin(dir.path(), &p.id, "5678", Some("0000")).is_err());
+        // Correct current_pin → ok
+        set_profile_pin(dir.path(), &p.id, "5678", Some("1234")).unwrap();
+        let f = load(dir.path()).unwrap();
+        let new_hash = f.profiles[0].pin_hash.as_ref().unwrap();
+        assert!(crate::pin::verify_pin(new_hash, "5678").unwrap());
+        assert!(!crate::pin::verify_pin(new_hash, "1234").unwrap());
+    }
+
+    #[test]
+    fn remove_pin_requires_correct_current() {
+        let dir = tempdir().unwrap();
+        let p = create_profile(dir.path(), "Akua".to_string(), None, Some("1234".to_string())).unwrap();
+        assert!(remove_profile_pin(dir.path(), &p.id, "0000").is_err());
+        remove_profile_pin(dir.path(), &p.id, "1234").unwrap();
+        let f = load(dir.path()).unwrap();
+        assert_eq!(f.profiles[0].pin_hash, None);
+    }
+
+    #[test]
+    fn remove_pin_on_unlocked_errors() {
+        let dir = tempdir().unwrap();
+        let p = create_profile(dir.path(), "Akua".to_string(), None, None).unwrap();
+        assert!(remove_profile_pin(dir.path(), &p.id, "1234").is_err());
+    }
+}
+
 use tauri::{AppHandle, Manager};
 
 fn app_data_root(app: &AppHandle) -> Result<PathBuf, String> {
