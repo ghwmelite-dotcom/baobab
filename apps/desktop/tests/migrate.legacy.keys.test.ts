@@ -106,4 +106,14 @@ describe('migrateLegacyAuthKeys', () => {
     expect(store.has(`profile.${PROFILE_ID}.auth.refreshToken`)).toBe(false)
     expect(store.get(FLAG)).toBe(true)
   })
+
+  it('migrates tabs.snapshot into the profile namespace', async () => {
+    const snap = { activeId: 'x', tabs: [{ id: 'x', url: 'https://example.com' }] }
+    store.set('tabs.snapshot', snap)
+
+    await migrateLegacyAuthKeys(PROFILE_ID)
+
+    expect(store.get(`profile.${PROFILE_ID}.tabs.snapshot`)).toEqual(snap)
+    expect(store.has('tabs.snapshot')).toBe(false)
+  })
 })
