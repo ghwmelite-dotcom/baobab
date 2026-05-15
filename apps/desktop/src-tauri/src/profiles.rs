@@ -302,3 +302,60 @@ mod create_tests {
         assert!(create_profile(dir.path(), "Hi\nthere".to_string(), None).is_err());
     }
 }
+
+pub fn rename_profile(app_data_root: &Path, id: &str, new_name: String) -> Result<(), String> {
+    let new_name = new_name.trim();
+    if new_name.is_empty() || new_name.chars().count() > 48 || new_name.chars().any(|c| c.is_control()) {
+        return Err("invalid name".to_string());
+    }
+    let mut file = load(app_data_root)?;
+    let p = file.profiles.iter_mut().find(|p| p.id == id).ok_or("profile not found")?;
+    p.name = new_name.to_string();
+    p.avatar_letter = derive_avatar_letter(new_name);
+    save(app_data_root, &file)
+}
+
+pub fn update_profile_color(app_data_root: &Path, id: &str, color: FruitColor) -> Result<(), String> {
+    let mut file = load(app_data_root)?;
+    let p = file.profiles.iter_mut().find(|p| p.id == id).ok_or("profile not found")?;
+    p.fruit_color = color;
+    save(app_data_root, &file)
+}
+
+#[cfg(test)]
+mod rename_color_tests {
+    use super::*;
+    use tempfile::tempdir;
+
+    #[test]
+    fn rename_updates_name_and_avatar_letter() {
+        let dir = tempdir().unwrap();
+        let p = create_profile(dir.path(), "Akua".to_string(), None).unwrap();
+        rename_profile(dir.path(), &p.id, "Brilla".to_string()).unwrap();
+        let f = load(dir.path()).unwrap();
+        assert_eq!(f.profiles[0].name, "Brilla");
+        assert_eq!(f.profiles[0].avatar_letter, "B");
+    }
+
+    #[test]
+    fn rename_unknown_id_errors() {
+        let dir = tempdir().unwrap();
+        assert!(rename_profile(dir.path(), "nope", "X".to_string()).is_err());
+    }
+
+    #[test]
+    fn rename_rejects_invalid_name() {
+        let dir = tempdir().unwrap();
+        let p = create_profile(dir.path(), "Akua".to_string(), None).unwrap();
+        assert!(rename_profile(dir.path(), &p.id, "".to_string()).is_err());
+    }
+
+    #[test]
+    fn update_color_changes_fruit_color() {
+        let dir = tempdir().unwrap();
+        let p = create_profile(dir.path(), "Akua".to_string(), None).unwrap();
+        update_profile_color(dir.path(), &p.id, FruitColor::Indigo).unwrap();
+        let f = load(dir.path()).unwrap();
+        assert_eq!(f.profiles[0].fruit_color, FruitColor::Indigo);
+    }
+}
