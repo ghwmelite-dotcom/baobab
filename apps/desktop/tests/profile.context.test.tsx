@@ -21,6 +21,11 @@ vi.mock('~/state/tabs.store', () => {
   return { useTabsStore }
 })
 
+// Stub out the migration helper so this test doesn't touch the real Tauri store.
+vi.mock('~/profiles/migrateLegacyKeys', () => ({
+  migrateLegacyAuthKeys: vi.fn(async () => undefined),
+}))
+
 import { ProfileProvider, useProfile } from '~/profiles/ProfileContext'
 import * as tauriCore from '@tauri-apps/api/core'
 

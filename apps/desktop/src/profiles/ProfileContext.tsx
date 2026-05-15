@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import { profileApi, type Profile } from './profile.api'
 import { useAuthStore } from '~/auth/auth.store'
 import { useTabsStore } from '~/state/tabs.store'
+import { migrateLegacyAuthKeys } from './migrateLegacyKeys'
 
 const ProfileContext = createContext<Profile | null>(null)
 
@@ -36,6 +37,10 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       if (match) {
         useAuthStore.getState().setProfileId(match.id)
         useTabsStore.getState().setProfileId(match.id)
+        // Migrate legacy (pre-profile) flat auth keys into the profile namespace
+        // before any store hydration fires — must happen after setProfileId so
+        // the scoped keys resolve to the correct profile prefix.
+        await migrateLegacyAuthKeys(match.id)
       }
       setProfile(match)
     })()
