@@ -481,3 +481,51 @@ mod prefs_tests {
         assert!(got.ends_with(PathBuf::from("baobab").join("profiles").join(&p.id).join("userdata")));
     }
 }
+
+pub fn link_baobab_account(app_data_root: &Path, id: &str, link: CloudLink) -> Result<(), String> {
+    let mut file = load(app_data_root)?;
+    let p = file.profiles.iter_mut().find(|p| p.id == id).ok_or("profile not found")?;
+    p.cloud_link = Some(link);
+    save(app_data_root, &file)
+}
+
+pub fn unlink_baobab_account(app_data_root: &Path, id: &str) -> Result<(), String> {
+    let mut file = load(app_data_root)?;
+    let p = file.profiles.iter_mut().find(|p| p.id == id).ok_or("profile not found")?;
+    p.cloud_link = None;
+    save(app_data_root, &file)
+}
+
+#[cfg(test)]
+mod cloud_link_tests {
+    use super::*;
+    use tempfile::tempdir;
+
+    fn sample_link() -> CloudLink {
+        CloudLink {
+            baobab_user_id: "u1".to_string(),
+            account_email: Some("a@b.com".to_string()),
+            account_phone: None,
+            linked_at: now_iso(),
+        }
+    }
+
+    #[test]
+    fn link_sets_cloud_link() {
+        let dir = tempdir().unwrap();
+        let p = create_profile(dir.path(), "Akua".to_string(), None).unwrap();
+        link_baobab_account(dir.path(), &p.id, sample_link()).unwrap();
+        let f = load(dir.path()).unwrap();
+        assert!(f.profiles[0].cloud_link.is_some());
+        assert_eq!(f.profiles[0].cloud_link.as_ref().unwrap().baobab_user_id, "u1");
+    }
+
+    #[test]
+    fn unlink_clears_cloud_link() {
+        let dir = tempdir().unwrap();
+        let p = create_profile(dir.path(), "Akua".to_string(), None).unwrap();
+        link_baobab_account(dir.path(), &p.id, sample_link()).unwrap();
+        unlink_baobab_account(dir.path(), &p.id).unwrap();
+        assert!(load(dir.path()).unwrap().profiles[0].cloud_link.is_none());
+    }
+}
