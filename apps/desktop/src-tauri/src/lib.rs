@@ -23,7 +23,8 @@ pub fn run() {
 
             let file = profiles::load(&root).map_err(|e| e.to_string())?;
             let count = file.profiles.len();
-            let show_picker = match count {
+            let any_locked = file.profiles.iter().any(|p| p.pin_hash.is_some());
+            let show_picker = any_locked || match count {
                 0 => false,
                 1 => file.picker_prefs.show_on_startup,
                 _ => true,
