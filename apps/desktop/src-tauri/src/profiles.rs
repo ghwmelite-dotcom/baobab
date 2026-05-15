@@ -53,6 +53,78 @@ impl Default for ProfilesFile {
     }
 }
 
+use std::path::{Path, PathBuf};
+
+/// Returns the absolute path to `profiles.json` under the app data dir.
+/// Tests pass an explicit root; production code derives it from `dirs::data_dir()`.
+pub fn profiles_json_path(app_data_root: &Path) -> PathBuf {
+    app_data_root.join("baobab").join("profiles.json")
+}
+
+/// Read the profiles registry from disk.
+///
+/// Recovery rules:
+/// - If file missing → return `Ok(ProfilesFile::default())`.
+/// - If file present but unparseable → rename to `profiles.json.broken-<ts>` and return default.
+pub fn load(app_data_root: &Path) -> Result<ProfilesFile, String> {
+    let path = profiles_json_path(app_data_root);
+    if !path.exists() {
+        return Ok(ProfilesFile::default());
+    }
+    let bytes = std::fs::read(&path).map_err(|e| e.to_string())?;
+    match serde_json::from_slice::<ProfilesFile>(&bytes) {
+        Ok(f) => Ok(f),
+        Err(_) => {
+            let ts = chrono::Utc::now().format("%Y%m%dT%H%M%SZ").to_string();
+            let broken = path.with_extension(format!("json.broken-{}", ts));
+            let _ = std::fs::rename(&path, &broken);
+            Ok(ProfilesFile::default())
+        }
+    }
+}
+
+#[cfg(test)]
+mod load_tests {
+    use super::*;
+    use tempfile::tempdir;
+
+    #[test]
+    fn missing_file_returns_default() {
+        let dir = tempdir().unwrap();
+        let f = load(dir.path()).unwrap();
+        assert_eq!(f, ProfilesFile::default());
+    }
+
+    #[test]
+    fn corrupted_file_is_renamed_and_default_returned() {
+        let dir = tempdir().unwrap();
+        let baobab = dir.path().join("baobab");
+        std::fs::create_dir_all(&baobab).unwrap();
+        std::fs::write(baobab.join("profiles.json"), b"{not json").unwrap();
+
+        let f = load(dir.path()).unwrap();
+        assert_eq!(f, ProfilesFile::default());
+
+        let entries: Vec<_> = std::fs::read_dir(&baobab).unwrap().collect();
+        let names: Vec<String> = entries.iter()
+            .filter_map(|e| e.as_ref().ok().map(|e| e.file_name().to_string_lossy().into_owned()))
+            .collect();
+        assert!(names.iter().any(|n| n.starts_with("profiles.json.broken-")), "got: {:?}", names);
+    }
+
+    #[test]
+    fn valid_file_round_trips() {
+        let dir = tempdir().unwrap();
+        let baobab = dir.path().join("baobab");
+        std::fs::create_dir_all(&baobab).unwrap();
+        let original = ProfilesFile::default();
+        std::fs::write(baobab.join("profiles.json"), serde_json::to_vec(&original).unwrap()).unwrap();
+
+        let parsed = load(dir.path()).unwrap();
+        assert_eq!(parsed, original);
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
