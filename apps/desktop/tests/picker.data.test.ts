@@ -18,6 +18,7 @@ const sampleProfile = (overrides: Partial<{ id: string; name: string }> = {}) =>
   fruitColor: 'mango' as const,
   avatarLetter: 'A',
   createdAt: 'x', lastUsedAt: 'x', cloudLink: null, userDataDirName: 'u',
+  pinRequired: false,
 })
 
 describe('usePickerData', () => {
@@ -54,6 +55,6 @@ describe('usePickerData', () => {
   it('select calls open_profile_window', async () => {
     invokeMock.mockResolvedValue(undefined)
     await usePickerData.getState().select('p1')
-    expect(invokeMock).toHaveBeenCalledWith('open_profile_window', { profileId: 'p1' })
+    expect(invokeMock).toHaveBeenCalledWith('open_profile_window', { profileId: 'p1', pin: null })
   })
 })
