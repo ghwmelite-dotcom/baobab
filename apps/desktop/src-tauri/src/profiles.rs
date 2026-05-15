@@ -322,6 +322,7 @@ pub fn create_profile(
     app_data_root: &Path,
     name: String,
     fruit_color: Option<FruitColor>,
+    pin: Option<String>,
 ) -> Result<Profile, String> {
     let name = name.trim();
     if name.is_empty() || name.chars().count() > 48 {
@@ -330,6 +331,11 @@ pub fn create_profile(
     if name.chars().any(|c| c.is_control()) {
         return Err("name contains control chars".to_string());
     }
+
+    let pin_hash = match pin {
+        Some(p) => Some(crate::pin::hash_pin(&p)?),
+        None => None,
+    };
 
     let mut file = load(app_data_root)?;
     let color = fruit_color.unwrap_or_else(|| next_default_color(&file.profiles));
@@ -344,7 +350,7 @@ pub fn create_profile(
         last_used_at: now,
         cloud_link: None,
         user_data_dir_name: "userdata".to_string(),
-        pin_hash: None,
+        pin_hash,
     };
     let profile_dir = app_data_root.join("baobab").join("profiles").join(&id).join("userdata");
     std::fs::create_dir_all(&profile_dir).map_err(|e| e.to_string())?;
@@ -365,7 +371,7 @@ mod create_tests {
     #[test]
     fn create_profile_writes_registry_and_dir() {
         let dir = tempdir().unwrap();
-        let p = create_profile(dir.path(), "Akua".to_string(), None).unwrap();
+        let p = create_profile(dir.path(), "Akua".to_string(), None, None).unwrap();
         assert_eq!(p.name, "Akua");
         assert_eq!(p.avatar_letter, "A");
         assert_eq!(p.fruit_color, FruitColor::Mango);
@@ -377,33 +383,49 @@ mod create_tests {
     #[test]
     fn second_profile_flips_show_on_startup() {
         let dir = tempdir().unwrap();
-        create_profile(dir.path(), "Akua".to_string(), None).unwrap();
+        create_profile(dir.path(), "Akua".to_string(), None, None).unwrap();
         assert!(!load(dir.path()).unwrap().picker_prefs.show_on_startup);
-        create_profile(dir.path(), "Kofi".to_string(), None).unwrap();
+        create_profile(dir.path(), "Kofi".to_string(), None, None).unwrap();
         assert!(load(dir.path()).unwrap().picker_prefs.show_on_startup);
     }
 
     #[test]
     fn second_profile_gets_different_default_color() {
         let dir = tempdir().unwrap();
-        let p1 = create_profile(dir.path(), "Akua".to_string(), None).unwrap();
-        let p2 = create_profile(dir.path(), "Kofi".to_string(), None).unwrap();
+        let p1 = create_profile(dir.path(), "Akua".to_string(), None, None).unwrap();
+        let p2 = create_profile(dir.path(), "Kofi".to_string(), None, None).unwrap();
         assert_ne!(p1.fruit_color, p2.fruit_color);
     }
 
     #[test]
     fn rejects_empty_or_too_long_name() {
         let dir = tempdir().unwrap();
-        assert!(create_profile(dir.path(), "".to_string(), None).is_err());
-        assert!(create_profile(dir.path(), "   ".to_string(), None).is_err());
+        assert!(create_profile(dir.path(), "".to_string(), None, None).is_err());
+        assert!(create_profile(dir.path(), "   ".to_string(), None, None).is_err());
         let long = "x".repeat(49);
-        assert!(create_profile(dir.path(), long, None).is_err());
+        assert!(create_profile(dir.path(), long, None, None).is_err());
     }
 
     #[test]
     fn rejects_control_chars_in_name() {
         let dir = tempdir().unwrap();
-        assert!(create_profile(dir.path(), "Hi\nthere".to_string(), None).is_err());
+        assert!(create_profile(dir.path(), "Hi\nthere".to_string(), None, None).is_err());
+    }
+
+    #[test]
+    fn create_profile_with_pin_stores_hash() {
+        let dir = tempdir().unwrap();
+        let p = create_profile(dir.path(), "Akua".to_string(), None, Some("1234".to_string())).unwrap();
+        assert!(p.pin_hash.is_some(), "expected pin_hash to be set");
+        let hash = p.pin_hash.unwrap();
+        assert!(hash.starts_with("pbkdf2-sha256$100000$"), "got: {}", hash);
+    }
+
+    #[test]
+    fn create_profile_with_invalid_pin_errors() {
+        let dir = tempdir().unwrap();
+        let r = create_profile(dir.path(), "Akua".to_string(), None, Some("123".to_string()));
+        assert!(r.is_err());
     }
 }
 
@@ -434,7 +456,7 @@ mod rename_color_tests {
     #[test]
     fn rename_updates_name_and_avatar_letter() {
         let dir = tempdir().unwrap();
-        let p = create_profile(dir.path(), "Akua".to_string(), None).unwrap();
+        let p = create_profile(dir.path(), "Akua".to_string(), None, None).unwrap();
         rename_profile(dir.path(), &p.id, "Brilla".to_string()).unwrap();
         let f = load(dir.path()).unwrap();
         assert_eq!(f.profiles[0].name, "Brilla");
@@ -450,14 +472,14 @@ mod rename_color_tests {
     #[test]
     fn rename_rejects_invalid_name() {
         let dir = tempdir().unwrap();
-        let p = create_profile(dir.path(), "Akua".to_string(), None).unwrap();
+        let p = create_profile(dir.path(), "Akua".to_string(), None, None).unwrap();
         assert!(rename_profile(dir.path(), &p.id, "".to_string()).is_err());
     }
 
     #[test]
     fn update_color_changes_fruit_color() {
         let dir = tempdir().unwrap();
-        let p = create_profile(dir.path(), "Akua".to_string(), None).unwrap();
+        let p = create_profile(dir.path(), "Akua".to_string(), None, None).unwrap();
         update_profile_color(dir.path(), &p.id, FruitColor::Indigo).unwrap();
         let f = load(dir.path()).unwrap();
         assert_eq!(f.profiles[0].fruit_color, FruitColor::Indigo);
@@ -496,7 +518,7 @@ mod delete_tests {
     #[test]
     fn delete_removes_from_registry_and_disk() {
         let dir = tempdir().unwrap();
-        let p = create_profile(dir.path(), "Akua".to_string(), None).unwrap();
+        let p = create_profile(dir.path(), "Akua".to_string(), None, None).unwrap();
         let profile_dir = dir.path().join("baobab").join("profiles").join(&p.id);
         assert!(profile_dir.exists());
 
@@ -514,7 +536,7 @@ mod delete_tests {
     #[test]
     fn deleting_last_used_clears_pointer() {
         let dir = tempdir().unwrap();
-        let p = create_profile(dir.path(), "Akua".to_string(), None).unwrap();
+        let p = create_profile(dir.path(), "Akua".to_string(), None, None).unwrap();
         let mut f = load(dir.path()).unwrap();
         f.picker_prefs.last_used_profile_id = Some(p.id.clone());
         save(dir.path(), &f).unwrap();
@@ -526,8 +548,8 @@ mod delete_tests {
     #[test]
     fn dropping_below_two_disables_show_on_startup() {
         let dir = tempdir().unwrap();
-        let p1 = create_profile(dir.path(), "Akua".to_string(), None).unwrap();
-        let _p2 = create_profile(dir.path(), "Kofi".to_string(), None).unwrap();
+        let p1 = create_profile(dir.path(), "Akua".to_string(), None, None).unwrap();
+        let _p2 = create_profile(dir.path(), "Kofi".to_string(), None, None).unwrap();
         assert!(load(dir.path()).unwrap().picker_prefs.show_on_startup);
 
         delete_profile(dir.path(), &p1.id).unwrap();
@@ -568,7 +590,7 @@ mod prefs_tests {
     #[test]
     fn record_profile_used_updates_pointer_and_timestamp() {
         let dir = tempdir().unwrap();
-        let p = create_profile(dir.path(), "Akua".to_string(), None).unwrap();
+        let p = create_profile(dir.path(), "Akua".to_string(), None, None).unwrap();
         let before = p.last_used_at.clone();
         std::thread::sleep(std::time::Duration::from_millis(10));
         record_profile_used(dir.path(), &p.id).unwrap();
@@ -580,7 +602,7 @@ mod prefs_tests {
     #[test]
     fn resolve_user_data_dir_builds_correct_path() {
         let dir = tempdir().unwrap();
-        let p = create_profile(dir.path(), "Akua".to_string(), None).unwrap();
+        let p = create_profile(dir.path(), "Akua".to_string(), None, None).unwrap();
         let got = resolve_user_data_dir(dir.path(), &p);
         assert!(got.ends_with(PathBuf::from("baobab").join("profiles").join(&p.id).join("userdata")));
     }
@@ -617,7 +639,7 @@ mod cloud_link_tests {
     #[test]
     fn link_sets_cloud_link() {
         let dir = tempdir().unwrap();
-        let p = create_profile(dir.path(), "Akua".to_string(), None).unwrap();
+        let p = create_profile(dir.path(), "Akua".to_string(), None, None).unwrap();
         link_baobab_account(dir.path(), &p.id, sample_link()).unwrap();
         let f = load(dir.path()).unwrap();
         assert!(f.profiles[0].cloud_link.is_some());
@@ -627,7 +649,7 @@ mod cloud_link_tests {
     #[test]
     fn unlink_clears_cloud_link() {
         let dir = tempdir().unwrap();
-        let p = create_profile(dir.path(), "Akua".to_string(), None).unwrap();
+        let p = create_profile(dir.path(), "Akua".to_string(), None, None).unwrap();
         link_baobab_account(dir.path(), &p.id, sample_link()).unwrap();
         unlink_baobab_account(dir.path(), &p.id).unwrap();
         assert!(load(dir.path()).unwrap().profiles[0].cloud_link.is_none());
@@ -661,7 +683,7 @@ pub async fn cmd_get_picker_prefs(app: AppHandle) -> Result<PickerPrefs, String>
 #[tauri::command]
 pub async fn cmd_create_profile(app: AppHandle, name: String, fruit_color: Option<FruitColor>) -> Result<Profile, String> {
     let root = app_data_root(&app)?;
-    create_profile(&root, name, fruit_color)
+    create_profile(&root, name, fruit_color, None)
 }
 
 #[tauri::command]

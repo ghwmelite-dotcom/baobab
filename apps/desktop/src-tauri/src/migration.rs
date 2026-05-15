@@ -26,7 +26,7 @@ pub fn maybe_migrate(app_data_root: &Path) -> Result<Option<Profile>, String> {
         std::fs::write(&marker, b"v1").ok();
         return Ok(None);
     }
-    let profile = profiles::create_profile(app_data_root, "My Baobab".to_string(), Some(FruitColor::Shea))?;
+    let profile = profiles::create_profile(app_data_root, "My Baobab".to_string(), Some(FruitColor::Shea), None)?;
     std::fs::write(&marker, b"v1").map_err(|e| e.to_string())?;
     Ok(Some(profile))
 }
@@ -58,7 +58,7 @@ mod tests {
     #[test]
     fn migration_skipped_when_profiles_already_exist() {
         let dir = tempdir().unwrap();
-        profiles::create_profile(dir.path(), "Existing".to_string(), None).unwrap();
+        profiles::create_profile(dir.path(), "Existing".to_string(), None, None).unwrap();
         let result = maybe_migrate(dir.path()).unwrap();
         assert!(result.is_none());
         assert_eq!(profiles::load(dir.path()).unwrap().profiles.len(), 1);
