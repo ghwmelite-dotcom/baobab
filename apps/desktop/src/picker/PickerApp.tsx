@@ -6,6 +6,7 @@ import { UnlockSheet } from './UnlockSheet'
 import { ChangePinSheet } from './ChangePinSheet'
 import { RenameSheet } from './RenameSheet'
 import { ConfirmDeleteSheet } from './ConfirmDeleteSheet'
+import { PickerControls } from './PickerControls'
 import { usePickerData } from './usePickerData'
 
 export function PickerApp() {
@@ -38,51 +39,91 @@ export function PickerApp() {
   const deleteProfile = deleteTarget ? profiles.find((p) => p.id === deleteTarget) ?? null : null
 
   return (
-    <div style={{
-      position: 'relative',
-      height: '100vh',
-      overflow: 'hidden',
-      background: 'linear-gradient(180deg, #fde7c4 0%, #f4b878 30%, #d97a3a 65%, #6b2814 100%)',
-    }}>
-      <div style={{
-        height: '100%',
-        overflowY: 'auto',
-        display: 'flex', flexDirection: 'column', alignItems: 'center',
-        padding: '56px 32px 88px',
-      }}>
+    <div
+      data-tauri-drag-region
+      style={{
+        position: 'relative',
+        height: '100vh',
+        overflow: 'hidden',
+        background: 'linear-gradient(180deg, #fde7c4 0%, #f4b878 30%, #d97a3a 65%, #6b2814 100%)',
+      }}
+    >
+      <PickerControls />
+      <div
+        data-tauri-drag-region
+        style={{
+          height: '100%',
+          overflowY: 'auto',
+          display: 'flex', flexDirection: 'column', alignItems: 'center',
+          padding: '52px 32px 88px',
+        }}
+      >
         <GroveTree size={108} />
-        <h1 style={{ color: '#3c1810', fontSize: 28, margin: '20px 0 6px', letterSpacing: '-0.01em' }}>Who's using Baobab?</h1>
-        <p style={{ color: 'rgba(60,24,16,0.7)', fontSize: 14, margin: 0 }}>
+        <h1 data-tauri-drag-region style={{ color: '#3c1810', fontSize: 28, margin: '20px 0 6px', letterSpacing: '-0.01em' }}>Who's using Baobab?</h1>
+        <p data-tauri-drag-region style={{ color: 'rgba(60,24,16,0.7)', fontSize: 14, margin: 0 }}>
           {profiles.length} {profiles.length === 1 ? 'profile' : 'profiles'} in this grove
         </p>
-        <div style={{ marginTop: 40 }}>
+        <div data-tauri-drag-region="false" style={{ marginTop: 40 }}>
           <ProfileGrid
             profiles={profiles}
             onSelect={(id) => void select(id)}
             onRename={(id) => setRenameTarget(id)}
             onDelete={(id) => setDeleteTarget(id)}
             onAdd={() => setSheetOpen(true)}
-            onGuest={() => void openGuest()}
             onSetPin={(id) => setPinSheet({ mode: 'set', profileId: id })}
             onChangePin={(id) => setPinSheet({ mode: 'change', profileId: id })}
             onRemovePin={(id) => setPinSheet({ mode: 'remove', profileId: id })}
           />
         </div>
       </div>
-      <label style={{
-        position: 'absolute', bottom: 18, left: 24,
-        color: 'rgba(255,250,240,0.95)', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8,
-        pointerEvents: 'auto',
-      }}>
+
+      <button
+        type="button"
+        data-tauri-drag-region="false"
+        aria-label="Open guest window"
+        onClick={() => void openGuest()}
+        style={{
+          position: 'absolute', bottom: 18, left: 24,
+          display: 'flex', alignItems: 'center', gap: 8,
+          padding: '8px 16px 8px 12px',
+          background: 'rgba(255,250,240,0.92)',
+          color: '#3c1810',
+          border: '1.5px solid rgba(60,30,15,0.15)',
+          borderRadius: 999,
+          cursor: 'pointer',
+          fontSize: 13, fontWeight: 600,
+          boxShadow: '0 2px 8px rgba(60,20,10,0.18)',
+          transition: 'background 120ms ease, transform 120ms ease',
+        }}
+        onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,1)'; e.currentTarget.style.transform = 'translateY(-1px)' }}
+        onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,250,240,0.92)'; e.currentTarget.style.transform = 'translateY(0)' }}
+      >
+        <span aria-hidden style={{
+          width: 22, height: 22, borderRadius: '50%',
+          background: 'radial-gradient(circle at 30% 30%, #c0b5a0, #6a5a48)',
+          color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 11, fontWeight: 700,
+        }}>G</span>
+        Guest mode
+      </button>
+
+      <label
+        data-tauri-drag-region="false"
+        style={{
+          position: 'absolute', bottom: 18, right: 24,
+          color: 'rgba(255,250,240,0.95)', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8,
+        }}
+      >
         <input
           type="checkbox"
+          data-tauri-drag-region="false"
           checked={showOnStartup}
           onChange={(e) => void toggleShow(e.target.checked)}
           aria-label="Show on startup"
         />
         Show on startup
       </label>
-      {error && <div role="alert" style={{ position: 'absolute', bottom: 18, right: 24, color: '#fff8ee', fontSize: 13 }}>{error}</div>}
+      {error && <div role="alert" data-tauri-drag-region="false" style={{ position: 'absolute', top: 44, left: '50%', transform: 'translateX(-50%)', color: '#a23a1f', fontSize: 13, background: 'rgba(255,250,240,0.95)', padding: '6px 12px', borderRadius: 6 }}>{error}</div>}
       <NewProfileSheet
         open={sheetOpen}
         onClose={() => setSheetOpen(false)}
