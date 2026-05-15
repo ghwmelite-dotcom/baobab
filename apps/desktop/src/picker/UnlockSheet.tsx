@@ -15,6 +15,7 @@ export function UnlockSheet({ open, profile, onClose }: Props) {
   const [err, setErr] = useState<string | null>(null)
   const [lockSecs, setLockSecs] = useState<number | null>(null)
   const [busy, setBusy] = useState(false)
+  const [wrongCount, setWrongCount] = useState(0)
 
   // Tick down lockout countdown.
   useEffect(() => {
@@ -27,7 +28,7 @@ export function UnlockSheet({ open, profile, onClose }: Props) {
   // Reset state on close.
   useEffect(() => {
     if (!open) {
-      setPin(''); setShake(false); setErr(null); setLockSecs(null); setBusy(false)
+      setPin(''); setShake(false); setErr(null); setLockSecs(null); setBusy(false); setWrongCount(0)
     }
   }, [open])
 
@@ -46,10 +47,16 @@ export function UnlockSheet({ open, profile, onClose }: Props) {
       if (msg.startsWith('locked:')) {
         const secs = parseInt(msg.slice('locked:'.length), 10)
         setLockSecs(isNaN(secs) ? 30 : secs)
+        setWrongCount(0)
         setErr(null)
       } else if (msg === 'wrong_pin') {
         setShake(true)
-        setErr('Wrong PIN. Try again.')
+        setWrongCount((c) => {
+          const next = c + 1
+          const remaining = Math.max(0, 3 - next)
+          setErr(remaining > 0 ? `Wrong PIN — ${remaining} attempt${remaining === 1 ? '' : 's'} left.` : `Wrong PIN.`)
+          return next
+        })
         // Clear the input on the next tick so the boxes empty after the shake registers.
         setTimeout(() => { setPin(''); setShake(false) }, 450)
       } else {
