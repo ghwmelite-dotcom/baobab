@@ -27,6 +27,8 @@ pub struct Profile {
     pub last_used_at: String,
     pub cloud_link: Option<CloudLink>,
     pub user_data_dir_name: String,
+    #[serde(default)]
+    pub pin_hash: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -124,6 +126,33 @@ mod load_tests {
         let parsed = load(dir.path()).unwrap();
         assert_eq!(parsed, original);
     }
+
+    #[test]
+    fn loads_v1_profiles_json_without_pin_hash_field() {
+        use tempfile::tempdir;
+        let dir = tempdir().unwrap();
+        let baobab = dir.path().join("baobab");
+        std::fs::create_dir_all(&baobab).unwrap();
+        // Hand-written v1.0 schema: no pinHash field at all.
+        let raw = r#"{
+            "schemaVersion": 1,
+            "profiles": [{
+                "id": "abc",
+                "name": "Akua",
+                "fruitColor": "mango",
+                "avatarLetter": "A",
+                "createdAt": "2026-01-01T00:00:00Z",
+                "lastUsedAt": "2026-01-01T00:00:00Z",
+                "cloudLink": null,
+                "userDataDirName": "userdata"
+            }],
+            "pickerPrefs": { "showOnStartup": false, "lastUsedProfileId": null }
+        }"#;
+        std::fs::write(baobab.join("profiles.json"), raw).unwrap();
+        let f = load(dir.path()).unwrap();
+        assert_eq!(f.profiles.len(), 1);
+        assert_eq!(f.profiles[0].pin_hash, None);
+    }
 }
 
 /// Write the profiles registry to disk atomically (temp file + rename).
@@ -179,6 +208,7 @@ mod tests {
                 last_used_at: "2026-05-15T00:00:00Z".to_string(),
                 cloud_link: None,
                 user_data_dir_name: "userdata".to_string(),
+                pin_hash: None,
             }],
             picker_prefs: PickerPrefs { show_on_startup: true, last_used_profile_id: Some("abc".to_string()) },
         };
@@ -241,6 +271,7 @@ pub fn create_profile(
         last_used_at: now,
         cloud_link: None,
         user_data_dir_name: "userdata".to_string(),
+        pin_hash: None,
     };
     let profile_dir = app_data_root.join("baobab").join("profiles").join(&id).join("userdata");
     std::fs::create_dir_all(&profile_dir).map_err(|e| e.to_string())?;
