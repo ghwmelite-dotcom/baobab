@@ -61,7 +61,10 @@ export function ProfileTile({ profile, onSelect, onRename, onDelete, onSetPin, o
                 boxShadow: '0 1px 4px rgba(60,20,10,0.3)',
               }}
             >
-              🔒
+              <svg aria-hidden width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="4" y="11" width="16" height="10" rx="2" />
+                <path d="M8 11V7a4 4 0 1 1 8 0v4" />
+              </svg>
             </span>
           )}
         </span>
