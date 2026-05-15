@@ -1,4 +1,5 @@
 mod downloads;
+mod profiles;
 mod tabs;
 
 use tauri::Manager;
