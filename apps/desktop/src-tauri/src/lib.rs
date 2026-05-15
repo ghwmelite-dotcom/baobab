@@ -35,6 +35,9 @@ pub fn run() {
             profiles::cmd_set_show_on_startup,
             profiles::cmd_record_profile_used,
             windows::open_profile_window,
+            windows::open_picker_window,
+            windows::open_guest_window,
+            windows::current_profile_id,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Baobab");
