@@ -5,6 +5,8 @@ use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter, LogicalPosition, LogicalSize, Manager, WebviewUrl};
 
 use crate::downloads;
+use crate::profiles;
+use crate::windows;
 
 // Current chrome layout (post-r9 redesign): tab bar (38) + address bar (48)
 // = 86px. The old constant was 132px from the 3-row chrome and was making
@@ -78,18 +80,30 @@ fn tab_label(id: &str) -> String {
     format!("tab-{id}")
 }
 
+fn data_dir_for_window(app: &AppHandle, window_label: &str) -> Option<std::path::PathBuf> {
+    let profile_id = windows::profile_id_from_label(window_label)?;
+    if profile_id == "guest" {
+        return Some(std::env::temp_dir().join(format!("baobab-guest-{window_label}")));
+    }
+    let root = app.path().app_data_dir().ok()?;
+    let file = profiles::load(&root).ok()?;
+    let profile = file.profiles.iter().find(|p| p.id == profile_id)?;
+    Some(profiles::resolve_user_data_dir(&root, profile))
+}
+
 #[tauri::command]
 pub async fn create_tab(
     app: AppHandle,
+    window_label: String,
     id: String,
     url: String,
     incognito: Option<bool>,
 ) -> Result<TabInfo, String> {
-    let main = app
-        .get_window("main")
-        .ok_or_else(|| "main window not found".to_string())?;
-    let size = main.inner_size().map_err(|e| e.to_string())?;
-    let scale = main.scale_factor().map_err(|e| e.to_string())?;
+    let host = app
+        .get_window(&window_label)
+        .ok_or_else(|| format!("window {window_label} not found"))?;
+    let size = host.inner_size().map_err(|e| e.to_string())?;
+    let scale = host.scale_factor().map_err(|e| e.to_string())?;
     let logical_w = size.width as f64 / scale;
     let logical_h = size.height as f64 / scale;
 
@@ -107,6 +121,8 @@ pub async fn create_tab(
     // for the alpha that's an acceptable cleanup boundary.
     if incognito.unwrap_or(false) {
         let dir = std::env::temp_dir().join(format!("baobab-incognito-{}", id));
+        builder = builder.data_directory(dir);
+    } else if let Some(dir) = data_dir_for_window(&app, &window_label) {
         builder = builder.data_directory(dir);
     }
     let builder = downloads::attach(builder, app.clone());
@@ -139,7 +155,7 @@ pub async fn create_tab(
         let title = lookup_title(&label);
         emit_tab_loaded(&webview, &label, url, title);
     });
-    main.add_child(
+    host.add_child(
         builder,
         LogicalPosition::new(0.0, CHROME_HEIGHT),
         LogicalSize::new(logical_w, (logical_h - CHROME_HEIGHT - STATUS_HEIGHT).max(0.0)),
@@ -169,12 +185,12 @@ pub async fn close_tab(app: AppHandle, id: String) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub async fn show_tab(app: AppHandle, id: String) -> Result<(), String> {
-    let main = app
-        .get_window("main")
-        .ok_or_else(|| "main window not found".to_string())?;
-    for wv in main.webviews() {
-        if wv.label() == "main" {
+pub async fn show_tab(app: AppHandle, window_label: String, id: String) -> Result<(), String> {
+    let host = app
+        .get_window(&window_label)
+        .ok_or_else(|| format!("window {window_label} not found"))?;
+    for wv in host.webviews() {
+        if wv.label() == window_label {
             continue;
         }
         let _ = wv.hide();
@@ -206,17 +222,17 @@ pub async fn hide_tab(app: AppHandle, id: String) -> Result<(), String> {
     Ok(())
 }
 
-// Hide every non-main child webview. Used when the canvas should show
+// Hide every non-host child webview. Used when the canvas should show
 // the NewTabPage or an overlay, and no webview should be visible —
 // hide_tab(activeId) alone leaves any previously-shown tab's webview
 // dangling on top of React content.
 #[tauri::command]
-pub async fn hide_all_tabs(app: AppHandle) -> Result<(), String> {
-    let main = app
-        .get_window("main")
-        .ok_or_else(|| "main window not found".to_string())?;
-    for wv in main.webviews() {
-        if wv.label() == "main" {
+pub async fn hide_all_tabs(app: AppHandle, window_label: String) -> Result<(), String> {
+    let host = app
+        .get_window(&window_label)
+        .ok_or_else(|| format!("window {window_label} not found"))?;
+    for wv in host.webviews() {
+        if wv.label() == window_label {
             continue;
         }
         let _ = wv.hide();
@@ -247,12 +263,12 @@ pub async fn tab_go_forward(app: AppHandle, tab_id: String) -> Result<(), String
 }
 
 #[tauri::command]
-pub async fn list_tabs(app: AppHandle) -> Result<Vec<TabInfo>, String> {
-    let main = app
-        .get_window("main")
-        .ok_or_else(|| "main window not found".to_string())?;
+pub async fn list_tabs(app: AppHandle, window_label: String) -> Result<Vec<TabInfo>, String> {
+    let host = app
+        .get_window(&window_label)
+        .ok_or_else(|| format!("window {window_label} not found"))?;
     let mut tabs = Vec::new();
-    for wv in main.webviews() {
+    for wv in host.webviews() {
         let label = wv.label().to_string();
         if let Some(id) = label.strip_prefix("tab-") {
             let url = wv.url().map(|u| u.to_string()).unwrap_or_default();
