@@ -67,6 +67,8 @@ pub fn run() {
             profiles::cmd_delete_profile,
             profiles::cmd_set_show_on_startup,
             profiles::cmd_record_profile_used,
+            profiles::cmd_set_profile_pin,
+            profiles::cmd_remove_profile_pin,
             windows::open_profile_window,
             windows::open_picker_window,
             windows::open_guest_window,

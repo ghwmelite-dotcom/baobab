@@ -751,9 +751,9 @@ fn app_data_root(app: &AppHandle) -> Result<PathBuf, String> {
 }
 
 #[tauri::command]
-pub async fn cmd_list_profiles(app: AppHandle) -> Result<Vec<Profile>, String> {
+pub async fn cmd_list_profiles(app: AppHandle) -> Result<Vec<ProfileView>, String> {
     let root = app_data_root(&app)?;
-    Ok(load(&root)?.profiles)
+    Ok(load(&root)?.profiles.iter().map(ProfileView::from).collect())
 }
 
 #[tauri::command]
@@ -763,9 +763,15 @@ pub async fn cmd_get_picker_prefs(app: AppHandle) -> Result<PickerPrefs, String>
 }
 
 #[tauri::command]
-pub async fn cmd_create_profile(app: AppHandle, name: String, fruit_color: Option<FruitColor>) -> Result<Profile, String> {
+pub async fn cmd_create_profile(
+    app: AppHandle,
+    name: String,
+    fruit_color: Option<FruitColor>,
+    pin: Option<String>,
+) -> Result<ProfileView, String> {
     let root = app_data_root(&app)?;
-    create_profile(&root, name, fruit_color, None)
+    let p = create_profile(&root, name, fruit_color, pin)?;
+    Ok(ProfileView::from(&p))
 }
 
 #[tauri::command]
@@ -802,4 +808,25 @@ pub async fn cmd_set_show_on_startup(app: AppHandle, value: bool) -> Result<(), 
 pub async fn cmd_record_profile_used(app: AppHandle, id: String) -> Result<(), String> {
     let root = app_data_root(&app)?;
     record_profile_used(&root, &id)
+}
+
+#[tauri::command]
+pub async fn cmd_set_profile_pin(
+    app: AppHandle,
+    id: String,
+    new_pin: String,
+    current_pin: Option<String>,
+) -> Result<(), String> {
+    let root = app_data_root(&app)?;
+    set_profile_pin(&root, &id, &new_pin, current_pin.as_deref())
+}
+
+#[tauri::command]
+pub async fn cmd_remove_profile_pin(
+    app: AppHandle,
+    id: String,
+    current_pin: String,
+) -> Result<(), String> {
+    let root = app_data_root(&app)?;
+    remove_profile_pin(&root, &id, &current_pin)
 }
