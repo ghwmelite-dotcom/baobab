@@ -41,11 +41,19 @@ export function App() {
   useChromeShortcuts()
   const profile = useProfile()
 
+  // Wait for ProfileProvider to resolve before hydrating stores — they read
+  // per-profile persistence keys and require setProfileId to have been called.
+  // Firing hydrate() before setProfileId is set causes scope() to throw and
+  // tabs never restore on cold start (the error is swallowed silently).
   useEffect(() => {
-    void refreshResidency()
+    if (!profile) return
     void useTabsStore.getState().hydrate()
     void useTabsStore.getState().initListeners()
     void useDownloadsStore.getState().initListeners()
+  }, [profile?.id])
+
+  useEffect(() => {
+    void refreshResidency()
     const t = setInterval(() => void refreshResidency(), 60_000)
     return () => clearInterval(t)
   }, [])
