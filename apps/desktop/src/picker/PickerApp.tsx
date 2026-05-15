@@ -48,14 +48,14 @@ export function PickerApp() {
         height: '100%',
         overflowY: 'auto',
         display: 'flex', flexDirection: 'column', alignItems: 'center',
-        padding: '32px 24px 64px',
+        padding: '56px 32px 88px',
       }}>
-        <GroveTree size={72} />
-        <h1 style={{ color: '#3c1810', fontSize: 22, margin: '12px 0 4px' }}>Who's using Baobab?</h1>
-        <p style={{ color: 'rgba(60,24,16,0.7)', fontSize: 12, margin: 0 }}>
+        <GroveTree size={108} />
+        <h1 style={{ color: '#3c1810', fontSize: 28, margin: '20px 0 6px', letterSpacing: '-0.01em' }}>Who's using Baobab?</h1>
+        <p style={{ color: 'rgba(60,24,16,0.7)', fontSize: 14, margin: 0 }}>
           {profiles.length} {profiles.length === 1 ? 'profile' : 'profiles'} in this grove
         </p>
-        <div style={{ marginTop: 24 }}>
+        <div style={{ marginTop: 40 }}>
           <ProfileGrid
             profiles={profiles}
             onSelect={(id) => void select(id)}
@@ -70,8 +70,8 @@ export function PickerApp() {
         </div>
       </div>
       <label style={{
-        position: 'absolute', bottom: 12, left: 16,
-        color: 'rgba(255,250,240,0.95)', fontSize: 12, display: 'flex', alignItems: 'center', gap: 6,
+        position: 'absolute', bottom: 18, left: 24,
+        color: 'rgba(255,250,240,0.95)', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8,
         pointerEvents: 'auto',
       }}>
         <input
@@ -82,7 +82,7 @@ export function PickerApp() {
         />
         Show on startup
       </label>
-      {error && <div role="alert" style={{ position: 'absolute', bottom: 12, right: 16, color: '#fff8ee', fontSize: 12 }}>{error}</div>}
+      {error && <div role="alert" style={{ position: 'absolute', bottom: 18, right: 24, color: '#fff8ee', fontSize: 13 }}>{error}</div>}
       <NewProfileSheet
         open={sheetOpen}
         onClose={() => setSheetOpen(false)}
