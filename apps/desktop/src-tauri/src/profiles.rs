@@ -125,6 +125,42 @@ mod load_tests {
     }
 }
 
+/// Write the profiles registry to disk atomically (temp file + rename).
+pub fn save(app_data_root: &Path, file: &ProfilesFile) -> Result<(), String> {
+    let path = profiles_json_path(app_data_root);
+    let baobab_dir = path.parent().ok_or("no parent")?;
+    std::fs::create_dir_all(baobab_dir).map_err(|e| e.to_string())?;
+    let tmp = baobab_dir.join(format!(".profiles.json.tmp.{}", std::process::id()));
+    let bytes = serde_json::to_vec_pretty(file).map_err(|e| e.to_string())?;
+    std::fs::write(&tmp, &bytes).map_err(|e| e.to_string())?;
+    std::fs::rename(&tmp, &path).map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[cfg(test)]
+mod save_tests {
+    use super::*;
+    use tempfile::tempdir;
+
+    #[test]
+    fn save_then_load_roundtrips() {
+        let dir = tempdir().unwrap();
+        let mut original = ProfilesFile::default();
+        original.picker_prefs.show_on_startup = true;
+        save(dir.path(), &original).unwrap();
+
+        let loaded = load(dir.path()).unwrap();
+        assert_eq!(loaded, original);
+    }
+
+    #[test]
+    fn save_creates_baobab_directory_if_missing() {
+        let dir = tempdir().unwrap();
+        save(dir.path(), &ProfilesFile::default()).unwrap();
+        assert!(dir.path().join("baobab").join("profiles.json").exists());
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
