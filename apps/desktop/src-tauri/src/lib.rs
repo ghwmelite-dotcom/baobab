@@ -4,15 +4,45 @@ mod profiles;
 mod tabs;
 mod windows;
 
-use tauri::Manager;
-
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_store::Builder::default().build())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
-        .setup(|_app| {
+        .setup(|app| {
+            use tauri::Manager;
+            let handle = app.handle().clone();
+            let root = handle.path().app_data_dir().map_err(|e| e.to_string())?;
+
+            // One-shot migration creates "My Baobab" on fresh install.
+            let _ = migration::maybe_migrate(&root);
+
+            let file = profiles::load(&root).map_err(|e| e.to_string())?;
+            let count = file.profiles.len();
+            let show_picker = match count {
+                0 => false,
+                1 => file.picker_prefs.show_on_startup,
+                _ => true,
+            };
+
+            if show_picker {
+                tauri::async_runtime::block_on(windows::open_picker_window(handle.clone()))
+                    .map_err(|e| e.to_string())?;
+            } else if let Some(p) = file.profiles.first() {
+                tauri::async_runtime::block_on(windows::open_profile_window(handle.clone(), p.id.clone()))
+                    .map_err(|e| e.to_string())?;
+            } else {
+                tauri::async_runtime::block_on(windows::open_picker_window(handle.clone()))
+                    .map_err(|e| e.to_string())?;
+            }
+
+            #[cfg(debug_assertions)]
+            {
+                for (_label, win) in handle.webview_windows() {
+                    win.open_devtools();
+                }
+            }
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
