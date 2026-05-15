@@ -7,11 +7,16 @@ interface Props {
   onSelect: (id: string) => void
   onRename?: (id: string) => void
   onDelete?: (id: string) => void
+  onSetPin?: (id: string) => void
+  onChangePin?: (id: string) => void
+  onRemovePin?: (id: string) => void
 }
 
-export function ProfileTile({ profile, onSelect, onRename, onDelete }: Props) {
+export function ProfileTile({ profile, onSelect, onRename, onDelete, onSetPin, onChangePin, onRemovePin }: Props) {
   const [menuOpen, setMenuOpen] = useState(false)
   const { from, to } = FRUIT_HEX[profile.fruitColor]
+
+  const hasMenu = onRename || onDelete || onSetPin || onChangePin || onRemovePin
 
   return (
     <div style={{ position: 'relative' }}>
@@ -28,21 +33,41 @@ export function ProfileTile({ profile, onSelect, onRename, onDelete }: Props) {
         }}
       >
         <span
-          aria-hidden
-          style={{
-            width: 44, height: 44, borderRadius: '50%',
-            background: `radial-gradient(circle at 30% 30%, ${from}, ${to})`,
-            border: '2px solid rgba(255,255,255,0.85)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: 'white', fontSize: 18, marginBottom: 8,
-            boxShadow: '0 3px 8px rgba(60,20,10,0.35), inset 0 -3px 6px rgba(0,0,0,0.2)',
-          }}
+          style={{ position: 'relative', marginBottom: 8 }}
         >
-          {profile.avatarLetter}
+          <span
+            aria-hidden
+            style={{
+              width: 44, height: 44, borderRadius: '50%',
+              background: `radial-gradient(circle at 30% 30%, ${from}, ${to})`,
+              border: '2px solid rgba(255,255,255,0.85)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: 'white', fontSize: 18,
+              boxShadow: '0 3px 8px rgba(60,20,10,0.35), inset 0 -3px 6px rgba(0,0,0,0.2)',
+            }}
+          >
+            {profile.avatarLetter}
+          </span>
+          {profile.pinRequired && (
+            <span
+              aria-label={`${profile.name} is locked`}
+              style={{
+                position: 'absolute', bottom: -2, right: -4,
+                fontSize: 13, lineHeight: 1,
+                background: 'rgba(255,250,240,0.95)',
+                borderRadius: '50%',
+                width: 18, height: 18,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: '0 1px 4px rgba(60,20,10,0.3)',
+              }}
+            >
+              🔒
+            </span>
+          )}
         </span>
         <span style={{ fontSize: 13 }}>{profile.name}</span>
       </button>
-      {(onRename || onDelete) && (
+      {hasMenu && (
         <>
           <button
             type="button"
@@ -69,6 +94,24 @@ export function ProfileTile({ profile, onSelect, onRename, onDelete }: Props) {
                 <button type="button" role="menuitem" onClick={() => { setMenuOpen(false); onRename(profile.id) }}
                   style={{ display: 'block', width: '100%', textAlign: 'left', padding: '6px 10px', border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 13 }}>
                   Rename
+                </button>
+              )}
+              {!profile.pinRequired && onSetPin && (
+                <button type="button" role="menuitem" onClick={() => { setMenuOpen(false); onSetPin(profile.id) }}
+                  style={{ display: 'block', width: '100%', textAlign: 'left', padding: '6px 10px', border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 13 }}>
+                  Set PIN
+                </button>
+              )}
+              {profile.pinRequired && onChangePin && (
+                <button type="button" role="menuitem" onClick={() => { setMenuOpen(false); onChangePin(profile.id) }}
+                  style={{ display: 'block', width: '100%', textAlign: 'left', padding: '6px 10px', border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 13 }}>
+                  Change PIN
+                </button>
+              )}
+              {profile.pinRequired && onRemovePin && (
+                <button type="button" role="menuitem" onClick={() => { setMenuOpen(false); onRemovePin(profile.id) }}
+                  style={{ display: 'block', width: '100%', textAlign: 'left', padding: '6px 10px', border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 13 }}>
+                  Remove PIN
                 </button>
               )}
               {onDelete && (
