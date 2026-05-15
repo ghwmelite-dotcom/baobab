@@ -7,12 +7,16 @@ interface PickerState {
   showOnStartup: boolean
   loading: boolean
   error: string | null
+  unlockTarget: string | null   // profile id awaiting PIN entry
   hydrate: () => Promise<void>
   create: (name: string, color?: FruitColor, pin?: string) => Promise<void>
   rename: (id: string, name: string) => Promise<void>
   delete: (id: string) => Promise<void>
   toggleShowOnStartup: (value: boolean) => Promise<void>
   select: (id: string) => Promise<void>
+  clearUnlockTarget: () => void
+  setPin: (id: string, newPin: string, currentPin?: string) => Promise<void>
+  removePin: (id: string, currentPin: string) => Promise<void>
   openGuest: () => Promise<void>
 }
 
@@ -21,6 +25,7 @@ export const usePickerData = create<PickerState>((set, get) => ({
   showOnStartup: false,
   loading: false,
   error: null,
+  unlockTarget: null,
 
   hydrate: async () => {
     set({ loading: true, error: null })
@@ -53,7 +58,24 @@ export const usePickerData = create<PickerState>((set, get) => ({
   },
 
   select: async (id) => {
+    const p = get().profiles.find((x) => x.id === id)
+    if (p?.pinRequired) {
+      set({ unlockTarget: id })
+      return
+    }
     await profileApi.openProfileWindow(id)
+  },
+
+  clearUnlockTarget: () => set({ unlockTarget: null }),
+
+  setPin: async (id, newPin, currentPin) => {
+    await profileApi.setPin(id, newPin, currentPin)
+    await get().hydrate()
+  },
+
+  removePin: async (id, currentPin) => {
+    await profileApi.removePin(id, currentPin)
+    await get().hydrate()
   },
 
   openGuest: async () => {
