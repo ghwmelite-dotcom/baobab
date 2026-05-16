@@ -27,7 +27,17 @@ function isNavigableUrl(url: string): boolean {
   }
 }
 
-const SEARCH_URL_RE = /^tauri:\/\/localhost\/search\.html\?q=(.*)$/
+// Webview-runtime navigation can't resolve the `tauri://localhost/...`
+// custom protocol — that scheme only applies to initial window load via
+// WebviewUrl::App. At runtime nav we use the Vite dev URL in development
+// builds and the production tauri:// asset URL otherwise. The regex below
+// matches BOTH forms so the omnibar display works in either mode.
+const SEARCH_BASE_URL = import.meta.env.DEV
+  ? 'http://localhost:1420/search.html'
+  : 'tauri://localhost/search.html'
+
+const SEARCH_URL_RE =
+  /^(?:tauri:\/\/localhost|https?:\/\/localhost(?::\d+)?)\/search\.html\?q=(.*)$/
 
 function displayValueForTabUrl(url: string | undefined): string {
   if (!url) return ''
@@ -167,7 +177,7 @@ export function Omnibar() {
     if (parsed.kind === 'empty') return
     if (parsed.kind === 'url') {
       if (!isNavigableUrl(parsed.url)) {
-        const searchUrl = `tauri://localhost/search.html?q=${encodeURIComponent(value)}`
+        const searchUrl = `${SEARCH_BASE_URL}?q=${encodeURIComponent(value)}`
         if (activeId) void navigate(activeId, searchUrl)
         else void openTab(searchUrl)
         return
@@ -176,7 +186,7 @@ export function Omnibar() {
       else void openTab(parsed.url)
       return
     }
-    const searchUrl = `tauri://localhost/search.html?q=${encodeURIComponent(parsed.query)}`
+    const searchUrl = `${SEARCH_BASE_URL}?q=${encodeURIComponent(parsed.query)}`
     if (activeId) void navigate(activeId, searchUrl)
     else void openTab(searchUrl)
   }

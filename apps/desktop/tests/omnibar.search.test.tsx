@@ -62,6 +62,10 @@ beforeEach(() => {
   stateMock.history = {}
 })
 
+// In the test (Vitest) environment, `import.meta.env.DEV` is true, so the
+// Omnibar's SEARCH_BASE_URL resolves to the http://localhost:1420 form.
+const EXPECTED_SEARCH_BASE = 'http://localhost:1420/search.html'
+
 describe('Omnibar search routing', () => {
   it('typing a search query and pressing Enter navigates to the search page', () => {
     render(<Omnibar />)
@@ -70,7 +74,7 @@ describe('Omnibar search routing', () => {
     fireEvent.keyDown(input, { key: 'Enter' })
     expect(navigateMock).toHaveBeenCalledWith(
       'tab-1',
-      'tauri://localhost/search.html?q=baobab%20tree%20facts',
+      `${EXPECTED_SEARCH_BASE}?q=baobab%20tree%20facts`,
     )
   })
 
@@ -82,8 +86,14 @@ describe('Omnibar search routing', () => {
     expect(navigateMock).toHaveBeenCalledWith('tab-1', 'https://example.com')
   })
 
-  it('omnibar value displays the decoded query when current tab is on a search page', () => {
+  it('omnibar value displays the decoded query when current tab is on a tauri-scheme search page', () => {
     stateMock.tabs = [{ id: 'tab-1', url: 'tauri://localhost/search.html?q=baobab%20tree' }]
+    render(<Omnibar />)
+    expect((screen.getByRole('textbox') as HTMLInputElement).value).toBe('baobab tree')
+  })
+
+  it('omnibar value displays the decoded query when current tab is on a http-localhost search page', () => {
+    stateMock.tabs = [{ id: 'tab-1', url: 'http://localhost:1420/search.html?q=baobab%20tree' }]
     render(<Omnibar />)
     expect((screen.getByRole('textbox') as HTMLInputElement).value).toBe('baobab tree')
   })
