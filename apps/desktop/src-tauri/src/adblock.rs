@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
@@ -80,6 +81,95 @@ pub fn build_init_script(payload: &AdblockPayload) -> String {
     let json = serde_json::to_string(payload).expect("payload serialisable");
     let engine = engine_js().replace(YT_PLACEHOLDER, &payload.youtube_scriptlets);
     format!("var BAOBAB_ADBLOCK = {};\n{}", json, engine)
+}
+
+const EASYLIST_URL: &str = "https://easylist.to/easylist/easylist.txt";
+const EASYPRIVACY_URL: &str = "https://easylist.to/easylist/easyprivacy.txt";
+
+/// Parse an EasyList-formatted text and return the plain `||hostname^` hostnames.
+/// Skip path-suffixed rules (e.g. `||sub.example.com/path/*`) which need URL-pattern
+/// matching that v1 doesn't support.
+pub fn extract_hostnames_from_easylist(text: &str) -> Vec<String> {
+    let mut out: Vec<String> = Vec::new();
+    let mut seen: HashSet<String> = HashSet::new();
+    for line in text.lines() {
+        let line = line.trim();
+        if line.is_empty() || line.starts_with('!') || line.starts_with('[') {
+            continue;
+        }
+        let Some(rest) = line.strip_prefix("||") else { continue; };
+        // Stop at ^ (which marks end-of-host), or fail if we see / or * first
+        let mut host = String::new();
+        for c in rest.chars() {
+            match c {
+                '^' => break,
+                '/' | '*' => { host.clear(); break; }
+                _ => host.push(c),
+            }
+        }
+        if host.is_empty() { continue; }
+        if seen.insert(host.clone()) {
+            out.push(host);
+        }
+    }
+    out
+}
+
+/// Fetch EasyList + EasyPrivacy from upstream, parse, write the new payload
+/// to `$APP_DATA/baobab/adblock/payload.json`, and return it.
+pub async fn refresh_from_upstream(app_data_root: &Path) -> Result<AdblockPayload, String> {
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(30))
+        .build()
+        .map_err(|e| e.to_string())?;
+
+    let easylist = client
+        .get(EASYLIST_URL)
+        .send()
+        .await
+        .and_then(|r| r.error_for_status())
+        .map_err(|e| format!("easylist fetch: {e}"))?
+        .text()
+        .await
+        .map_err(|e| format!("easylist text: {e}"))?;
+
+    let easyprivacy = client
+        .get(EASYPRIVACY_URL)
+        .send()
+        .await
+        .and_then(|r| r.error_for_status())
+        .map_err(|e| format!("easyprivacy fetch: {e}"))?
+        .text()
+        .await
+        .map_err(|e| format!("easyprivacy text: {e}"))?;
+
+    let mut seen: HashSet<String> = HashSet::new();
+    let mut all: Vec<String> = Vec::new();
+    for src in [&easylist, &easyprivacy] {
+        for h in extract_hostnames_from_easylist(src) {
+            if seen.insert(h.clone()) {
+                all.push(h);
+            }
+        }
+    }
+    all.sort();
+
+    let now = chrono::Utc::now().to_rfc3339();
+    let payload = AdblockPayload {
+        blocked_hostnames: all,
+        youtube_scriptlets: BUNDLED_YOUTUBE_JS.to_string(),
+        last_updated: now.clone(),
+        source: AdblockSource::Upstream { fetched_at: now },
+    };
+
+    let cache = cache_path(app_data_root);
+    if let Some(parent) = cache.parent() {
+        std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+    }
+    let bytes = serde_json::to_vec_pretty(&payload).map_err(|e| e.to_string())?;
+    std::fs::write(&cache, &bytes).map_err(|e| e.to_string())?;
+
+    Ok(payload)
 }
 
 #[cfg(test)]
@@ -202,5 +292,46 @@ mod build_init_tests {
         let json_chunk = after_eq.split(';').next().unwrap();
         // Parse it back as JSON to prove it's valid
         let _: serde_json::Value = serde_json::from_str(json_chunk).expect("valid JSON");
+    }
+}
+
+#[cfg(test)]
+mod refresh_tests {
+    use super::*;
+
+    #[test]
+    fn extract_hostnames_from_easylist_format() {
+        // Sample EasyList lines: hostname-block rules look like ||domain.tld^
+        // with optional path or modifier suffixes after the ^.
+        // We extract the bare hostname.
+        let raw = r#"
+! Comment line, should skip
+||doubleclick.net^
+||googleadservices.com^$third-party
+||tracker.example.com^
+||sub.example.com/path/*
+[Adblock Plus 2.0]
+||cdn.evil.com^$image
+random non-block line
+"#;
+        let extracted = extract_hostnames_from_easylist(raw);
+        assert!(extracted.contains(&"doubleclick.net".to_string()));
+        assert!(extracted.contains(&"googleadservices.com".to_string()));
+        assert!(extracted.contains(&"tracker.example.com".to_string()));
+        assert!(extracted.contains(&"cdn.evil.com".to_string()));
+        // Path-suffix rules are NOT plain hostname blocks per spec; skip them.
+        assert!(!extracted.contains(&"sub.example.com".to_string()));
+    }
+
+    #[test]
+    fn extract_handles_empty_input() {
+        assert_eq!(extract_hostnames_from_easylist(""), Vec::<String>::new());
+    }
+
+    #[test]
+    fn extract_dedups() {
+        let raw = "||doubleclick.net^\n||doubleclick.net^\n";
+        let extracted = extract_hostnames_from_easylist(raw);
+        assert_eq!(extracted.iter().filter(|h| h == &"doubleclick.net").count(), 1);
     }
 }
