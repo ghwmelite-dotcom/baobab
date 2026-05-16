@@ -55,17 +55,17 @@ proxy.post('/fetch', async (c) => {
   const { html, ads_blocked, trackers_blocked } = stripAds(raw)
   const page = extractReadable(html)
 
-  const uid = c.get('userId')
-  if (uid) {
+  const userId = c.get('userId')
+  if (userId) {
     await c.env.DB.prepare(
       'INSERT INTO adblock_stats (id, user_id, url, ads_blocked, trackers_blocked, bytes_saved) VALUES (?, ?, ?, ?, ?, ?)'
-    ).bind(newId(), uid, body.url, ads_blocked, trackers_blocked, raw.length - html.length).run()
+    ).bind(newId(), userId, body.url, ads_blocked, trackers_blocked, raw.length - html.length).run()
   }
 
   let ai_summary = ''
   let key_points: string[] = []
   if (!body.skip_ai && page.word_count > 50) {
-    const user = uid ? await getUserById(c.env.DB, uid) : null
+    const user = userId ? await getUserById(c.env.DB, userId) : null
     const model = pickModel(c.env, { lowBw: !!user?.low_bandwidth_mode, model: c.env.SUMMARIZE_MODEL })
     const x = await summarizeAndExtract(c.env, model, page)
     ai_summary = x.summary
