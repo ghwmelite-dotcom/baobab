@@ -9,6 +9,16 @@ mod tabs;
 mod usage;
 mod windows;
 
+use std::sync::atomic::{AtomicBool, Ordering};
+
+pub struct SlowModeFlag(pub AtomicBool);
+
+#[tauri::command]
+fn set_slow_mode(state: tauri::State<'_, SlowModeFlag>, on: bool) -> Result<(), String> {
+    state.0.store(on, Ordering::Relaxed);
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -17,6 +27,7 @@ pub fn run() {
         .plugin(tauri_plugin_process::init())
         .manage(crate::pin_attempts::PinAttempts::new())
         .manage(crate::usage::UsageState::default())
+        .manage(SlowModeFlag(AtomicBool::new(false)))
         // Selection from any native context menu (raised via menus::show_context_menu)
         // is reported back to JS via this single global event. The JS side filters
         // on item id to dispatch the action.
@@ -93,6 +104,7 @@ pub fn run() {
             adblock::cmd_adblock_refresh_lists,
             menus::show_context_menu,
             usage::record_tab_usage,
+            set_slow_mode,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Baobab");

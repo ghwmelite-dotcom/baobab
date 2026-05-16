@@ -134,7 +134,11 @@ pub async fn create_tab(
     if adblock_enabled {
         let root = app.path().app_data_dir().map_err(|e: tauri::Error| e.to_string())?;
         let payload = crate::adblock::load_payload(&root);
-        let slow_mode = false; // wired in Task 9; v1 hardcoded false.
+        let slow_mode = {
+            use std::sync::atomic::Ordering;
+            let flag = app.state::<crate::SlowModeFlag>();
+            flag.0.load(Ordering::Relaxed)
+        };
         let script = crate::adblock::build_init_script(&payload, slow_mode);
         builder = builder.initialization_script(&script);
     }
