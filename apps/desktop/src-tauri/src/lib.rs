@@ -6,6 +6,7 @@ mod pin;
 mod pin_attempts;
 mod profiles;
 mod tabs;
+mod usage;
 mod windows;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -15,6 +16,7 @@ pub fn run() {
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
         .manage(crate::pin_attempts::PinAttempts::new())
+        .manage(crate::usage::UsageState::default())
         // Selection from any native context menu (raised via menus::show_context_menu)
         // is reported back to JS via this single global event. The JS side filters
         // on item id to dispatch the action.
@@ -90,6 +92,7 @@ pub fn run() {
             adblock::cmd_adblock_set_enabled,
             adblock::cmd_adblock_refresh_lists,
             menus::show_context_menu,
+            usage::record_tab_usage,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Baobab");
