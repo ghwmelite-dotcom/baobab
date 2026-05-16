@@ -77,6 +77,9 @@ pub fn run() {
             windows::open_picker_window,
             windows::open_guest_window,
             windows::current_profile_id,
+            adblock::cmd_adblock_get_state,
+            adblock::cmd_adblock_set_enabled,
+            adblock::cmd_adblock_refresh_lists,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Baobab");

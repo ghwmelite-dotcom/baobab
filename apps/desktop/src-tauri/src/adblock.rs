@@ -295,6 +295,82 @@ mod build_init_tests {
     }
 }
 
+use tauri::{AppHandle, Manager};
+use tauri_plugin_store::StoreExt;
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AdblockState {
+    pub enabled: bool,
+    pub last_updated: String,
+    pub source: AdblockSource,
+}
+
+fn app_data_root(app: &AppHandle) -> Result<PathBuf, String> {
+    app.path().app_data_dir().map_err(|e| e.to_string())
+}
+
+fn profile_enabled_key(profile_id: &str) -> String {
+    format!("profile.{profile_id}.adblock.enabled")
+}
+
+/// Read the per-profile enabled flag. Defaults to true if unset.
+pub fn is_enabled_for_profile(app: &AppHandle, profile_id: &str) -> Result<bool, String> {
+    if profile_id == "guest" {
+        // Guest sessions never get the blocker.
+        return Ok(false);
+    }
+    let store = app.store("baobab.store.json").map_err(|e| e.to_string())?;
+    let key = profile_enabled_key(profile_id);
+    let v = store.get(&key);
+    Ok(v.and_then(|j| j.as_bool()).unwrap_or(true))
+}
+
+fn set_enabled_for_profile(app: &AppHandle, profile_id: &str, enabled: bool) -> Result<(), String> {
+    let store = app.store("baobab.store.json").map_err(|e| e.to_string())?;
+    let key = profile_enabled_key(profile_id);
+    store.set(&key, serde_json::Value::Bool(enabled));
+    store.save().map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn cmd_adblock_get_state(
+    app: AppHandle,
+    profile_id: String,
+) -> Result<AdblockState, String> {
+    let root = app_data_root(&app)?;
+    let payload = load_payload(&root);
+    let enabled = is_enabled_for_profile(&app, &profile_id)?;
+    Ok(AdblockState {
+        enabled,
+        last_updated: payload.last_updated,
+        source: payload.source,
+    })
+}
+
+#[tauri::command]
+pub async fn cmd_adblock_set_enabled(
+    app: AppHandle,
+    profile_id: String,
+    enabled: bool,
+) -> Result<(), String> {
+    set_enabled_for_profile(&app, &profile_id, enabled)
+}
+
+#[tauri::command]
+pub async fn cmd_adblock_refresh_lists(app: AppHandle) -> Result<AdblockState, String> {
+    let root = app_data_root(&app)?;
+    let payload = refresh_from_upstream(&root).await?;
+    // Return state shape; enabled is per-profile so we leave it as `true` here
+    // because the command isn't profile-scoped — the caller will re-read state.
+    Ok(AdblockState {
+        enabled: true,
+        last_updated: payload.last_updated,
+        source: payload.source,
+    })
+}
+
 #[cfg(test)]
 mod refresh_tests {
     use super::*;
