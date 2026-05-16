@@ -1,5 +1,6 @@
 mod adblock;
 mod downloads;
+mod menus;
 mod migration;
 mod pin;
 mod pin_attempts;
@@ -14,6 +15,14 @@ pub fn run() {
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
         .manage(crate::pin_attempts::PinAttempts::new())
+        // Selection from any native context menu (raised via menus::show_context_menu)
+        // is reported back to JS via this single global event. The JS side filters
+        // on item id to dispatch the action.
+        .on_menu_event(|app, event| {
+            use tauri::Emitter;
+            let id = event.id().0.clone();
+            let _ = app.emit("menu:select", id);
+        })
         .setup(|app| {
             use tauri::Manager;
             let handle = app.handle().clone();
@@ -80,6 +89,7 @@ pub fn run() {
             adblock::cmd_adblock_get_state,
             adblock::cmd_adblock_set_enabled,
             adblock::cmd_adblock_refresh_lists,
+            menus::show_context_menu,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Baobab");
