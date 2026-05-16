@@ -36,6 +36,9 @@ import { useTranslateStore } from './translate/translate.store'
 import { usePaymentsStore } from './payments/payments.store'
 import { UpdateToast } from './updater/UpdateToast'
 import { PayWidget } from './payments/PayWidget'
+import { useDataStore } from './data/data.store'
+import { dataApi } from './data/data.api'
+import { attachConnectionListeners } from './state/connection.store'
 
 export function App() {
   useChromeShortcuts()
@@ -47,6 +50,10 @@ export function App() {
   // tabs never restore on cold start (the error is swallowed silently).
   useEffect(() => {
     if (!profile) return
+    useDataStore.getState().setProfileId(profile.id)
+    void useDataStore.getState().hydrate()
+    void dataApi.initListeners()
+    attachConnectionListeners()
     void useTabsStore.getState().hydrate()
     void useTabsStore.getState().initListeners()
     void useDownloadsStore.getState().initListeners()
