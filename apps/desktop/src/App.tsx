@@ -58,14 +58,17 @@ export function App() {
     return () => clearInterval(t)
   }, [])
 
-  // Belt-and-braces with `overflow: clip` on html/body in globals.css.
-  // Some focus / restoreFocus paths can shift document.scrollLeft to a
-  // non-zero value (e.g. when the Sidebar is translateX'd off-screen).
-  // We zero it on every render so the chrome layer always anchors at
-  // the viewport's left edge.
+  // Belt-and-braces with `overflow: clip` on html/body and on <main>.
+  // Focus / restoreFocus paths can shift scrollLeft on any ancestor with
+  // `overflow: hidden` — typically <main>, when focus jumps to a
+  // Sidebar element that's translateX'd off-screen. The diagnostic
+  // pinpointed <main>.scrollLeft = SIDEBAR_WIDTH (380) as the actual
+  // source of the wordmark-shift symptom. We zero it on every render.
   useEffect(() => {
     if (document.documentElement.scrollLeft !== 0) document.documentElement.scrollLeft = 0
     if (document.body.scrollLeft !== 0) document.body.scrollLeft = 0
+    const main = document.querySelector('main')
+    if (main && main.scrollLeft !== 0) main.scrollLeft = 0
   })
 
   const tabs = useTabsStore((s) => s.tabs)

@@ -453,40 +453,6 @@ export function NewTabPage() {
     el.scrollTop = 0
   }, [activeId])
 
-  // Tree-walk diagnostic — climb up from the NewTabPage outer div and
-  // print every ancestor's bounding rect + scrollLeft + transform. The
-  // earlier readout showed the OFFSET was -380 at every NTP layer, so
-  // the source is somewhere above NTP. This badge will reveal at which
-  // ancestor `left` becomes -380.
-  const [diag, setDiag] = useState<string>('')
-  useEffect(() => {
-    if (!import.meta.env.DEV) return
-    function measure() {
-      const ntp = scrollRef.current?.parentElement
-      if (!ntp) return
-      const lines: string[] = []
-      lines.push(`window.scrollX=${Math.round(window.scrollX)} bodySL=${document.body.scrollLeft} htmlSL=${document.documentElement.scrollLeft}`)
-      let el: HTMLElement | null = ntp
-      let depth = 0
-      while (el && depth < 12) {
-        const r = el.getBoundingClientRect()
-        const cs = getComputedStyle(el)
-        const tag = el.tagName.toLowerCase()
-        const cls = (el.className || '').toString().slice(0, 22)
-        const tf = cs.transform === 'none' ? '' : ` tf:${cs.transform.slice(0, 32)}`
-        lines.push(
-          `${depth} ${tag}.${cls} ${Math.round(r.left)},${Math.round(r.top)} ` +
-          `${Math.round(r.width)}x${Math.round(r.height)} sL=${el.scrollLeft}${tf}`,
-        )
-        el = el.parentElement
-        depth++
-      }
-      setDiag(lines.join('\n'))
-    }
-    measure()
-    const t = setTimeout(measure, 300)
-    return () => clearTimeout(t)
-  }, [activeId])
 
 
   // Kick off the Continent Today digest fetch on first mount. The store
@@ -749,32 +715,6 @@ export function NewTabPage() {
         <DigestStrip />
         </div>
       </div>
-
-      {/* DEV tree-walk diagnostic — reveals which ancestor introduces the
-          -380 offset. Click-through transparent. */}
-      {import.meta.env.DEV && diag && (
-        <pre
-          aria-hidden
-          style={{
-            position: 'fixed',
-            left: 8,
-            bottom: 8,
-            zIndex: 9999,
-            margin: 0,
-            padding: '6px 8px',
-            background: 'rgba(0,0,0,0.78)',
-            color: '#9be7a0',
-            fontSize: 10,
-            fontFamily: 'ui-monospace, Consolas, monospace',
-            lineHeight: 1.35,
-            borderRadius: 4,
-            whiteSpace: 'pre',
-            pointerEvents: 'none',
-            maxWidth: '90vw',
-            overflow: 'hidden',
-          }}
-        >{diag}</pre>
-      )}
 
       {/* Editorial signature — pinned to viewport, outside scroll layer. */}
       <div
