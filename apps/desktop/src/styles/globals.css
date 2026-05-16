@@ -25,7 +25,14 @@
 html, body, #root {
   margin: 0;
   height: 100vh;
-  overflow: hidden;
+  width: 100vw;
+  /* `clip` instead of `hidden` — prevents BOTH user scrolling AND
+     programmatic scrollLeft. With `hidden` the document can still be
+     scrolled via JS or via focus-restore on an off-viewport element
+     (e.g. the Sidebar while it was translateX'd off-screen), which
+     left a stale scrollLeft that shifted the whole chrome layer to
+     the left even after the sidebar reopened. */
+  overflow: clip;
   background: var(--canvas);
   color: var(--text-primary);
   font-family: var(--font-default);

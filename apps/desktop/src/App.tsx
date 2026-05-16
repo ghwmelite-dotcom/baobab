@@ -58,6 +58,16 @@ export function App() {
     return () => clearInterval(t)
   }, [])
 
+  // Belt-and-braces with `overflow: clip` on html/body in globals.css.
+  // Some focus / restoreFocus paths can shift document.scrollLeft to a
+  // non-zero value (e.g. when the Sidebar is translateX'd off-screen).
+  // We zero it on every render so the chrome layer always anchors at
+  // the viewport's left edge.
+  useEffect(() => {
+    if (document.documentElement.scrollLeft !== 0) document.documentElement.scrollLeft = 0
+    if (document.body.scrollLeft !== 0) document.body.scrollLeft = 0
+  })
+
   const tabs = useTabsStore((s) => s.tabs)
   const activeId = useTabsStore((s) => s.activeId)
   const active = tabs.find((t) => t.id === activeId)

@@ -453,6 +453,7 @@ export function NewTabPage() {
     el.scrollTop = 0
   }, [activeId])
 
+
   // Kick off the Continent Today digest fetch on first mount. The store
   // guards against re-fetching once `loaded` is set, so re-mounts are cheap.
   useEffect(() => {
@@ -481,9 +482,15 @@ export function NewTabPage() {
   return (
     <div
       style={{
-        position: 'relative',
-        height: '100%',
-        width: '100%',
+        // Absolute + inset:0 anchors the page to the canvas div's exact
+        // bounds. Earlier we used position:relative; width:100%; height:100%,
+        // which relied on the canvas div's content sizing being well-defined
+        // for the block layout to fill it. On some renderings — switching
+        // between two about:blank tabs in particular — that produced a
+        // mysterious left shift. Pinning to absolute makes the placement
+        // fully geometric and removes the ambiguity.
+        position: 'absolute',
+        inset: 0,
         overflow: 'hidden',
         color: 'var(--text-primary)',
         // Sahel sunrise — warm throughout, not just at the top. The
