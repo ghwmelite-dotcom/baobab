@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import type { Bookmark, BookmarkFolder } from '@baobab/cloud-client'
 import { bookmarksClient } from './api'
 import { useAuthStore } from '~/auth/auth.store'
+import { gate } from '~/data/wifiGate'
 
 interface BookmarksState {
   drawerOpen: boolean
@@ -41,7 +42,11 @@ export const useBookmarksStore = create<BookmarksState>()((set, get) => ({
       return undefined
     }
     try {
-      const r = await bookmarksClient.create({ url, title, folder_id })
+      const r = await gate(() => bookmarksClient.create({ url, title, folder_id }))
+      if (r === null) {
+        // Deferred until Wi-Fi.
+        return undefined
+      }
       await get().refresh()
       return r.id
     } catch {
@@ -51,7 +56,11 @@ export const useBookmarksStore = create<BookmarksState>()((set, get) => ({
 
   remove: async (id) => {
     try {
-      await bookmarksClient.remove(id)
+      const r = await gate(() => bookmarksClient.remove(id))
+      if (r === null) {
+        // Deferred until Wi-Fi.
+        return
+      }
       await get().refresh()
     } catch {
       /* tolerate */
@@ -63,7 +72,11 @@ export const useBookmarksStore = create<BookmarksState>()((set, get) => ({
 
   createFolder: async (name) => {
     try {
-      const r = await bookmarksClient.createFolder(name)
+      const r = await gate(() => bookmarksClient.createFolder(name))
+      if (r === null) {
+        // Deferred until Wi-Fi.
+        return undefined
+      }
       await get().refresh()
       return r.id
     } catch {
