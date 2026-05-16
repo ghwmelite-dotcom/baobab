@@ -42,12 +42,15 @@ function compute(c: NavigatorConnectionLike): { effectiveType: EffectiveType; do
   return { effectiveType, downlinkMbps, saveData, type, isSlow }
 }
 
+const initialIsOffline =
+  typeof navigator !== 'undefined' ? !navigator.onLine : false
+
 export const useConnectionStore = create<ConnectionState>()((set, get) => ({
   effectiveType: 'unknown',
   downlinkMbps: 0,
   saveData: false,
   type: '',
-  isOffline: false,
+  isOffline: initialIsOffline,
   isSlow: false,
   slowModeForced: false,
 
@@ -67,7 +70,7 @@ export const useConnectionStore = create<ConnectionState>()((set, get) => ({
 /** Attach listeners to navigator.connection + onLine/offline. Idempotent. */
 let attached = false
 export function attachConnectionListeners(): () => void {
-  if (attached) return () => undefined
+  if (attached) return () => {}
   attached = true
   const c = readConnection()
   const onChange = () => useConnectionStore.getState().sync()
@@ -81,4 +84,12 @@ export function attachConnectionListeners(): () => void {
     window.removeEventListener('offline', onChange)
     attached = false
   }
+}
+
+/**
+ * @internal Test-only hygiene helper. Resets module-level `attached` flag so
+ * tests that exercise `attachConnectionListeners()` don't pollute each other.
+ */
+export function __resetConnectionListenersForTest(): void {
+  attached = false
 }
