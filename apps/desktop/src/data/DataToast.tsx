@@ -54,7 +54,7 @@ export function DataToast() {
         fontSize: 13,
         boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
         zIndex: 9000,
-        animation: 'bb-fade-in 220ms ease-out',
+        animation: 'baobab-fade-in 220ms ease-out',
       }}
     >
       {toast.message}
