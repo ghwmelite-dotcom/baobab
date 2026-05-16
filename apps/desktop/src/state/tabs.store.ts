@@ -63,6 +63,14 @@ interface TabsState {
   setProfileId: (id: string) => void
   openTab: (url: string, opts?: OpenTabOptions) => Promise<string>
   openIncognitoTab: (url: string) => Promise<string>
+  /** Open a new tab and slot it immediately after `targetId` in the strip. */
+  openTabAfter: (targetId: string, url: string) => Promise<string>
+  /** Open a new tab carrying the same URL/title as `targetId`, slotted after it. */
+  duplicateTab: (targetId: string) => Promise<string>
+  /** Close every tab except `keepId`. Activates `keepId`. */
+  closeOthers: (keepId: string) => Promise<void>
+  /** Close every tab with index strictly greater than `targetId`'s. */
+  closeTabsRightOf: (targetId: string) => Promise<void>
   closeTab: (id: string) => Promise<void>
   setActive: (id: string) => void
   navigate: (id: string, url: string) => Promise<void>
@@ -163,6 +171,57 @@ export const useTabsStore = create<TabsState>()((set, get) => ({
 
   openIncognitoTab: async (url) => {
     return get().openTab(url, { incognito: true })
+  },
+
+  openTabAfter: async (targetId, url) => {
+    // Open in append-mode first so the backend webview is created and event
+    // wiring runs through the normal openTab path; then splice the React
+    // state list so the new tab sits next to its parent.
+    const newId = await get().openTab(url)
+    set((s) => {
+      const targetIdx = s.tabs.findIndex((t) => t.id === targetId)
+      const newIdx = s.tabs.findIndex((t) => t.id === newId)
+      if (targetIdx === -1 || newIdx === -1) return s
+      // Already in the right place (target is the last tab).
+      if (newIdx === targetIdx + 1) return s
+      const tab = s.tabs[newIdx]
+      if (!tab) return s
+      const without = [...s.tabs.slice(0, newIdx), ...s.tabs.slice(newIdx + 1)]
+      // After removal, target's index may have shifted (only if newIdx<targetIdx,
+      // which can't happen here since newId was appended). Still re-find to be safe.
+      const newTargetIdx = without.findIndex((t) => t.id === targetId)
+      const insertAt = newTargetIdx + 1
+      return { tabs: [...without.slice(0, insertAt), tab, ...without.slice(insertAt)] }
+    })
+    return newId
+  },
+
+  duplicateTab: async (targetId) => {
+    const target = get().tabs.find((t) => t.id === targetId)
+    if (!target) return ''
+    return get().openTabAfter(targetId, target.url)
+  },
+
+  closeOthers: async (keepId) => {
+    const victims = get().tabs.filter((t) => t.id !== keepId).map((t) => t.id)
+    if (get().activeId !== keepId) get().setActive(keepId)
+    // Close sequentially: closeTab is async and mutates the list; closing in
+    // parallel raced the IPC layer in early testing (two tabs trying to grab
+    // the "next active" slot at once).
+    for (const id of victims) {
+      // eslint-disable-next-line no-await-in-loop
+      await get().closeTab(id)
+    }
+  },
+
+  closeTabsRightOf: async (targetId) => {
+    const idx = get().tabs.findIndex((t) => t.id === targetId)
+    if (idx === -1) return
+    const victims = get().tabs.slice(idx + 1).map((t) => t.id)
+    for (const id of victims) {
+      // eslint-disable-next-line no-await-in-loop
+      await get().closeTab(id)
+    }
   },
 
   closeTab: async (id) => {

@@ -79,4 +79,46 @@ describe('tabs store', () => {
     expect(useTabsStore.getState().tabs[0]?.id).toBe(b)
     expect(useTabsStore.getState().tabs[0]?.pinned).toBe(true)
   })
+
+  it('openTabAfter slots the new tab immediately after the target', async () => {
+    const a = await useTabsStore.getState().openTab('https://a.com')
+    const b = await useTabsStore.getState().openTab('https://b.com')
+    const c = await useTabsStore.getState().openTab('https://c.com')
+    const newId = await useTabsStore.getState().openTabAfter(a, 'https://new.com')
+    const order = useTabsStore.getState().tabs.map((t) => t.id)
+    expect(order).toEqual([a, newId, b, c])
+  })
+
+  it('duplicateTab opens a tab with the same URL, slotted after the target', async () => {
+    const a = await useTabsStore.getState().openTab('https://a.com')
+    const b = await useTabsStore.getState().openTab('https://b.com')
+    const dupId = await useTabsStore.getState().duplicateTab(a)
+    const tabs = useTabsStore.getState().tabs
+    expect(tabs.map((t) => t.id)).toEqual([a, dupId, b])
+    expect(tabs.find((t) => t.id === dupId)?.url).toBe('https://a.com')
+  })
+
+  it('closeOthers closes every tab except the kept one and activates it', async () => {
+    const a = await useTabsStore.getState().openTab('https://a.com')
+    const b = await useTabsStore.getState().openTab('https://b.com')
+    const c = await useTabsStore.getState().openTab('https://c.com')
+    await useTabsStore.getState().closeOthers(b)
+    const { tabs, activeId } = useTabsStore.getState()
+    expect(tabs.map((t) => t.id)).toEqual([b])
+    expect(activeId).toBe(b)
+    // a + c got closed via IPC.
+    expect(ipc.ipcCloseTab).toHaveBeenCalledWith(a)
+    expect(ipc.ipcCloseTab).toHaveBeenCalledWith(c)
+  })
+
+  it('closeTabsRightOf closes only the tabs strictly to the right of the target', async () => {
+    const a = await useTabsStore.getState().openTab('https://a.com')
+    const b = await useTabsStore.getState().openTab('https://b.com')
+    const c = await useTabsStore.getState().openTab('https://c.com')
+    const d = await useTabsStore.getState().openTab('https://d.com')
+    await useTabsStore.getState().closeTabsRightOf(b)
+    expect(useTabsStore.getState().tabs.map((t) => t.id)).toEqual([a, b])
+    expect(ipc.ipcCloseTab).toHaveBeenCalledWith(c)
+    expect(ipc.ipcCloseTab).toHaveBeenCalledWith(d)
+  })
 })

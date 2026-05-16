@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type CSSProperties, type MouseEvent as ReactMouseEvent, type ReactNode } from 'react'
 import { useTabsStore } from '~/state/tabs.store'
 import { useSovereigntyStore } from '~/state/sovereignty.store'
 import { OS } from '~/platform/os'
@@ -8,6 +8,8 @@ import type { Tab } from '@baobab/core'
 import { useProfile } from '~/profiles/useProfile'
 import { profileApi } from '~/profiles/profile.api'
 import { FRUIT_HEX } from '~/profiles/fruitColors'
+import { ContextMenu, type ContextMenuItem } from './ContextMenu'
+import { ipcTabReload } from '~/ipc/tabs'
 
 const win = () => getCurrentWindow()
 
@@ -164,11 +166,12 @@ function MaskGlyph({ size = 12 }: { size?: number }) {
   )
 }
 
-function TabPill({ tab, active, onSelect, onClose }: {
+function TabPill({ tab, active, onSelect, onClose, onContextMenu }: {
   tab: Tab
   active: boolean
   onSelect: () => void
   onClose: () => void
+  onContextMenu: (e: ReactMouseEvent) => void
 }) {
   const [hover, setHover] = useState(false)
   const incognito = tab.incognito === true
@@ -188,6 +191,7 @@ function TabPill({ tab, active, onSelect, onClose }: {
       data-tab-id={tab.id}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
+      onContextMenu={onContextMenu}
       style={{
         height: 30,
         minWidth: TAB_MIN_WIDTH,
@@ -341,6 +345,13 @@ function AvatarButton() {
 
 // ── Tab bar (chrome bar) ─────────────────────────────────────────────────
 
+type MenuState =
+  | { kind: 'tab'; tabId: string; x: number; y: number }
+  | { kind: 'chrome'; x: number; y: number; isMaximized: boolean }
+  | null
+
+const CMD_KEY_LABEL = OS === 'macos' ? 'Cmd' : 'Ctrl'
+
 export function TabStrip() {
   const tabs = useTabsStore((s) => s.tabs)
   const activeId = useTabsStore((s) => s.activeId)
@@ -348,7 +359,14 @@ export function TabStrip() {
   const closeTab = useTabsStore((s) => s.closeTab)
   const openTab = useTabsStore((s) => s.openTab)
   const openIncognitoTab = useTabsStore((s) => s.openIncognitoTab)
+  const openTabAfter = useTabsStore((s) => s.openTabAfter)
+  const duplicateTab = useTabsStore((s) => s.duplicateTab)
+  const closeOthers = useTabsStore((s) => s.closeOthers)
+  const closeTabsRightOf = useTabsStore((s) => s.closeTabsRightOf)
   const incognitoShortcut = OS === 'macos' ? 'Cmd+Shift+N' : 'Ctrl+Shift+N'
+
+  const [menu, setMenu] = useState<MenuState>(null)
+  const closeMenu = () => setMenu(null)
 
   const isMac = OS === 'macos'
 
@@ -382,10 +400,86 @@ export function TabStrip() {
     }
   }, [activeId, tabs.length])
 
+  // Right-click anywhere on the header that wasn't intercepted by a tab pill
+  // (those stopPropagation) opens the window-chrome menu. We measure
+  // isMaximized synchronously via Tauri before opening so the menu can swap
+  // Maximize ↔ Restore correctly without a frame of stale text.
+  async function onHeaderContextMenu(e: ReactMouseEvent<HTMLElement>) {
+    e.preventDefault()
+    let isMaximized = false
+    try { isMaximized = await win().isMaximized() } catch { /* tolerate */ }
+    setMenu({ kind: 'chrome', x: e.clientX, y: e.clientY, isMaximized })
+  }
+
+  function tabMenuItems(tabId: string): ContextMenuItem[] {
+    const idx = tabs.findIndex((t) => t.id === tabId)
+    const tabsToRight = idx >= 0 ? tabs.length - 1 - idx : 0
+    const otherTabsCount = tabs.length - 1
+    return [
+      {
+        label: 'New tab to the right',
+        onSelect: () => { void openTabAfter(tabId, 'about:blank') },
+      },
+      {
+        label: 'Reload',
+        shortcut: `${CMD_KEY_LABEL}+R`,
+        onSelect: () => { void ipcTabReload(tabId) },
+      },
+      {
+        label: 'Duplicate',
+        onSelect: () => { void duplicateTab(tabId) },
+      },
+      { kind: 'separator' },
+      {
+        label: 'Close',
+        shortcut: `${CMD_KEY_LABEL}+W`,
+        danger: true,
+        onSelect: () => { void closeTab(tabId) },
+      },
+      {
+        label: 'Close other tabs',
+        disabled: otherTabsCount === 0,
+        onSelect: () => { void closeOthers(tabId) },
+      },
+      {
+        label: 'Close tabs to the right',
+        disabled: tabsToRight === 0,
+        onSelect: () => { void closeTabsRightOf(tabId) },
+      },
+    ]
+  }
+
+  function chromeMenuItems(isMaximized: boolean): ContextMenuItem[] {
+    return [
+      {
+        label: 'Minimize',
+        onSelect: () => { void win().minimize() },
+      },
+      {
+        label: isMaximized ? 'Restore' : 'Maximize',
+        onSelect: () => { void win().toggleMaximize() },
+      },
+      { kind: 'separator' },
+      {
+        label: 'New tab',
+        shortcut: `${CMD_KEY_LABEL}+T`,
+        onSelect: () => { void openTab('about:blank') },
+      },
+      { kind: 'separator' },
+      {
+        label: 'Close',
+        shortcut: 'Alt+F4',
+        danger: true,
+        onSelect: () => { void win().close() },
+      },
+    ]
+  }
+
   return (
     <header
       data-tauri-drag-region
       aria-label="Tab bar"
+      onContextMenu={onHeaderContextMenu}
       style={{
         height: CHROME_BAR_HEIGHT,
         display: 'flex',
@@ -457,6 +551,14 @@ export function TabStrip() {
               active={t.id === activeId}
               onSelect={() => setActive(t.id)}
               onClose={() => void closeTab(t.id)}
+              onContextMenu={(e) => {
+                e.preventDefault()
+                // Stop bubble so the header's chrome-menu handler doesn't
+                // also fire — right-click on a tab should ONLY open the
+                // per-tab menu.
+                e.stopPropagation()
+                setMenu({ kind: 'tab', tabId: t.id, x: e.clientX, y: e.clientY })
+              }}
             />
           ))}
         </div>
@@ -562,6 +664,25 @@ export function TabStrip() {
           </div>
         )}
       </div>
+
+      {menu?.kind === 'tab' && (
+        <ContextMenu
+          items={tabMenuItems(menu.tabId)}
+          x={menu.x}
+          y={menu.y}
+          onClose={closeMenu}
+          ariaLabel="Tab actions"
+        />
+      )}
+      {menu?.kind === 'chrome' && (
+        <ContextMenu
+          items={chromeMenuItems(menu.isMaximized)}
+          x={menu.x}
+          y={menu.y}
+          onClose={closeMenu}
+          ariaLabel="Window actions"
+        />
+      )}
     </header>
   )
 }
