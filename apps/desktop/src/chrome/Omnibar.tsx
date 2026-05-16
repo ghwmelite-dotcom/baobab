@@ -15,6 +15,7 @@ import { useDownloadsStore } from '~/downloads/downloads.store'
 import { useTranslateStore } from '~/translate/translate.store'
 import { suggest } from '~/history/omnibar-autocomplete'
 import { BookmarkButton } from '~/bookmarks/BookmarkButton'
+import { useDragWindow } from './useDragWindow'
 
 // XSS / local-FS exfiltration guard for omnibar-initiated navigation.
 const NAVIGATION_SCHEME_ALLOWLIST = new Set(['http:', 'https:', 'about:'])
@@ -121,6 +122,7 @@ function NavBtn({ label, onClick, disabled, active, children, danger, badge }: {
 export function Omnibar() {
   const { t } = useTranslation()
   const ref = useRef<HTMLInputElement | null>(null)
+  const onDragMouseDown = useDragWindow()
   const activeId = useTabsStore((s) => s.activeId)
   const tabs = useTabsStore((s) => s.tabs)
   const navigate = useTabsStore((s) => s.navigate)
@@ -209,6 +211,7 @@ export function Omnibar() {
   return (
     <div
       data-tauri-drag-region
+      onMouseDown={onDragMouseDown}
       style={{
         position: 'relative',
         height: 48,

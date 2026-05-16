@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useBookmarksStore } from './bookmarks.store'
 import { useTabsStore } from '~/state/tabs.store'
+import { useDragWindow } from '~/chrome/useDragWindow'
 
 export function BookmarksBar() {
   const bookmarks = useBookmarksStore((s) => s.bookmarks)
@@ -8,6 +9,7 @@ export function BookmarksBar() {
   const activeId = useTabsStore((s) => s.activeId)
   const navigate = useTabsStore((s) => s.navigate)
   const openTab = useTabsStore((s) => s.openTab)
+  const onDragMouseDown = useDragWindow()
 
   useEffect(() => {
     void refresh()
@@ -20,6 +22,7 @@ export function BookmarksBar() {
     <nav
       aria-label="Bookmarks bar"
       data-tauri-drag-region
+      onMouseDown={onDragMouseDown}
       style={{
         height: 28,
         display: 'flex',

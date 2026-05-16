@@ -10,6 +10,7 @@ import { profileApi } from '~/profiles/profile.api'
 import { FRUIT_HEX } from '~/profiles/fruitColors'
 import { ipcTabReload } from '~/ipc/tabs'
 import { showContextMenu, type NativeMenuItem } from '~/ipc/menus'
+import { useDragWindow } from './useDragWindow'
 
 const win = () => getCurrentWindow()
 
@@ -359,6 +360,7 @@ export function TabStrip() {
   const closeOthers = useTabsStore((s) => s.closeOthers)
   const closeTabsRightOf = useTabsStore((s) => s.closeTabsRightOf)
   const incognitoShortcut = OS === 'macos' ? 'Cmd+Shift+N' : 'Ctrl+Shift+N'
+  const onDragMouseDown = useDragWindow()
 
   const isMac = OS === 'macos'
 
@@ -449,6 +451,7 @@ export function TabStrip() {
     <header
       data-tauri-drag-region
       aria-label="Tab bar"
+      onMouseDown={onDragMouseDown}
       onContextMenu={(e) => { e.preventDefault(); void openChromeContextMenu() }}
       style={{
         height: CHROME_BAR_HEIGHT,
