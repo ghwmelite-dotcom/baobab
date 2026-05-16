@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { ipcTabReload } from '~/ipc/tabs'
 import { useTabsStore } from '~/state/tabs.store'
 import { useAiStore } from '~/ai/ai.store'
 import { useSettingsStore } from '~/settings/settings.store'
@@ -163,10 +164,10 @@ export function useChromeShortcuts(): void {
 }
 
 function reloadActive(tabsStore: ReturnType<typeof useTabsStore.getState>): void {
-  const { activeId, tabs, navigate } = tabsStore
+  const { activeId, tabs } = tabsStore
   const active = tabs.find((t) => t.id === activeId)
   if (active && active.url && active.url !== 'about:blank') {
-    void navigate(active.id, active.url)
+    void ipcTabReload(active.id)
   }
 }
 
