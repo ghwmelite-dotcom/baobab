@@ -56,3 +56,27 @@ export function markUserOverride(url: string): void {
 export function __resetInterceptOverridesForTest(): void {
   overrideUntil.clear()
 }
+
+// ── Reader-URL plumbing ─────────────────────────────────────────────────
+// We point the tab webview at our internal `reader.html` Vite entry instead
+// of the heavy origin. Tauri parses absolute URLs only, so dev hits
+// http://localhost:1420 and prod hits tauri://localhost. Mirrors the same
+// dev/prod switch the search portal uses for search.html.
+
+export const READER_BASE_URL = import.meta.env.DEV
+  ? 'http://localhost:1420/reader.html'
+  : 'tauri://localhost/reader.html'
+
+export const READER_URL_RE =
+  /^(?:tauri:\/\/localhost|https?:\/\/localhost(?::\d+)?)\/reader\.html\?url=(.*)$/
+
+export function buildReaderUrl(originalUrl: string): string {
+  return `${READER_BASE_URL}?url=${encodeURIComponent(originalUrl)}`
+}
+
+export function parseReaderUrl(url: string | null | undefined): string | null {
+  if (!url) return null
+  const m = url.match(READER_URL_RE)
+  if (!m || !m[1]) return null
+  try { return decodeURIComponent(m[1]) } catch { return null }
+}
