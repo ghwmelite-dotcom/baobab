@@ -65,6 +65,17 @@
       new MutationObserver(callback).observe(target, options);
       const sweep = document.querySelectorAll('img:not([loading]), iframe:not([loading])');
       for (const el of sweep) el.setAttribute('loading', 'lazy');
+      // Slow-mode CSS: kill animations and font preloads when the host has
+      // flagged this page (slow connection OR over budget OR user forced).
+      if (BAOBAB_ADBLOCK.slowMode === true) {
+        const style = document.createElement('style');
+        style.setAttribute('data-baobab', 'slow-mode');
+        style.textContent =
+          '* { animation-duration: 0.001s !important; transition-duration: 0.001s !important; }' +
+          'link[rel="preload"][as="font"] { display: none !important; }' +
+          '@font-face { font-display: optional !important; }';
+        (document.head || document.documentElement).appendChild(style);
+      }
     }
     attach();
   }
