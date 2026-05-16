@@ -19,6 +19,7 @@ export function BookmarksBar() {
   return (
     <nav
       aria-label="Bookmarks bar"
+      data-tauri-drag-region
       style={{
         height: 28,
         display: 'flex',

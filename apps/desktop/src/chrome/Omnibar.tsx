@@ -208,6 +208,7 @@ export function Omnibar() {
 
   return (
     <div
+      data-tauri-drag-region
       style={{
         position: 'relative',
         height: 48,
@@ -220,7 +221,7 @@ export function Omnibar() {
       }}
     >
       {/* Navigation cluster (left) */}
-      <div style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}>
+      <div data-tauri-drag-region="false" style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}>
         <NavBtn
           label={t('omnibar.back')}
           disabled={!activeId || !canGoBack}
@@ -256,6 +257,7 @@ export function Omnibar() {
         }}
       >
         <div
+          data-tauri-drag-region="false"
           style={{
             position: 'relative',
             width: '100%',
@@ -419,7 +421,7 @@ export function Omnibar() {
       </div>
 
       {/* Right-side action cluster */}
-      <div style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}>
+      <div data-tauri-drag-region="false" style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}>
         <NavBtn
           label={t('omnibar.readerMode')}
           onClick={() => activeTab?.url && activeTab.url !== 'about:blank' && void openReader(activeTab.url)}
