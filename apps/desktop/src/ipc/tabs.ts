@@ -49,6 +49,9 @@ export const ipcTabGoBack = (tabId: string): Promise<void> =>
 export const ipcTabGoForward = (tabId: string): Promise<void> =>
   invoke('tab_go_forward', { tabId })
 
+export const ipcTabReload = (tabId: string): Promise<void> =>
+  invoke('tab_reload', { tabId })
+
 export const onTabLoaded = (
   cb: (payload: IpcTabLoaded) => void,
 ): Promise<UnlistenFn> => listen<IpcTabLoaded>('tab://loaded', (e) => cb(e.payload))
