@@ -5,7 +5,6 @@ import type { HistoryItem } from '@baobab/cloud-client'
 import { ipcTabReload } from '~/ipc/tabs'
 import { useTabsStore } from '~/state/tabs.store'
 import { OS } from '~/platform/os'
-import { aiClient } from '~/ai/api'
 import { useAiStore } from '~/ai/ai.store'
 import { useReaderStore } from '~/reader/reader.store'
 import { useHistoryStore } from '~/history/history.store'
@@ -16,7 +15,6 @@ import { useDownloadsStore } from '~/downloads/downloads.store'
 import { useTranslateStore } from '~/translate/translate.store'
 import { suggest } from '~/history/omnibar-autocomplete'
 import { BookmarkButton } from '~/bookmarks/BookmarkButton'
-import { useAuthStore } from '~/auth/auth.store'
 
 // XSS / local-FS exfiltration guard for omnibar-initiated navigation.
 const NAVIGATION_SCHEME_ALLOWLIST = new Set(['http:', 'https:', 'about:'])
@@ -29,8 +27,16 @@ function isNavigableUrl(url: string): boolean {
   }
 }
 
-function newMsgId(): string {
-  return `m${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
+const SEARCH_URL_RE = /^tauri:\/\/localhost\/search\.html\?q=(.*)$/
+
+function displayValueForTabUrl(url: string | undefined): string {
+  if (!url) return ''
+  if (url === 'about:blank') return ''
+  const m = url.match(SEARCH_URL_RE)
+  if (m && m[1] !== undefined) {
+    try { return decodeURIComponent(m[1]) } catch { return m[1] }
+  }
+  return url
 }
 
 // ── Generic icon button used in the address bar action area ──────────────
@@ -114,8 +120,6 @@ export function Omnibar() {
   const historyCursor = useTabsStore((s) => (s.activeId ? s.history[s.activeId] : undefined))
   const canGoBack = (historyCursor?.depth ?? 0) > 0
   const canGoForward = !!historyCursor && historyCursor.depth < historyCursor.max
-  const setActive = useAiStore((s) => s.setActive)
-  const pushMessage = useAiStore((s) => s.pushMessage)
   const sidebarOpen = useAiStore((s) => s.sidebarOpen)
   const toggleSidebar = useAiStore((s) => s.toggleSidebar)
   const openReader = useReaderStore((s) => s.openFor)
@@ -135,7 +139,7 @@ export function Omnibar() {
   const [focused, setFocused] = useState(false)
 
   useEffect(() => {
-    setValue(activeTab?.url === 'about:blank' ? '' : (activeTab?.url ?? ''))
+    setValue(displayValueForTabUrl(activeTab?.url))
   }, [activeTab?.url])
 
   useEffect(() => {
@@ -158,42 +162,23 @@ export function Omnibar() {
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
-  const runAiSearch = async (query: string) => {
-    if (!useAuthStore.getState().user) {
-      useAuthStore.getState().openSignIn()
-      return
-    }
-    if (!useAiStore.getState().sidebarOpen) useAiStore.getState().toggleSidebar()
-    const convId = `c${Date.now().toString(36)}`
-    setActive(convId)
-    pushMessage(convId, { id: newMsgId(), role: 'user', content: query })
-    pushMessage(convId, { id: newMsgId(), role: 'assistant', content: t('omnibar.searchingContinent') })
-    try {
-      const r = await aiClient.search({ query })
-      const list = r.results.map((x) => `• [${x.title}](${x.url})`).join('\n')
-      pushMessage(convId, { id: newMsgId(), role: 'assistant', content: `${r.answer}\n\n${list}` })
-    } catch (e) {
-      pushMessage(convId, {
-        id: newMsgId(),
-        role: 'assistant',
-        content: t('omnibar.searchFailed', { error: e instanceof Error ? e.message : 'unknown' }),
-      })
-    }
-  }
-
-  const submit = async () => {
+  const submit = () => {
     const parsed = parseOmnibarInput(value)
     if (parsed.kind === 'empty') return
     if (parsed.kind === 'url') {
       if (!isNavigableUrl(parsed.url)) {
-        await runAiSearch(value)
+        const searchUrl = `tauri://localhost/search.html?q=${encodeURIComponent(value)}`
+        if (activeId) void navigate(activeId, searchUrl)
+        else void openTab(searchUrl)
         return
       }
       if (activeId) void navigate(activeId, parsed.url)
       else void openTab(parsed.url)
       return
     }
-    await runAiSearch(parsed.query)
+    const searchUrl = `tauri://localhost/search.html?q=${encodeURIComponent(parsed.query)}`
+    if (activeId) void navigate(activeId, searchUrl)
+    else void openTab(searchUrl)
   }
 
   const reload = () => {
@@ -330,7 +315,7 @@ export function Omnibar() {
                   else void openTab(wrapped)
                   return
                 }
-                void submit()
+                submit()
               }
               if (e.key === 'Escape') (e.target as HTMLInputElement).blur()
             }}
