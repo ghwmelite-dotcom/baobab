@@ -68,6 +68,20 @@ pub fn engine_js() -> &'static str {
     BUNDLED_ENGINE_JS
 }
 
+const YT_PLACEHOLDER: &str = "/* BAOBAB_YT_SCRIPTLETS_INJECTED_HERE */";
+
+/// Build the per-tab initialization script. Inlines the payload as a JSON
+/// literal assigned to a `BAOBAB_ADBLOCK` global, then runs the engine.
+/// The engine's YouTube placeholder is substituted with the bundled
+/// scriptlets so they only execute when the host matches.
+pub fn build_init_script(payload: &AdblockPayload) -> String {
+    // serde_json::to_string never produces output that breaks JS string literals
+    // when embedded directly into a JS source — quotes, slashes, etc. are escaped.
+    let json = serde_json::to_string(payload).expect("payload serialisable");
+    let engine = engine_js().replace(YT_PLACEHOLDER, &payload.youtube_scriptlets);
+    format!("var BAOBAB_ADBLOCK = {};\n{}", json, engine)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -129,5 +143,64 @@ mod tests {
         let raw = "doubleclick.net\n\n# comment\n  googleads.com  \n";
         let parsed = parse_hostnames(raw);
         assert_eq!(parsed, vec!["doubleclick.net", "googleads.com"]);
+    }
+}
+
+#[cfg(test)]
+mod build_init_tests {
+    use super::*;
+
+    fn fixture_payload() -> AdblockPayload {
+        AdblockPayload {
+            blocked_hostnames: vec!["doubleclick.net".to_string(), "googleads.com".to_string()],
+            youtube_scriptlets: "console.log('yt');".to_string(),
+            last_updated: "2026-05-16T00:00:00Z".to_string(),
+            source: AdblockSource::Bundled,
+        }
+    }
+
+    #[test]
+    fn embeds_payload_as_json_literal() {
+        let script = build_init_script(&fixture_payload());
+        assert!(script.contains("BAOBAB_ADBLOCK"));
+        assert!(script.contains("doubleclick.net"));
+        assert!(script.contains("googleads.com"));
+    }
+
+    #[test]
+    fn substitutes_youtube_scriptlets_into_engine() {
+        let script = build_init_script(&fixture_payload());
+        // The placeholder /* BAOBAB_YT_SCRIPTLETS_INJECTED_HERE */ in engine.js
+        // should be replaced with the actual scriptlet source.
+        assert!(script.contains("console.log('yt');"));
+        assert!(!script.contains("BAOBAB_YT_SCRIPTLETS_INJECTED_HERE"));
+    }
+
+    #[test]
+    fn empty_scriptlets_leave_placeholder_replaced_with_empty() {
+        let mut p = fixture_payload();
+        p.youtube_scriptlets = String::new();
+        let script = build_init_script(&p);
+        assert!(!script.contains("BAOBAB_YT_SCRIPTLETS_INJECTED_HERE"));
+    }
+
+    #[test]
+    fn safely_escapes_payload_with_special_chars() {
+        // Hostnames containing characters that would need JSON-escaping should
+        // round-trip via serde_json without breaking the script.
+        let p = AdblockPayload {
+            blocked_hostnames: vec!["tracker.example.com/path\"weird".to_string()],
+            youtube_scriptlets: String::new(),
+            last_updated: "2026-05-16T00:00:00Z".to_string(),
+            source: AdblockSource::Bundled,
+        };
+        let script = build_init_script(&p);
+        // Should not crash, should contain escaped form
+        assert!(script.contains("tracker.example.com/path"));
+        // No raw unescaped quote that would break the JS
+        let after_eq = script.split("BAOBAB_ADBLOCK = ").nth(1).unwrap();
+        let json_chunk = after_eq.split(';').next().unwrap();
+        // Parse it back as JSON to prove it's valid
+        let _: serde_json::Value = serde_json::from_str(json_chunk).expect("valid JSON");
     }
 }
