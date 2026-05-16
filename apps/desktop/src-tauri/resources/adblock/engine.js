@@ -30,6 +30,8 @@
       const target = document.documentElement || document.body;
       if (!target) { setTimeout(attach, 1); return; }
       new MutationObserver(callback).observe(target, options);
+      const sweep = document.querySelectorAll('img:not([loading]), iframe:not([loading])');
+      for (const el of sweep) el.setAttribute('loading', 'lazy');
     }
     attach();
   }
@@ -90,6 +92,9 @@
         if (tag !== 'SCRIPT' && tag !== 'IFRAME' && tag !== 'IMG') continue;
         const src = node.getAttribute('src');
         if (src && isBlocked(src)) node.remove();
+        if ((tag === 'IMG' || tag === 'IFRAME') && !node.hasAttribute('loading')) {
+          node.setAttribute('loading', 'lazy');
+        }
       }
     }
   }, { childList: true, subtree: true });
