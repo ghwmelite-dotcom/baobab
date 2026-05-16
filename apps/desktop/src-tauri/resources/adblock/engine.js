@@ -20,6 +20,20 @@
     return false;
   }
 
+  // Helper: install a MutationObserver as soon as the document has a root
+  // element. Tauri's initialization_script runs so early that
+  // document.documentElement is null at script-start time; observing it
+  // directly throws "parameter 1 is not of type 'Node'". Polling via
+  // setTimeout(0) keeps cost trivial and avoids the race.
+  function installMutationObserver(callback, options) {
+    function attach() {
+      const target = document.documentElement || document.body;
+      if (!target) { setTimeout(attach, 1); return; }
+      new MutationObserver(callback).observe(target, options);
+    }
+    attach();
+  }
+
   // Hook fetch
   const origFetch = window.fetch;
   window.fetch = function (input, init) {
@@ -28,14 +42,28 @@
     return origFetch.call(this, input, init);
   };
 
-  // Hook XHR
+  // Hook XHR — silent no-op on send() for blocked URLs. Avoids the CORS
+  // noise that came from redirecting to about:blank. Callers waiting on
+  // load/error get a synthetic error event so they don't hang.
   const XhrOpen = XMLHttpRequest.prototype.open;
+  const XhrSend = XMLHttpRequest.prototype.send;
   XMLHttpRequest.prototype.open = function (method, url, ...rest) {
-    if (isBlocked(url)) {
-      this.__bbBlocked = true;
-      return XhrOpen.call(this, method, 'about:blank', ...rest);
+    this.__bbBlocked = isBlocked(url);
+    return XhrOpen.apply(this, [method, url, ...rest]);
+  };
+  XMLHttpRequest.prototype.send = function (...args) {
+    if (this.__bbBlocked) {
+      const self = this;
+      setTimeout(function () {
+        try {
+          const ev = new Event('error');
+          self.dispatchEvent(ev);
+          if (typeof self.onerror === 'function') self.onerror(ev);
+        } catch (_) { /* ignore */ }
+      }, 0);
+      return;
     }
-    return XhrOpen.call(this, method, url, ...rest);
+    return XhrSend.apply(this, args);
   };
 
   // Hook Image src setter
@@ -50,7 +78,7 @@
   });
 
   // MutationObserver for late-injected <script>/<iframe>/<img>
-  const mo = new MutationObserver((muts) => {
+  installMutationObserver(function (muts) {
     for (const m of muts) {
       for (const node of m.addedNodes) {
         if (!(node instanceof Element)) continue;
@@ -60,8 +88,12 @@
         if (src && isBlocked(src)) node.remove();
       }
     }
-  });
-  mo.observe(document.documentElement, { childList: true, subtree: true });
+  }, { childList: true, subtree: true });
+
+  // Expose the helper so YouTube scriptlets can reuse it. (Reassigning to
+  // window so the YT block below — which lives in the same IIFE scope —
+  // doesn't need its own copy.)
+  window.__bbInstallMutationObserver = installMutationObserver;
 
   // YouTube-specific scriptlets, inlined by Rust when host matches.
   const host = location.hostname;

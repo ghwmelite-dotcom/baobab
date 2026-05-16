@@ -1,61 +1,47 @@
 // === Baobab YouTube ad scriptlets ===
 // Run only on YouTube hostnames. The Rust template inlines this block
-// inside the matching `if` in engine.js.
-//
-// Strategy (defence in depth, most-reliable-first):
-//   1. DOM fast-forward — when the player enters .ad-showing mode,
-//      jump the <video> element to its end. This works at the player
-//      level regardless of how YouTube serves the ad.
-//   2. Auto-click skip buttons (multiple selector variants).
-//   3. Hide ad UI containers via CSS (cosmetic).
-//   4. Best-effort response-rewrite to strip adPlacements (may or may
-//      not catch anything depending on YouTube's current player config
-//      delivery, but cheap to try).
+// inside the matching `if` in engine.js. We reuse the
+// `window.__bbInstallMutationObserver` helper exposed by engine.js
+// because document.documentElement is `null` at the moment
+// initialization_script runs.
 
 // 1. Fast-forward through ads at the <video> element level.
 (function () {
   function skipAdIfShowing() {
-    // The main video player carries .ad-showing while a pre/mid/post-roll
-    // is playing, and .ad-interrupting during a transition.
     const player =
       document.querySelector('.html5-video-player') ||
       document.querySelector('#movie_player');
     if (!player) return;
-    const isAd =
-      player.classList.contains('ad-showing') ||
-      player.classList.contains('ad-interrupting');
+    const cls = player.classList;
+    const isAd = cls.contains('ad-showing') || cls.contains('ad-interrupting');
     if (!isAd) return;
 
     const video = player.querySelector('video');
-    if (!video || !isFinite(video.duration) || video.duration <= 0) return;
+    if (!video) return;
 
-    // Jump to end. YouTube will move on to the next item (the real video)
-    // or call the next ad — either way, the current ad is over instantly.
     try {
       video.muted = true;
       video.playbackRate = 16;
-      video.currentTime = video.duration;
+      // Shove currentTime to a huge value. WebView2 clamps to the actual
+      // ad duration, which ends the ad immediately. Avoids depending on
+      // video.duration being finite (it can be NaN during MSE setup).
+      video.currentTime = 9999;
     } catch (_) {
-      /* swallow — best effort */
+      /* swallow */
     }
   }
 
-  const obs = new MutationObserver(skipAdIfShowing);
-  obs.observe(document.documentElement, {
+  window.__bbInstallMutationObserver(skipAdIfShowing, {
     childList: true,
     subtree: true,
     attributes: true,
     attributeFilter: ['class'],
   });
-
-  // Also run on a slow interval as a final safety net. The MutationObserver
-  // should catch every relevant change, but some YouTube codepaths set the
-  // class before the player element is in the DOM tree we're observing.
+  // Safety-net poll in case the observer misses an attribute mutation.
   setInterval(skipAdIfShowing, 500);
 })();
 
-// 2. Auto-click skip buttons as they appear (covers the "wait 5s then
-//    skip" UI YouTube shows before our fast-forward kicks in).
+// 2. Auto-click any visible skip button.
 (function () {
   const SKIP_SELECTORS = [
     '.ytp-ad-skip-button',
@@ -75,42 +61,45 @@
     }
   }
 
-  new MutationObserver(clickSkips).observe(document.documentElement, {
+  window.__bbInstallMutationObserver(clickSkips, {
     childList: true,
     subtree: true,
   });
   setInterval(clickSkips, 500);
 })();
 
-// 3. Hide ad UI containers via CSS (cosmetic — keeps the player from
-//    flashing an ad overlay even when our fast-forward kicks in instantly).
+// 3. Hide ad UI containers via CSS.
 (function () {
-  const style = document.createElement('style');
-  style.textContent = [
-    'ytd-ad-slot-renderer',
-    'ytd-banner-promo-renderer',
-    'ytd-statement-banner-renderer',
-    'ytd-in-feed-ad-layout-renderer',
-    'ytd-promoted-sparkles-text-search-renderer',
-    'ytd-promoted-video-renderer',
-    'ytd-display-ad-renderer',
-    'ytd-action-companion-ad-renderer',
-    'ytd-companion-slot-renderer',
-    'ytd-rich-item-renderer:has(ytd-ad-slot-renderer)',
-    '.ytp-ad-module',
-    '.ytp-ad-overlay-container',
-    '.ytp-ad-image-overlay',
-    '.ytp-ad-text-overlay',
-    '#masthead-ad',
-    '#player-ads',
-  ].join(',') + ' { display: none !important; }';
-  (document.head || document.documentElement).appendChild(style);
+  function injectStyle() {
+    if (!document.head && !document.documentElement) {
+      setTimeout(injectStyle, 10);
+      return;
+    }
+    const style = document.createElement('style');
+    style.textContent = [
+      'ytd-ad-slot-renderer',
+      'ytd-banner-promo-renderer',
+      'ytd-statement-banner-renderer',
+      'ytd-in-feed-ad-layout-renderer',
+      'ytd-promoted-sparkles-text-search-renderer',
+      'ytd-promoted-video-renderer',
+      'ytd-display-ad-renderer',
+      'ytd-action-companion-ad-renderer',
+      'ytd-companion-slot-renderer',
+      'ytd-rich-item-renderer:has(ytd-ad-slot-renderer)',
+      '.ytp-ad-module',
+      '.ytp-ad-overlay-container',
+      '.ytp-ad-image-overlay',
+      '.ytp-ad-text-overlay',
+      '#masthead-ad',
+      '#player-ads',
+    ].join(',') + ' { display: none !important; }';
+    (document.head || document.documentElement).appendChild(style);
+  }
+  injectStyle();
 })();
 
-// 4. Best-effort player config rewrite. Newer YouTube serves player
-//    metadata via /youtubei/v1/player and /youtubei/v1/next. If the
-//    response is JSON we can read, strip ad markers; if it's protobuf
-//    or fails to parse, we silently fall through to the DOM defences.
+// 4. Best-effort player config rewrite (cheap defensive layer).
 (function () {
   const origFetch = window.fetch;
   window.fetch = async function (input, init) {
