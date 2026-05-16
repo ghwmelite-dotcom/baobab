@@ -10,15 +10,10 @@ async function token() {
 }
 
 describe('POST /api/proxy/fetch', () => {
-  it('requires auth', async () => {
-    const r = await SELF.fetch('http://baobab/api/proxy/fetch', { method: 'POST' })
-    expect(r.status).toBe(401)
-  })
-  it('returns cleaned content for a URL', async () => {
-    const access = await token()
+  it('is public — succeeds without an Authorization header', async () => {
     const r = await SELF.fetch('http://baobab/api/proxy/fetch', {
       method: 'POST',
-      headers: { Authorization: `Bearer ${access}`, 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         url: 'https://example.com',
         html_content: '<html><head><title>Example</title></head><body><article><p>Hello Baobab.</p></article></body></html>',
@@ -30,5 +25,28 @@ describe('POST /api/proxy/fetch', () => {
     expect(typeof j.title).toBe('string')
     expect(typeof j.ads_blocked).toBe('number')
     expect(typeof j.word_count).toBe('number')
+  })
+
+  it('also works with auth (back-compat for the existing reader panel)', async () => {
+    const access = await token()
+    const r = await SELF.fetch('http://baobab/api/proxy/fetch', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${access}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        url: 'https://example.com',
+        html_content: '<html><head><title>Example</title></head><body><article><p>Hello Baobab.</p></article></body></html>',
+        skip_ai: true,
+      }),
+    })
+    expect(r.status).toBe(200)
+  })
+
+  it('returns 400 when url is missing', async () => {
+    const r = await SELF.fetch('http://baobab/api/proxy/fetch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ html_content: '<html></html>' }),
+    })
+    expect(r.status).toBe(400)
   })
 })
