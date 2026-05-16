@@ -21,6 +21,8 @@ pub struct AdblockPayload {
     pub youtube_scriptlets: String,
     pub last_updated: String,
     pub source: AdblockSource,
+    #[serde(default)]
+    pub slow_mode: bool,
 }
 
 fn parse_hostnames(text: &str) -> Vec<String> {
@@ -39,6 +41,7 @@ fn bundled_payload() -> AdblockPayload {
         youtube_scriptlets: BUNDLED_YOUTUBE_JS.to_string(),
         last_updated: chrono::Utc::now().to_rfc3339(),
         source: AdblockSource::Bundled,
+        slow_mode: false,
     }
 }
 
@@ -75,11 +78,15 @@ const YT_PLACEHOLDER: &str = "/* BAOBAB_YT_SCRIPTLETS_INJECTED_HERE */";
 /// literal assigned to a `BAOBAB_ADBLOCK` global, then runs the engine.
 /// The engine's YouTube placeholder is substituted with the bundled
 /// scriptlets so they only execute when the host matches.
-pub fn build_init_script(payload: &AdblockPayload) -> String {
+pub fn build_init_script(payload: &AdblockPayload, slow_mode_runtime: bool) -> String {
     // serde_json::to_string never produces output that breaks JS string literals
     // when embedded directly into a JS source — quotes, slashes, etc. are escaped.
-    let json = serde_json::to_string(payload).expect("payload serialisable");
-    let engine = engine_js().replace(YT_PLACEHOLDER, &payload.youtube_scriptlets);
+    // Clone the payload so the runtime slow-mode flag overrides whatever is on
+    // disk; the persistent payload value is informational only.
+    let mut p = payload.clone();
+    p.slow_mode = slow_mode_runtime;
+    let json = serde_json::to_string(&p).expect("payload serialisable");
+    let engine = engine_js().replace(YT_PLACEHOLDER, &p.youtube_scriptlets);
     format!("var BAOBAB_ADBLOCK = {};\n{}", json, engine)
 }
 
@@ -160,6 +167,7 @@ pub async fn refresh_from_upstream(app_data_root: &Path) -> Result<AdblockPayloa
         youtube_scriptlets: BUNDLED_YOUTUBE_JS.to_string(),
         last_updated: now.clone(),
         source: AdblockSource::Upstream { fetched_at: now },
+        slow_mode: false,
     };
 
     let cache = cache_path(app_data_root);
@@ -221,6 +229,7 @@ mod tests {
             source: AdblockSource::Upstream {
                 fetched_at: "2026-05-01T00:00:00Z".to_string(),
             },
+            slow_mode: false,
         };
         std::fs::write(&cache, serde_json::to_vec(&custom).unwrap()).unwrap();
 
@@ -246,12 +255,13 @@ mod build_init_tests {
             youtube_scriptlets: "console.log('yt');".to_string(),
             last_updated: "2026-05-16T00:00:00Z".to_string(),
             source: AdblockSource::Bundled,
+            slow_mode: false,
         }
     }
 
     #[test]
     fn embeds_payload_as_json_literal() {
-        let script = build_init_script(&fixture_payload());
+        let script = build_init_script(&fixture_payload(), false);
         assert!(script.contains("BAOBAB_ADBLOCK"));
         assert!(script.contains("doubleclick.net"));
         assert!(script.contains("googleads.com"));
@@ -259,7 +269,7 @@ mod build_init_tests {
 
     #[test]
     fn substitutes_youtube_scriptlets_into_engine() {
-        let script = build_init_script(&fixture_payload());
+        let script = build_init_script(&fixture_payload(), false);
         // The placeholder /* BAOBAB_YT_SCRIPTLETS_INJECTED_HERE */ in engine.js
         // should be replaced with the actual scriptlet source.
         assert!(script.contains("console.log('yt');"));
@@ -270,7 +280,7 @@ mod build_init_tests {
     fn empty_scriptlets_leave_placeholder_replaced_with_empty() {
         let mut p = fixture_payload();
         p.youtube_scriptlets = String::new();
-        let script = build_init_script(&p);
+        let script = build_init_script(&p, false);
         assert!(!script.contains("BAOBAB_YT_SCRIPTLETS_INJECTED_HERE"));
     }
 
@@ -283,8 +293,9 @@ mod build_init_tests {
             youtube_scriptlets: String::new(),
             last_updated: "2026-05-16T00:00:00Z".to_string(),
             source: AdblockSource::Bundled,
+            slow_mode: false,
         };
-        let script = build_init_script(&p);
+        let script = build_init_script(&p, false);
         // Should not crash, should contain escaped form
         assert!(script.contains("tracker.example.com/path"));
         // No raw unescaped quote that would break the JS
@@ -292,6 +303,12 @@ mod build_init_tests {
         let json_chunk = after_eq.split(';').next().unwrap();
         // Parse it back as JSON to prove it's valid
         let _: serde_json::Value = serde_json::from_str(json_chunk).expect("valid JSON");
+    }
+
+    #[test]
+    fn slow_mode_flag_propagates_into_script() {
+        let script = build_init_script(&fixture_payload(), true);
+        assert!(script.contains("\"slowMode\":true"));
     }
 }
 

@@ -134,7 +134,8 @@ pub async fn create_tab(
     if adblock_enabled {
         let root = app.path().app_data_dir().map_err(|e: tauri::Error| e.to_string())?;
         let payload = crate::adblock::load_payload(&root);
-        let script = crate::adblock::build_init_script(&payload);
+        let slow_mode = false; // wired in Task 9; v1 hardcoded false.
+        let script = crate::adblock::build_init_script(&payload, slow_mode);
         builder = builder.initialization_script(&script);
     }
     let builder = downloads::attach(builder, app.clone());
