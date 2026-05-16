@@ -34,12 +34,16 @@
     attach();
   }
 
-  // Hook fetch
+  // Hook fetch.
+  // Bind to `window` explicitly: native `fetch` rejects with "Illegal
+  // invocation" unless its receiver is the Window. Forwarding the caller's
+  // `this` breaks any client code that does `this.fetchFn(...)` (e.g. our
+  // BaobabClient holds `fetch` as an instance method).
   const origFetch = window.fetch;
   window.fetch = function (input, init) {
     const url = typeof input === 'string' ? input : (input && input.url) || '';
     if (isBlocked(url)) return Promise.reject(new TypeError('Blocked by Baobab ad-blocker'));
-    return origFetch.call(this, input, init);
+    return origFetch.call(window, input, init);
   };
 
   // Hook XHR — silent no-op on send() for blocked URLs. Avoids the CORS

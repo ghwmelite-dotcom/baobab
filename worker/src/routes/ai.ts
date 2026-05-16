@@ -8,10 +8,11 @@ import type { AppContext } from '../types'
 
 export const ai = new Hono<AppContext>()
 
-ai.use('*', authMiddleware)
+// Rate-limit applies to all AI routes. Auth is applied per-route so /search
+// can stay public per spec (Anyone can search — no sign-in required).
 ai.use('*', rateLimit({ requests: 30, windowSec: 60, keyPrefix: 'ai' }))
 
-ai.post('/chat', async (c) => {
+ai.post('/chat', authMiddleware, async (c) => {
   const body = await c.req.json<{
     message: string
     model_id?: string
@@ -116,7 +117,7 @@ function htmlToText(html: string): string {
     .trim()
 }
 
-ai.post('/summarize', async (c) => {
+ai.post('/summarize', authMiddleware, async (c) => {
   const body = await c.req.json<{ url?: string; html_content?: string }>()
   if (!body.url) return c.json({ error: 'url required' }, 400)
 
@@ -226,7 +227,7 @@ ai.post('/search', async (c) => {
   return c.json(parsed)
 })
 
-ai.post('/compare', async (c) => {
+ai.post('/compare', authMiddleware, async (c) => {
   const body = await c.req.json<{ items?: string[]; criteria?: string }>()
   if (!body.items || body.items.length < 2) return c.json({ error: 'need at least 2 items' }, 400)
   const reply = await runChat(c.env, c.env.DEFAULT_MODEL, [

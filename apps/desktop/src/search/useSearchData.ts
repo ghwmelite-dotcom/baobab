@@ -15,6 +15,7 @@ interface SearchDataState {
   answer: string
   results: SearchResult[]
   error: ErrorKind | null
+  errorDetail: string | null
   requestId: number
   runSearch: (query: string) => Promise<void>
 }
@@ -31,6 +32,7 @@ export const useSearchData = create<SearchDataState>((set, get) => ({
   answer: '',
   results: [],
   error: null,
+  errorDetail: null,
   requestId: 0,
 
   runSearch: async (rawQuery) => {
@@ -43,6 +45,7 @@ export const useSearchData = create<SearchDataState>((set, get) => ({
       answer: '',
       results: [],
       error: null,
+      errorDetail: null,
       requestId: nextId,
     })
     try {
@@ -56,11 +59,19 @@ export const useSearchData = create<SearchDataState>((set, get) => ({
       })
     } catch (e) {
       if (get().requestId !== nextId) return
+      console.error('[search] fetch failed:', e)
+      const detail =
+        e instanceof Error
+          ? `${e.name}: ${e.message}`
+          : typeof e === 'string'
+            ? e
+            : 'unknown error'
       set({
         status: 'error',
         answer: '',
         results: [],
         error: classifyError(e),
+        errorDetail: detail,
       })
     }
   },

@@ -4,9 +4,10 @@ interface Props {
   variant: 'auth_required' | 'unavailable'
   onRetry?: () => void
   onSignIn?: () => void
+  detail?: string | null
 }
 
-export function ErrorState({ variant, onRetry, onSignIn }: Props) {
+export function ErrorState({ variant, onRetry, onSignIn, detail }: Props) {
   const title =
     variant === 'auth_required'
       ? 'Sign in to use grove search'
@@ -69,6 +70,17 @@ export function ErrorState({ variant, onRetry, onSignIn }: Props) {
         >
           Try again
         </button>
+      )}
+      {import.meta.env.DEV && detail && (
+        <pre style={{
+          marginTop: 20, padding: '10px 14px',
+          fontSize: 11, color: 'rgba(60,30,15,0.7)',
+          background: 'rgba(60,30,15,0.06)', borderRadius: 6,
+          textAlign: 'left', whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+          fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
+        }}>
+          {detail}
+        </pre>
       )}
     </section>
   )

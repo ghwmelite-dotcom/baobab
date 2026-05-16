@@ -21,6 +21,7 @@ export function SearchApp() {
   const answer = useSearchData((s) => s.answer)
   const results = useSearchData((s) => s.results)
   const error = useSearchData((s) => s.error)
+  const errorDetail = useSearchData((s) => s.errorDetail)
   const runSearch = useSearchData((s) => s.runSearch)
 
   // Initial load: read ?q= and run the search.
@@ -62,11 +63,11 @@ export function SearchApp() {
       {status === 'loading' && <LoadingState />}
 
       {status === 'error' && error === 'auth_required' && (
-        <ErrorState variant="auth_required" />
+        <ErrorState variant="auth_required" detail={errorDetail} />
       )}
 
       {status === 'error' && error === 'unavailable' && (
-        <ErrorState variant="unavailable" onRetry={handleRetry} />
+        <ErrorState variant="unavailable" onRetry={handleRetry} detail={errorDetail} />
       )}
 
       {status === 'success' && (
