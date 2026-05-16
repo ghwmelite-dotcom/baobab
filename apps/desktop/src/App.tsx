@@ -38,6 +38,7 @@ import { UpdateToast } from './updater/UpdateToast'
 import { PayWidget } from './payments/PayWidget'
 import { useDataStore } from './data/data.store'
 import { dataApi } from './data/data.api'
+import { DataToast } from './data/DataToast'
 import { attachConnectionListeners } from './state/connection.store'
 
 export function App() {
@@ -166,6 +167,7 @@ export function App() {
             <DownloadsPanel />
             <TranslatePad />
             {showNtp ? <NewTabPage /> : null}
+            <DataToast />
             <UpdateToast />
           </div>
           <Sidebar>
