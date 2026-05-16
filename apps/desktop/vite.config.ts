@@ -19,6 +19,7 @@ export default defineConfig({
       input: {
         main: path.resolve(__dirname, 'index.html'),
         picker: path.resolve(__dirname, 'picker.html'),
+        search: path.resolve(__dirname, 'search.html'),
       },
     },
   },
