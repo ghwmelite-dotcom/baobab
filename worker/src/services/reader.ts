@@ -72,7 +72,7 @@ const FACTOR_TABLE: readonly [RegExp, number][] = [
   // App-like
   [/(?:^|\.)slack\.com$/, 2],
   [/(?:^|\.)github\.com$/, 2],
-  [/\.app$/, 2],
+  [/(?:^|\.)app$/, 2],
 ]
 const DEFAULT_FACTOR = 4
 
