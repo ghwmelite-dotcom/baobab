@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { useSettingsStore } from './settings.store'
 import { GeneralSection } from './sections/GeneralSection'
 import { PrivacySection } from './sections/PrivacySection'
+import { AdblockSection } from './sections/AdblockSection'
 import { AISection } from './sections/AISection'
 import { SovereigntySection } from './sections/SovereigntySection'
 import { LanguageSection } from './sections/LanguageSection'
@@ -84,6 +85,7 @@ export function SettingsScreen() {
         <GeneralSection />
         <LanguageSection />
         <PrivacySection />
+        <AdblockSection />
         <AISection />
         <SovereigntySection />
         <LegalSection />
