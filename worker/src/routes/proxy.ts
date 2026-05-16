@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import { rateLimit } from '../middleware/rate-limit'
 import { stripAds } from '../services/adblock'
-import { extractReadable, summarizeAndExtract } from '../services/reader'
+import { extractReadable, factorFor, summarizeAndExtract } from '../services/reader'
 import { newId, getUserById } from '../lib/db'
 import { pickModel } from '../services/ai'
 import type { AppContext } from '../types'
@@ -72,7 +72,7 @@ proxy.post('/fetch', async (c) => {
     key_points = x.key_points
   }
 
-  const result = {
+  const responseBody = {
     title: page.title,
     cleaned_html: page.cleaned_html,
     text: page.text,
@@ -85,6 +85,15 @@ proxy.post('/fetch', async (c) => {
     cached: false,
   }
 
+  // Bytes-saved estimate. raw is the origin's HTML doc; the user, without
+  // Reader, would have fetched it plus typical sub-resources (images, JS,
+  // CSS). factorFor() scales raw by hostname tier. Conservative: clamp to >= 0.
+  const responseSize = JSON.stringify(responseBody).length
+  const fullPageEstimate = factorFor(parsed.hostname) * raw.length
+  const bytes_saved = Math.max(0, fullPageEstimate - responseSize)
+  const bytes_saved_adblock = Math.max(0, raw.length - html.length)
+
+  const result = { ...responseBody, bytes_saved, bytes_saved_adblock }
   await c.env.PAGE_CACHE.put(cacheKey, JSON.stringify(result), { expirationTtl: 1800 })
   return c.json(result)
 })
