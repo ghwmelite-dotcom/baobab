@@ -125,6 +125,18 @@ pub async fn create_tab(
     } else if let Some(dir) = data_dir_for_window(&app, &window_label) {
         builder = builder.data_directory(dir);
     }
+    // Adblock: attach initialization script when the calling profile has it enabled.
+    // Guest windows are skipped per design (is_enabled_for_profile returns false for "guest").
+    let adblock_enabled = match crate::windows::profile_id_from_label(&window_label) {
+        Some(pid) => crate::adblock::is_enabled_for_profile(&app, &pid).unwrap_or(true),
+        None => false,
+    };
+    if adblock_enabled {
+        let root = app.path().app_data_dir().map_err(|e: tauri::Error| e.to_string())?;
+        let payload = crate::adblock::load_payload(&root);
+        let script = crate::adblock::build_init_script(&payload);
+        builder = builder.initialization_script(&script);
+    }
     let builder = downloads::attach(builder, app.clone());
     // Capture the latest <title> reported by the engine so we can ship it
     // with the next `tab://loaded` event. The renderer sets the document
