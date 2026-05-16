@@ -1,3 +1,4 @@
+mod adblock;
 mod downloads;
 mod migration;
 mod pin;
