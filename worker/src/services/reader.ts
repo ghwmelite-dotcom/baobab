@@ -50,3 +50,36 @@ export async function summarizeAndExtract(env: Env, model: string, page: Readabl
     return { summary: reply.slice(0, 400), key_points: [] }
   }
 }
+
+// ── bytes-saved multiplier ──────────────────────────────────────────────
+// Estimate of total page weight (HTML + images + JS + CSS) relative to
+// the HTML doc alone. Multiplier × raw.length approximates what the user
+// would have downloaded without Reader. Conservative-by-default.
+
+const FACTOR_TABLE: readonly [RegExp, number][] = [
+  // News
+  [/(?:^|\.)nytimes\.com$/, 8],
+  [/(?:^|\.)bbc\.(?:co\.uk|com)$/, 8],
+  [/(?:^|\.)cnn\.com$/, 8],
+  [/(?:^|\.)guardian\.co\.uk$/, 8],
+  [/(?:^|\.)washingtonpost\.com$/, 8],
+  [/(?:^|\.)reuters\.com$/, 8],
+  // Blog platforms
+  [/(?:^|\.)medium\.com$/, 5],
+  [/(?:^|\.)substack\.com$/, 5],
+  [/(?:^|\.)wordpress\.com$/, 5],
+  [/\.blogspot\./, 5],
+  // App-like
+  [/(?:^|\.)slack\.com$/, 2],
+  [/(?:^|\.)github\.com$/, 2],
+  [/\.app$/, 2],
+]
+const DEFAULT_FACTOR = 4
+
+export function factorFor(hostname: string): number {
+  const h = hostname.toLowerCase()
+  for (const [re, f] of FACTOR_TABLE) {
+    if (re.test(h)) return f
+  }
+  return DEFAULT_FACTOR
+}
