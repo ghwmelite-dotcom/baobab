@@ -262,6 +262,19 @@ pub async fn tab_go_forward(app: AppHandle, tab_id: String) -> Result<(), String
     Ok(())
 }
 
+// Fire-and-forget reload via webview.eval. WebView2 honours its own
+// cache rules, so this behaves like a normal browser refresh — no
+// cache-skip semantics (that would be a separate hard-reload command).
+#[tauri::command]
+pub async fn tab_reload(app: AppHandle, tab_id: String) -> Result<(), String> {
+    let label = tab_label(&tab_id);
+    let wv = app
+        .get_webview(&label)
+        .ok_or_else(|| format!("webview {label} not found"))?;
+    wv.eval("location.reload()").map_err(|e| e.to_string())?;
+    Ok(())
+}
+
 #[tauri::command]
 pub async fn list_tabs(app: AppHandle, window_label: String) -> Result<Vec<TabInfo>, String> {
     let host = app
