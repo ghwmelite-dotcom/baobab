@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 import type { TFunction } from 'i18next'
 import { strings } from '@baobab/brand'
@@ -430,6 +430,8 @@ export function NewTabPage() {
   const residency = useSovereigntyStore((s) => s.residency)
   const user = useAuthStore((s) => s.user)
   const tabs = useTabsStore((s) => s.tabs)
+  const activeId = useTabsStore((s) => s.activeId)
+  const scrollRef = useRef<HTMLDivElement>(null)
 
   // Refresh greeting once a minute (in case user lingers past the hour).
   const [, setTick] = useState(0)
@@ -437,6 +439,19 @@ export function NewTabPage() {
     const id = setInterval(() => setTick((n) => n + 1), 60_000)
     return () => clearInterval(id)
   }, [])
+
+  // Defensive: reset scroll on every tab switch. The container has
+  // overflowX:hidden which usually prevents horizontal scroll, but Edge/
+  // WebView2 can carry a stale scrollLeft across remounts when the
+  // active tab swaps. A stale scrollLeft would visually shift every
+  // child to the left — exactly the symptom we hit when switching
+  // between two about:blank tabs.
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el) return
+    el.scrollLeft = 0
+    el.scrollTop = 0
+  }, [activeId])
 
   // Kick off the Continent Today digest fetch on first mount. The store
   // guards against re-fetching once `loaded` is set, so re-mounts are cheap.
@@ -531,12 +546,17 @@ export function NewTabPage() {
       {/* Scroll container — content scrolls inside this layer while the
           gradient, grain, and tree above remain fixed to the viewport. */}
       <div
+        ref={scrollRef}
         className="baobab-scroll-hidden"
         style={{
           position: 'absolute',
           inset: 0,
           overflowY: 'auto',
-          overflowX: 'hidden',
+          // `clip` (not `hidden`) prevents both manual AND programmatic
+          // scrolling on the x-axis. With `hidden`, WebView2 can carry a
+          // non-zero scrollLeft across remounts which visually shifts the
+          // whole content stack to the left.
+          overflowX: 'clip',
         }}
       >
         {/* Content stack */}
@@ -544,10 +564,13 @@ export function NewTabPage() {
           style={{
             position: 'relative',
             minHeight: '100%',
+            width: '100%',
             padding: '56px clamp(40px, 6vw, 88px) 88px',
             display: 'flex',
             flexDirection: 'column',
             maxWidth: 1200,
+            margin: 0,
+            transform: 'translate(0, 0)',
             boxSizing: 'border-box',
           }}
         >

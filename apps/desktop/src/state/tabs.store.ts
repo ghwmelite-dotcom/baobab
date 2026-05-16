@@ -248,7 +248,15 @@ export const useTabsStore = create<TabsState>()((set, get) => ({
 
   setActive: (id) => {
     set({ activeId: id })
-    void ipcShowTab(id)
+    // about:blank tabs don't get their webview shown — the NewTabPage HTML
+    // in the chrome layer is what renders for those. The App.tsx effect
+    // calls ipcHideAllTabs when showNtp goes true; firing ipcShowTab here
+    // first creates a brief race where the empty WebView2 page can flash
+    // (and on some setups, leave layout artifacts) before the hide lands.
+    const target = get().tabs.find((t) => t.id === id)
+    if (target && target.url !== 'about:blank') {
+      void ipcShowTab(id)
+    }
   },
 
   navigate: async (id, url) => {
