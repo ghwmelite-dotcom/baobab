@@ -11,6 +11,7 @@ import { FRUIT_HEX } from '~/profiles/fruitColors'
 import { ipcTabReload } from '~/ipc/tabs'
 import { showContextMenu, type NativeMenuItem } from '~/ipc/menus'
 import { useDragWindow } from './useDragWindow'
+import { NetworkChip } from './NetworkChip'
 
 const win = () => getCurrentWindow()
 
@@ -611,6 +612,7 @@ export function TabStrip() {
 
       {/* Right: residency chip + window controls (Windows/Linux) */}
       <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, paddingInline: isMac ? '0 12px' : '0 0', height: '100%' }}>
+        <NetworkChip />
         <ResidencyChip />
         {!isMac && (
           <div style={{ display: 'inline-flex', height: '100%' }} aria-label="Window controls">
