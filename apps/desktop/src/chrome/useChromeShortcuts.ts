@@ -27,8 +27,10 @@ export function useChromeShortcuts(): void {
       // These are handled BEFORE the primary-mod gate so they work on
       // both Windows (Ctrl) and macOS (Cmd) consistently.
 
-      // F5 → reload (universal)
-      if (e.key === 'F5' && !primary) {
+      // F5 / Ctrl+F5 → reload. Ctrl+F5 is the Windows hard-reload convention;
+      // we intercept it to STOP WebView2 from reloading the chrome window
+      // itself (which dumps the user into "Loading profile…" purgatory).
+      if (e.key === 'F5') {
         e.preventDefault()
         reloadActive(tabsStore)
         return
@@ -100,8 +102,10 @@ export function useChromeShortcuts(): void {
         return
       }
 
-      // Ctrl/Cmd + R → reload active tab
-      if (key === 'r' && !e.shiftKey) {
+      // Ctrl/Cmd + R → reload active tab.
+      // Ctrl/Cmd + Shift + R → hard reload (same handler — WebView2 manages
+      // cache itself, the important thing is preventing the chrome reload).
+      if (key === 'r') {
         e.preventDefault()
         reloadActive(tabsStore)
         return
