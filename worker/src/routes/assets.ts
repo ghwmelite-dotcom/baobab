@@ -24,8 +24,14 @@ assets.get('/:key{.+}', async (c) => {
   const obj = await c.env.ASSETS.get(key)
   if (!obj) return c.json({ error: 'not found' }, 404)
   const ct = obj.httpMetadata?.contentType ?? 'application/octet-stream'
-  // obj.body's type comes from @cloudflare/workers-types' ReadableStream, which
-  // doesn't satisfy lib.dom's BodyInit constraint despite being runtime-compatible
-  // (the worker's actual Response uses the worker's types). Cast through BodyInit.
-  return new Response(obj.body as BodyInit, { headers: { 'Content-Type': ct } })
+  // Consume the R2 body as an ArrayBuffer rather than streaming the body
+  // ReadableStream. Two reasons:
+  //   1. The streaming path returns a ReadableStream owned by R2; under
+  //      vitest-pool-workers' isolated-storage stack, the test runner
+  //      can't pop the storage frame until the stream is fully consumed,
+  //      causing "Isolated storage failed" failures (CI test step).
+  //   2. The 10 MB upload cap above bounds the buffer; production memory
+  //      stays within Workers' 128 MB limit.
+  const buf = await obj.arrayBuffer()
+  return new Response(buf, { headers: { 'Content-Type': ct } })
 })
