@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import DOMPurify from 'dompurify'
+import { SummarizePill } from './SummarizePill'
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL as string | undefined)
   ?? 'https://baobab-api.ohcsghana-main.workers.dev'
@@ -51,6 +52,7 @@ export function ReaderApp() {
   const [data, setData] = useState<ReaderResponse | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState<boolean>(!!urlParam)
+  const [summary, setSummary] = useState<string>('')
 
   useEffect(() => {
     if (!urlParam) return
@@ -92,10 +94,21 @@ export function ReaderApp() {
   }
   return (
     <article style={{ maxWidth: 760, margin: '0 auto', padding: '24px 32px', fontFamily: 'var(--font-default)' }}>
-      <header style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 24, display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+      <header style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 24, display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
         <span>📖 saved ≈ {formatMb(data.bytes_saved + data.bytes_saved_adblock)} · {data.est_read_minutes} min read · {data.ads_blocked} ads blocked</span>
-        <a href={urlParam} style={{ color: 'var(--accent)', textDecoration: 'none' }}>Load full page</a>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+          {!data.ai_summary && !summary && (
+            <SummarizePill text={data.text} onSummary={setSummary} />
+          )}
+          <a href={urlParam} style={{ color: 'var(--accent)', textDecoration: 'none' }}>Load full page</a>
+        </span>
       </header>
+      {(data.ai_summary || summary) && (
+        <aside style={{ background: 'var(--surface-1)', borderRadius: 10, padding: '12px 14px', marginBottom: 20, border: '1px solid var(--border)' }}>
+          <strong style={{ fontSize: 11, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>AI summary</strong>
+          <p style={{ margin: '6px 0 0', color: 'var(--text-primary)', fontSize: 13.5 }}>{data.ai_summary || summary}</p>
+        </aside>
+      )}
       <h1 style={{ fontSize: 28, lineHeight: 1.25, color: 'var(--text-primary)' }}>{data.title}</h1>
       <div
         style={{ fontSize: 17, lineHeight: 1.7, color: 'var(--text-primary)' }}
