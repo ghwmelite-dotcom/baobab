@@ -290,7 +290,16 @@ export function Omnibar() {
           </svg>
         </NavBtn>
         <NavBtn label={t('omnibar.reload')} onClick={reload} disabled={!activeTab?.url || activeTab.url === 'about:blank'}>
-          <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden>
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 16 16"
+            aria-hidden
+            style={{
+              animation: activeTab?.loading ? 'baobab-spinner-rotate 800ms linear infinite' : undefined,
+              transformOrigin: 'center',
+            }}
+          >
             <path d="M13 4 V8 H9 M13 8 A5 5 0 1 1 11 4" stroke="currentColor" strokeWidth="1.4" fill="none" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </NavBtn>
