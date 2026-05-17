@@ -72,4 +72,19 @@ describe('ProfileProvider', () => {
     expect(authSetProfileId).toHaveBeenCalledWith('guest')
     expect(tabsSetProfileId).toHaveBeenCalledWith('guest')
   })
+
+  it('shows the recovery UI when current_profile_id resolves to null', async () => {
+    invokeMock.mockImplementation((cmd: string) => {
+      if (cmd === 'current_profile_id') return Promise.resolve(null)
+      return Promise.resolve()
+    })
+
+    render(<ProfileProvider><Probe /></ProfileProvider>)
+    await waitFor(() => {
+      expect(screen.queryByText(/Couldn['']t load your profile/)).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: /Open profile picker/ })).toBeInTheDocument()
+    })
+    // Probe is gated out — children don't render when there's no profile.
+    expect(screen.queryByTestId('probe')).not.toBeInTheDocument()
+  })
 })

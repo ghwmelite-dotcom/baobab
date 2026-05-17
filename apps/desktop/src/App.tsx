@@ -132,9 +132,10 @@ export function App() {
     }
   }, [showNtp, activeId, anyOverlayOpen])
 
-  if (!profile) {
-    return <div style={{ padding: 24, color: 'rgba(255,255,255,0.7)' }}>Loading profile…</div>
-  }
+  // ProfileProvider gates rendering — when it renders App, profile is always
+  // non-null. The TS narrowing below is just for the downstream useProfile()
+  // call sites that read profile.id, profile.fruitColor, etc.
+  if (!profile) return null
 
   return (
     <ThemeProvider theme="dark">
