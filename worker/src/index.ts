@@ -22,6 +22,7 @@ import { continentToday } from './routes/continent-today'
 import { translate } from './routes/translate'
 import { payments } from './routes/payments'
 import { agents } from './routes/agents'
+import { search } from './routes/search'
 
 export { ReaderQueue } from './durable-objects/reader-queue'
 
@@ -69,6 +70,7 @@ app.route('/api/translate', translate)
 app.route('/api/continent-today', continentToday)
 app.route('/api/payments', payments)
 app.route('/api/agents', agents)
+app.route('/api/search', search)
 
 app.onError((err, c) => {
   const reqId = c.get('reqId')

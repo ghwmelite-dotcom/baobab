@@ -20,3 +20,39 @@ Set via `npx wrangler secret put <NAME>` (production environment).
 ```bash
 openssl rand -base64 48 | npx wrangler secret put AUTH_SECRET --env production
 ```
+
+## Google Programmable Search Engine (PSE)
+
+The `/api/search` route requires two additional secrets:
+
+| Secret | Required | Used by |
+|---|---|---|
+| GOOGLE_PSE_API_KEY | Yes | Google Custom Search JSON API key |
+| GOOGLE_PSE_CX | Yes | Programmable Search Engine ID (cx) |
+
+### `GOOGLE_PSE_API_KEY`
+
+1. Go to https://console.cloud.google.com/apis/credentials
+2. Click "Create credentials → API key"
+3. Restrict the key:
+   - API restrictions → "Custom Search JSON API" only
+   - Application restrictions → "None" for now (HTTP referrer doesn't work for workers)
+4. Set in worker:
+   ```bash
+   wrangler secret put GOOGLE_PSE_API_KEY
+   ```
+
+### `GOOGLE_PSE_CX`
+
+1. Go to https://programmablesearchengine.google.com/controlpanel/create
+2. Name: "Baobab Search"
+3. Sites to search: "Search the entire web" (toggle on)
+4. Create. Copy the "Search engine ID" (the `cx` value).
+5. Set in worker:
+   ```bash
+   wrangler secret put GOOGLE_PSE_CX
+   ```
+
+### Daily budget
+
+Set a billing alert in Google Cloud Console at $40/day. PSE pricing: 100 queries/day free, then $5/1000 (capped at $50/day = 10K queries).

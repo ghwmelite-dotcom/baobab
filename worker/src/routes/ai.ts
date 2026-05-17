@@ -2,8 +2,8 @@ import { Hono } from 'hono'
 import { authMiddleware } from '../middleware/auth'
 import { rateLimit } from '../middleware/rate-limit'
 import { newId, getUserById } from '../lib/db'
-import { runChat, runChatStream, runChatJson, pickModel, embedQuery, extractJson, type ChatMessage } from '../services/ai'
-import { AFRICAN_SOURCES_SEED, rerank } from '../services/search-rank'
+import { runChat, runChatStream, pickModel, extractJson, type ChatMessage } from '../services/ai'
+import { search as searchV2 } from './search'
 import type { AppContext } from '../types'
 
 export const ai = new Hono<AppContext>()
@@ -178,53 +178,28 @@ ai.post('/summarize', authMiddleware, async (c) => {
   return c.json({ ...parsed, cached: false })
 })
 
-// Worker-side search is LLM-generated for the alpha: the model produces an
-// `answer` plus a synthetic list of plausible URLs from its training data —
-// nothing is fetched live and the results are not crawled/ranked. Real web
-// crawl + ranking (Browser Rendering / Vectorize index over indexed pages) is
-// a P1 task.
+// Forward to the v2 /api/search orchestrator and downcast to v1 shape for
+// backward compatibility. Clients that depended on { answer, results: [{title, url}] }
+// continue to work unchanged; the richer v2 response is available at /api/search.
 ai.post('/search', async (c) => {
-  const body = await c.req.json<{ query?: string }>()
-  if (!body.query) return c.json({ error: 'query required' }, 400)
-
-  c.executionCtx.waitUntil(embedQuery(c.env, body.query).catch(() => []))
-
-  // The 70B fp8-fast default model returns prose-wrapped JSON that
-  // defeats strict parsing. The 8B model is more reliable for
-  // strict-format outputs at this scale and we get good answer
-  // quality back; mirrors the summarize-route fix.
-  const SEARCH_MODEL = '@cf/meta/llama-3.1-8b-instruct'
-
-  // Pragmatic path: response_format on Workers AI llama is inconsistent
-  // across models (json_object rejected, json_schema sometimes silently
-  // returns empty). Use a hard prompt + extractJson with brace-scanning.
-  const systemPrompt =
-    'You are Baobab Search. Reply with a JSON object and NOTHING ELSE. No preamble. No code fence. No explanation.\n' +
-    'Schema: {"answer":"2-3 sentence direct answer","results":[{"title":"...","url":"https://..."}]}\n' +
-    'Include 5-8 results. Prioritize African sources (gov.gh, gov.ng, gov.ke, gov.za, au.int, premiumtimesng.com, dailymaverick.co.za, theeastafrican.co.ke, africanews.com).\n\n' +
-    'Example INPUT: "Best universities in Kenya"\n' +
-    'Example OUTPUT: {"answer":"Kenya\'s top universities include the University of Nairobi and Strathmore.","results":[{"title":"University of Nairobi","url":"https://uonbi.ac.ke"},{"title":"Strathmore University","url":"https://strathmore.edu"}]}'
-
-  let raw: string
-  try {
-    raw = await runChat(c.env, SEARCH_MODEL, [
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: body.query },
-    ])
-  } catch (e) {
-    return c.json(
-      { error: 'ai_call_failed', model: SEARCH_MODEL, detail: e instanceof Error ? e.message : 'unknown' },
-      502,
-    )
+  const v2 = await searchV2.fetch(
+    new Request(new URL('/', c.req.url).toString(), {
+      method: 'POST',
+      headers: c.req.raw.headers,
+      body: c.req.raw.body,
+    }),
+    c.env,
+    c.executionCtx,
+  )
+  if (!v2.ok) return v2
+  const v2body = await v2.json() as {
+    answer: { en: string } | null
+    results: Array<{ title: string; url: string }>
   }
-
-  const extracted = extractJson<{ answer: string; results: Array<{ title: string; url: string }> }>(raw)
-  const parsed = extracted ?? { answer: raw.slice(0, 500), results: [] }
-  // Defensive: model might omit `results` even within valid JSON.
-  if (!Array.isArray(parsed.results)) parsed.results = []
-  parsed.results = rerank(parsed.results, AFRICAN_SOURCES_SEED)
-
-  return c.json(parsed)
+  return c.json({
+    answer: v2body.answer?.en ?? '',
+    results: (v2body.results ?? []).map((r) => ({ title: r.title, url: r.url })),
+  })
 })
 
 ai.post('/compare', authMiddleware, async (c) => {
