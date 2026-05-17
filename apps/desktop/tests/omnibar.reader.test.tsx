@@ -74,7 +74,7 @@ describe('Omnibar Bundle-B integration', () => {
     fireEvent.click(screen.getByRole('button', { name: /open now/i }))
     await waitFor(() => expect(ipcNavigateTab).toHaveBeenCalled())
     const calls = (ipcNavigateTab as ReturnType<typeof vi.fn>).mock.calls
-    const lastCall = calls[calls.length - 1]
+    const lastCall = calls[calls.length - 1]!
     const url = lastCall[1] as string
     expect(url).toContain('/reader.html?url=')
     expect(url).toContain(encodeURIComponent('https://example.com/article'))
@@ -89,7 +89,7 @@ describe('Omnibar Bundle-B integration', () => {
     fireEvent.click(screen.getByRole('button', { name: /cancel/i }))
     await waitFor(() => expect(ipcNavigateTab).toHaveBeenCalled())
     const calls = (ipcNavigateTab as ReturnType<typeof vi.fn>).mock.calls
-    const lastCall = calls[calls.length - 1]
+    const lastCall = calls[calls.length - 1]!
     expect(lastCall[1]).toBe('https://example.com/article')
   })
 
@@ -101,7 +101,7 @@ describe('Omnibar Bundle-B integration', () => {
     fireEvent.keyDown(input, { key: 'Enter' })
     await waitFor(() => expect(ipcNavigateTab).toHaveBeenCalled())
     const calls = (ipcNavigateTab as ReturnType<typeof vi.fn>).mock.calls
-    const lastCall = calls[calls.length - 1]
+    const lastCall = calls[calls.length - 1]!
     expect(lastCall[1]).toBe('https://example.com/article')
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
@@ -132,7 +132,7 @@ describe('Omnibar Bundle-B integration', () => {
     fireEvent.click(screen.getByRole('button', { name: /reader/i }))
     await waitFor(() => expect(ipcNavigateTab).toHaveBeenCalled())
     const calls = (ipcNavigateTab as ReturnType<typeof vi.fn>).mock.calls
-    const lastCall = calls[calls.length - 1]
+    const lastCall = calls[calls.length - 1]!
     expect(lastCall[1]).toBe('https://example.com/article')
   })
 })

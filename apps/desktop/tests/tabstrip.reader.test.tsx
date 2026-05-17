@@ -75,7 +75,7 @@ describe('TabStrip duplicate gating', () => {
     fireEvent.click(screen.getByRole('button', { name: /open now/i }))
 
     await waitFor(() => expect(openTabAfter).toHaveBeenCalled())
-    const args = openTabAfter.mock.calls[0]
+    const args = openTabAfter.mock.calls[0]!
     expect(args[0]).toBe('t1')
     expect(args[1]).toContain('/reader.html?url=')
     expect(args[1]).toContain(encodeURIComponent('https://example.com/article'))

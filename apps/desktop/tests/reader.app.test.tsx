@@ -31,11 +31,11 @@ describe('<ReaderApp>', () => {
     vi.stubGlobal('fetch', fetchMock)
     render(<ReaderApp />)
     await waitFor(() => expect(fetchMock).toHaveBeenCalled())
-    const call = fetchMock.mock.calls[0]
-    const req = call[0] as Request | string
+    const call = fetchMock.mock.calls[0]! as unknown as [Request | string, RequestInit]
+    const req = call[0]
     const url = typeof req === 'string' ? req : req.url
     expect(url).toContain('/api/proxy/fetch')
-    const init = call[1] as RequestInit
+    const init = call[1]
     const body = JSON.parse(init.body as string)
     expect(body.url).toBe('https://example.com/article')
     expect(typeof body.skip_ai).toBe('boolean')
@@ -79,7 +79,7 @@ describe('<ReaderApp>', () => {
       }), { status: 200, headers: { 'Content-Type': 'application/json' } })))
     render(<ReaderApp />)
     await waitFor(() => expect(invoke).toHaveBeenCalled())
-    const call = invoke.mock.calls[0]
+    const call = invoke.mock.calls[0]! as unknown as [string, unknown]
     expect(call[0]).toBe('record_tab_usage')
     expect(call[1]).toEqual({ bytesUsed: 0, bytesSaved: 1200 })
     delete (window as Window & { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__
