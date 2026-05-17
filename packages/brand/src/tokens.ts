@@ -62,6 +62,66 @@ export const lightTokens: ThemeTokens = {
   info: '#0e7490',
 }
 
+// "Grove sunset" surface — used by the profile picker and search results.
+// A warm sky-over-savanna gradient with paired ink/pill tokens for the
+// floating UI that sits on top of it. Exposed via
+// [data-baobab-surface='grove'] in @baobab/ui's tokens.css.
+export interface GroveTokens {
+  // Sunset sky gradient stops (picker uses all five; search uses dawn + mist + haze).
+  skyDawn: string
+  skyMist: string
+  skyHaze: string
+  skyEmber: string
+  skyFlame: string
+  skyDusk: string
+  skyNight: string
+  // Warm ink — primary text + accents on the light end of the gradient.
+  textPrimary: string
+  textSecondary: string
+  // Pale text on the dark end of the gradient (paired with pillTextShadow).
+  textOnDusk: string
+  // Floating pill controls (guest button, etc.).
+  pillBg: string
+  pillBgHover: string
+  pillBorder: string
+  pillShadow: string
+  pillShadowHover: string
+  pillTextShadow: string
+  // Elevated translucent toast surface (error, status, etc.). Slightly more opaque than pillBg.
+  toastBg: string
+  errorShadow: string
+  // Guest avatar.
+  avatarHighlight: string
+  avatarShadow: string
+  avatarRing: string
+  avatarText: string
+}
+
+export const groveTokens: GroveTokens = {
+  skyDawn: '#fde7c4',
+  skyMist: '#f4d8a8',
+  skyHaze: '#fffaf2',
+  skyEmber: '#f4b878',
+  skyFlame: '#d97a3a',
+  skyDusk: '#8a3815',
+  skyNight: '#4a1e0a',
+  textPrimary: '#3c1810',
+  textSecondary: 'rgba(60, 24, 16, 0.7)',
+  textOnDusk: 'rgba(255, 250, 240, 0.95)',
+  pillBg: 'rgba(255, 250, 240, 0.92)',
+  pillBgHover: '#ffffff',
+  pillBorder: 'rgba(60, 30, 15, 0.15)',
+  pillShadow: 'rgba(60, 20, 10, 0.22)',
+  pillShadowHover: 'rgba(60, 20, 10, 0.30)',
+  pillTextShadow: 'rgba(60, 20, 10, 0.4)',
+  toastBg: 'rgba(255, 250, 240, 0.96)',
+  errorShadow: 'rgba(0, 0, 0, 0.15)',
+  avatarHighlight: '#c0b5a0',
+  avatarShadow: '#6a5a48',
+  avatarRing: 'rgba(255, 255, 255, 0.6)',
+  avatarText: '#ffffff',
+}
+
 export const typography = {
   display: 'Recoleta',
   displayFallback: 'General Sans',

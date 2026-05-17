@@ -44,11 +44,12 @@ export function PickerApp() {
   return (
     <div
       data-tauri-drag-region
+      data-baobab-surface="grove"
       style={{
         position: 'relative',
         height: '100vh',
         overflow: 'hidden',
-        background: 'linear-gradient(180deg, #fde7c4 0%, #f4b878 28%, #d97a3a 60%, #8a3815 92%, #4a1e0a 100%)',
+        background: 'linear-gradient(180deg, var(--grove-sky-dawn, #fde7c4) 0%, var(--grove-sky-ember, #f4b878) 28%, var(--grove-sky-flame, #d97a3a) 60%, var(--grove-sky-dusk, #8a3815) 92%, var(--grove-sky-night, #4a1e0a) 100%)',
         fontFamily: 'system-ui, -apple-system, "Segoe UI", sans-serif',
         userSelect: 'none',
       }}
@@ -100,7 +101,7 @@ export function PickerApp() {
           data-tauri-drag-region
           className="bb-title"
           style={{
-            color: '#3c1810',
+            color: 'var(--grove-text-primary)',
             fontFamily: SERIF_STACK,
             fontSize: 32,
             fontWeight: 600,
@@ -115,7 +116,7 @@ export function PickerApp() {
           data-tauri-drag-region
           className="bb-subtitle"
           style={{
-            color: 'rgba(60,24,16,0.7)',
+            color: 'var(--grove-text-secondary)',
             fontSize: 14,
             margin: 0,
             letterSpacing: '0.01em',
@@ -147,34 +148,34 @@ export function PickerApp() {
           position: 'absolute', bottom: 20, left: 28,
           display: 'flex', alignItems: 'center', gap: 10,
           padding: '9px 18px 9px 12px',
-          background: 'rgba(255,250,240,0.92)',
-          color: '#3c1810',
-          border: '1.5px solid rgba(60,30,15,0.15)',
+          background: 'var(--grove-pill-bg)',
+          color: 'var(--grove-text-primary)',
+          border: '1.5px solid var(--grove-pill-border)',
           borderRadius: 999,
           cursor: 'pointer',
           fontSize: 13, fontWeight: 600,
-          boxShadow: '0 3px 10px rgba(60,20,10,0.22)',
+          boxShadow: '0 3px 10px var(--grove-pill-shadow)',
           backdropFilter: 'blur(6px)',
           transition: 'background 160ms ease, transform 160ms ease, box-shadow 160ms ease',
           zIndex: 2,
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.background = 'rgba(255,255,255,1)'
+          e.currentTarget.style.background = 'var(--grove-pill-bg-hover)'
           e.currentTarget.style.transform = 'translateY(-2px)'
-          e.currentTarget.style.boxShadow = '0 6px 16px rgba(60,20,10,0.30)'
+          e.currentTarget.style.boxShadow = '0 6px 16px var(--grove-pill-shadow-hover)'
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.background = 'rgba(255,250,240,0.92)'
+          e.currentTarget.style.background = 'var(--grove-pill-bg)'
           e.currentTarget.style.transform = 'translateY(0)'
-          e.currentTarget.style.boxShadow = '0 3px 10px rgba(60,20,10,0.22)'
+          e.currentTarget.style.boxShadow = '0 3px 10px var(--grove-pill-shadow)'
         }}
       >
         <span aria-hidden style={{
           width: 24, height: 24, borderRadius: '50%',
-          background: 'radial-gradient(circle at 30% 30%, #c0b5a0, #6a5a48)',
-          color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: 'radial-gradient(circle at 30% 30%, var(--grove-avatar-highlight), var(--grove-avatar-shadow))',
+          color: 'var(--grove-avatar-text)', display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: 12, fontWeight: 700,
-          border: '1.5px solid rgba(255,255,255,0.6)',
+          border: '1.5px solid var(--grove-avatar-ring)',
         }}>G</span>
         Guest mode
       </button>
@@ -184,9 +185,9 @@ export function PickerApp() {
         className="bb-footer-r"
         style={{
           position: 'absolute', bottom: 22, right: 28,
-          color: 'rgba(255,250,240,0.95)', fontSize: 13, fontWeight: 500,
+          color: 'var(--grove-text-on-dusk)', fontSize: 13, fontWeight: 500,
           display: 'flex', alignItems: 'center', gap: 8,
-          textShadow: '0 1px 2px rgba(60,20,10,0.4)',
+          textShadow: '0 1px 2px var(--grove-pill-text-shadow)',
           zIndex: 2,
         }}
       >
@@ -196,7 +197,7 @@ export function PickerApp() {
           checked={showOnStartup}
           onChange={(e) => void toggleShow(e.target.checked)}
           aria-label="Show on startup"
-          style={{ accentColor: '#3c1810', cursor: 'pointer' }}
+          style={{ accentColor: 'var(--grove-text-primary)', cursor: 'pointer' }}
         />
         Show on startup
       </label>
@@ -206,8 +207,8 @@ export function PickerApp() {
           data-tauri-drag-region="false"
           style={{
             position: 'absolute', top: 50, left: '50%', transform: 'translateX(-50%)',
-            color: '#a23a1f', fontSize: 13, background: 'rgba(255,250,240,0.96)',
-            padding: '6px 14px', borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+            color: 'var(--critical)', fontSize: 13, background: 'var(--grove-toast-bg)',
+            padding: '6px 14px', borderRadius: 8, boxShadow: '0 4px 12px var(--grove-error-shadow)',
             zIndex: 30,
           }}
         >

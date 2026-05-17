@@ -45,6 +45,34 @@
   color-scheme: light;
 }
 
+/* "Grove sunset" surface — picker and search windows opt in via
+   data-baobab-surface="grove" on their outermost element. Values mirror
+   groveTokens in @baobab/brand. Keep these in sync if either side changes. */
+[data-baobab-surface='grove'] {
+  --grove-sky-dawn: #fde7c4;
+  --grove-sky-mist: #f4d8a8;
+  --grove-sky-haze: #fffaf2;
+  --grove-sky-ember: #f4b878;
+  --grove-sky-flame: #d97a3a;
+  --grove-sky-dusk: #8a3815;
+  --grove-sky-night: #4a1e0a;
+  --grove-text-primary: #3c1810;
+  --grove-text-secondary: rgba(60, 24, 16, 0.7);
+  --grove-text-on-dusk: rgba(255, 250, 240, 0.95);
+  --grove-pill-bg: rgba(255, 250, 240, 0.92);
+  --grove-pill-bg-hover: #ffffff;
+  --grove-pill-border: rgba(60, 30, 15, 0.15);
+  --grove-pill-shadow: rgba(60, 20, 10, 0.22);
+  --grove-pill-shadow-hover: rgba(60, 20, 10, 0.30);
+  --grove-pill-text-shadow: rgba(60, 20, 10, 0.4);
+  --grove-toast-bg: rgba(255, 250, 240, 0.96);
+  --grove-error-shadow: rgba(0, 0, 0, 0.15);
+  --grove-avatar-highlight: #c0b5a0;
+  --grove-avatar-shadow: #6a5a48;
+  --grove-avatar-ring: rgba(255, 255, 255, 0.6);
+  --grove-avatar-text: #ffffff;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0ms !important;

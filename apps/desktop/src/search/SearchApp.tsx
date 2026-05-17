@@ -67,10 +67,11 @@ export function SearchApp() {
 
   return (
     <div
+      data-baobab-surface="grove"
       style={{
         minHeight: '100vh',
-        background: 'linear-gradient(180deg, #fde7c4 0%, #f4d8a8 40%, #fffaf2 100%)',
-        color: '#3c1810',
+        background: 'linear-gradient(180deg, var(--grove-sky-dawn, #fde7c4) 0%, var(--grove-sky-mist, #f4d8a8) 40%, var(--grove-sky-haze, #fffaf2) 100%)',
+        color: 'var(--grove-text-primary)',
       }}
     >
       <SearchHeader query={query} onRefine={handleRefine} />
