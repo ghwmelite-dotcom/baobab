@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 
 import { useTranslation } from 'react-i18next'
 import { parseOmnibarInput } from '@baobab/core'
 import type { HistoryItem } from '@baobab/cloud-client'
-import { ipcTabReload } from '~/ipc/tabs'
+import { ipcTabReload, ipcTabStop } from '~/ipc/tabs'
 import { useTabsStore } from '~/state/tabs.store'
 import { OS } from '~/platform/os'
 import { useAiStore } from '~/ai/ai.store'
@@ -216,6 +216,18 @@ export function Omnibar() {
     }
   }
 
+  const stop = () => {
+    if (activeId) {
+      // Optimistic clear — WebView2's on_page_load(Finished) will also fire
+      // when the load aborts and snap loading=false again, but doing it here
+      // means the spinner/progress bar collapse instantly on click.
+      useTabsStore.setState((s) => ({
+        tabs: s.tabs.map((t) => (t.id === activeId ? { ...t, loading: false } : t)),
+      }))
+      void ipcTabStop(activeId)
+    }
+  }
+
   const isSecure = activeTab?.url?.startsWith('https://') ?? false
   const showSecurityGlyph = activeTab?.url && activeTab.url !== 'about:blank'
   const omnibarBg: CSSProperties['background'] = focused
@@ -289,19 +301,21 @@ export function Omnibar() {
             <path d="M6 3 L11 8 L6 13" stroke="currentColor" strokeWidth="1.6" fill="none" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </NavBtn>
-        <NavBtn label={t('omnibar.reload')} onClick={reload} disabled={!activeTab?.url || activeTab.url === 'about:blank'}>
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 16 16"
-            aria-hidden
-            style={{
-              animation: activeTab?.loading ? 'baobab-spinner-rotate 800ms linear infinite' : undefined,
-              transformOrigin: 'center',
-            }}
-          >
-            <path d="M13 4 V8 H9 M13 8 A5 5 0 1 1 11 4" stroke="currentColor" strokeWidth="1.4" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+        <NavBtn
+          label={activeTab?.loading ? t('omnibar.stop') : t('omnibar.reload')}
+          onClick={activeTab?.loading ? stop : reload}
+          disabled={!activeTab?.url || activeTab.url === 'about:blank'}
+        >
+          {activeTab?.loading ? (
+            // Stop (X) — replaces reload while loading; clicking cancels the load
+            <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden>
+              <path d="M4 4 L12 12 M12 4 L4 12" stroke="currentColor" strokeWidth="1.6" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          ) : (
+            <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden>
+              <path d="M13 4 V8 H9 M13 8 A5 5 0 1 1 11 4" stroke="currentColor" strokeWidth="1.4" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          )}
         </NavBtn>
       </div>
 

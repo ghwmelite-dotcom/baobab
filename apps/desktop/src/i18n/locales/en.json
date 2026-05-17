@@ -138,6 +138,7 @@
     "back": "Back",
     "forward": "Forward",
     "reload": "Reload",
+    "stop": "Stop loading",
     "secure": "Secure connection",
     "notSecure": "Not secure",
     "secureTitle": "Secure connection (HTTPS)",

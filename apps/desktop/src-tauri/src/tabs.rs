@@ -292,6 +292,20 @@ pub async fn tab_reload(app: AppHandle, tab_id: String) -> Result<(), String> {
     Ok(())
 }
 
+// Cancel any in-flight navigation/network for the tab. WebView2 fires
+// on_page_load(Finished) when the load aborts, which clears the loading
+// flag on the JS side via the tab://loaded event. We also fire a stop
+// event so the chrome can clear loading optimistically without waiting.
+#[tauri::command]
+pub async fn tab_stop(app: AppHandle, tab_id: String) -> Result<(), String> {
+    let label = tab_label(&tab_id);
+    let wv = app
+        .get_webview(&label)
+        .ok_or_else(|| format!("webview {label} not found"))?;
+    wv.eval("window.stop()").map_err(|e| e.to_string())?;
+    Ok(())
+}
+
 #[tauri::command]
 pub async fn list_tabs(app: AppHandle, window_label: String) -> Result<Vec<TabInfo>, String> {
     let host = app

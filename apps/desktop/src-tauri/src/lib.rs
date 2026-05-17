@@ -83,6 +83,7 @@ pub fn run() {
             tabs::tab_go_back,
             tabs::tab_go_forward,
             tabs::tab_reload,
+            tabs::tab_stop,
             downloads::download_show_in_folder,
             downloads::download_open_file,
             profiles::cmd_list_profiles,
