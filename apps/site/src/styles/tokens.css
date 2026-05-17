@@ -29,6 +29,14 @@
   --critical: #b91c1c;
   --info: #0891b2;
 
+  /* Persona-band accents (landing page only — Task 10 PersonaBand needs
+     these four CSS vars. Not present in @baobab/ui upstream because the
+     persona-band concept is landing-specific.) */
+  --persona-metered: #d9a45a;
+  --persona-builder: #9ec78a;
+  --persona-diaspora: #c89876;
+  --persona-org: #6a8caa;
+
   /* Typography — Bookman Old Style for editorial, warm feel; Fraunces
      available via @import from fonts.googleapis.com if display-only needs
      arise (currently used in desktop NTP). JetBrains Mono for code. */
