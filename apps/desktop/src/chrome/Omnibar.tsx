@@ -240,6 +240,35 @@ export function Omnibar() {
         borderBottom: '1px solid var(--border)',
       }}
     >
+      {/* Indeterminate progress bar — sits on top of the borderBottom while the
+          active tab is loading, fades out on completion. */}
+      <div
+        aria-hidden
+        style={{
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          bottom: -1,
+          height: 2,
+          overflow: 'hidden',
+          pointerEvents: 'none',
+          opacity: activeTab?.loading ? 1 : 0,
+          transition: 'opacity 220ms ease',
+        }}
+      >
+        {activeTab?.loading && (
+          <div
+            style={{
+              height: 2,
+              width: '35%',
+              background: 'var(--accent)',
+              animation: 'baobab-progress-slide 1.1s cubic-bezier(0.4, 0.0, 0.2, 1) infinite',
+              willChange: 'transform',
+            }}
+          />
+        )}
+      </div>
+
       {/* Navigation cluster (left) */}
       <div data-tauri-drag-region="false" style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}>
         <NavBtn

@@ -44,10 +44,28 @@ html, body, #root {
 
 button { font: inherit; }
 
-/* Selection styling — keep accent restrained, not amber-everywhere */
+/* Selection styling — keep accent restrained in body text, not amber-everywhere */
 ::selection {
   background: var(--accent-dim);
   color: var(--text-primary);
+}
+
+/* Form fields where selection MUST be obvious — full amber, dark text. */
+input::selection,
+textarea::selection {
+  background: var(--accent);
+  color: var(--canvas);
+}
+
+/* Indeterminate progress slide — used by Omnibar loading bar. */
+@keyframes baobab-progress-slide {
+  0%   { transform: translateX(-35%); }
+  100% { transform: translateX(135%); }
+}
+
+/* Tab favicon spinner — used by TabStrip while tab.loading. */
+@keyframes baobab-spinner-rotate {
+  to { transform: rotate(360deg); }
 }
 
 /* Subtle scrollbar — opt in via .baobab-scroll. Default WebKit scrollbar

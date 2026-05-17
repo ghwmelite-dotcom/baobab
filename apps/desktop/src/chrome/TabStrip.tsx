@@ -253,11 +253,24 @@ function TabPill({ tab, active, onSelect, onClose, onContextMenu }: {
           </span>
         )}
         {tab.pinned && <span aria-hidden style={{ color: 'var(--accent)', fontSize: 8 }}>●</span>}
-        {/* Favicon — render only for real navigations. about:blank tabs
-            keep their "New Tab" label and skip the icon entirely. Engines
-            return a stale or 404 image for ~5% of hosts, so onError hides
-            the broken-image glyph rather than letting it bleed through. */}
-        {tab.faviconUrl && tab.url !== 'about:blank' && (
+        {/* Loading spinner takes priority over favicon — replaces the icon while the
+            tab is navigating, then snaps back to the favicon once tab-loaded fires. */}
+        {tab.loading && tab.url !== 'about:blank' ? (
+          <span
+            aria-hidden
+            style={{
+              width: 16,
+              height: 16,
+              flexShrink: 0,
+              display: 'inline-block',
+              border: '2px solid rgba(255,255,255,0.18)',
+              borderTopColor: 'var(--accent)',
+              borderRadius: '50%',
+              animation: 'baobab-spinner-rotate 800ms linear infinite',
+              boxSizing: 'border-box',
+            }}
+          />
+        ) : tab.faviconUrl && tab.url !== 'about:blank' ? (
           <img
             src={tab.faviconUrl}
             alt=""
@@ -276,7 +289,7 @@ function TabPill({ tab, active, onSelect, onClose, onContextMenu }: {
               objectFit: 'contain',
             }}
           />
-        )}
+        ) : null}
         <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
           {label}
         </span>
