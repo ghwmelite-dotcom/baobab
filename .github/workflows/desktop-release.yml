@@ -1,0 +1,91 @@
+name: Desktop Release
+
+on:
+  push:
+    # Match strict semver tags (desktop-v0.1.0) and revision tags
+    # (desktop-v0.1.0-rN) issued while the public version is frozen.
+    tags: ['desktop-v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+          # macOS dropped 2026-05-13 — its runner bills 10x against
+          # included minutes and we burned through the alpha account's
+          # CI budget. Restore by adding this block back once Apple
+          # Developer Program + signing certs are funded (see P0c C1):
+          #   - os: macos-14
+          #     target: aarch64-apple-darwin
+          - os: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Linux deps
+        if: matrix.os == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf \
+            libssl-dev
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: apps/desktop/src-tauri
+
+      - run: npm ci
+
+      - name: Build & bundle
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Tauri updater signing — pubkey embedded in tauri.conf.json,
+          # private key + (optional) password come from secrets.
+          # When unset, tauri-action skips signing and no updater
+          # manifest is generated — but updater will fail at runtime,
+          # so set TAURI_SIGNING_PRIVATE_KEY for r6 onward.
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          # Apple + Windows code-signing env vars are intentionally
+          # omitted until certs are provisioned.
+        with:
+          projectPath: apps/desktop
+          tagName: ${{ github.ref_name }}
+          # Tauri 2 updater: latest.json points at the NSIS installer for
+          # Windows (we don't ship .msi). createUpdaterArtifacts in
+          # tauri.conf.json is what actually triggers latest.json
+          # generation; this flag just steers the Windows URL choice.
+          updaterJsonPreferNsis: true
+          releaseName: 'Baobab Desktop · ${{ github.ref_name }}'
+          releaseBody: |
+            Public version held at **0.1.0** while we iterate on the
+            browser experience. Each tag is a build revision; the
+            artifacts inside are all `Baobab_0.1.0_*` regardless of
+            which revision tag triggered the build.
+
+            Built from `${{ github.ref_name }}`.
+          releaseDraft: true
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          args: --target ${{ matrix.target }}

@@ -1,0 +1,8 @@
+{
+  "_meta": {
+    "language": "Swahili",
+    "code": "sw",
+    "status": "stub",
+    "note": "TODO: Native Swahili translator needed. All keys fall back to English via i18next fallbackLng='en'."
+  }
+}

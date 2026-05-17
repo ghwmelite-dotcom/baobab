@@ -15,7 +15,7 @@ const migrations = await readD1Migrations(path.join(__dirname, 'db/migrations'))
 const AI_STUB_WORKER = `
 export default function () {
   return {
-    async run(_model, input) {
+    async run(model, input) {
       if (Array.isArray(input?.text)) {
         return { data: [Array.from({ length: 8 }, (_, i) => i * 0.1)] }
       }
@@ -24,6 +24,20 @@ export default function () {
         return new ReadableStream({
           start(c) { c.enqueue(encoder.encode('ok')); c.close() }
         })
+      }
+      // m2m100-style translation input: { text, source_lang, target_lang }
+      if (typeof input?.text === 'string' && typeof input?.target_lang === 'string') {
+        // Sentinel target lang lets the translate-route fallback test simulate
+        // an m2m100 failure so the llama branch is exercised.
+        if (input.target_lang === 'fail') {
+          throw new Error('m2m100 unavailable (test sentinel)')
+        }
+        if (input.target_lang === 'yo') {
+          // Escape Yoruba diacritics so the literal survives any encoding hops
+          // between this config file, the worker bundler, and the test runner.
+          return { translated_text: '\\u1EB8 k\\u00E1\\u00E0\\u00E1r\\u1ECD\\u0300.' }
+        }
+        return { translated_text: '[' + input.target_lang + '] ' + input.text }
       }
       return { response: 'ok' }
     }

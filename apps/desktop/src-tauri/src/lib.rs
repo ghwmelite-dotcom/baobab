@@ -1,0 +1,111 @@
+mod adblock;
+mod downloads;
+mod menus;
+mod migration;
+mod pin;
+mod pin_attempts;
+mod profiles;
+mod tabs;
+mod usage;
+mod windows;
+
+use std::sync::atomic::{AtomicBool, Ordering};
+
+pub struct SlowModeFlag(pub AtomicBool);
+
+#[tauri::command]
+fn set_slow_mode(state: tauri::State<'_, SlowModeFlag>, on: bool) -> Result<(), String> {
+    state.0.store(on, Ordering::Relaxed);
+    Ok(())
+}
+
+#[cfg_attr(mobile, tauri::mobile_entry_point)]
+pub fn run() {
+    tauri::Builder::default()
+        .plugin(tauri_plugin_store::Builder::default().build())
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init())
+        .manage(crate::pin_attempts::PinAttempts::new())
+        .manage(crate::usage::UsageState::default())
+        .manage(SlowModeFlag(AtomicBool::new(false)))
+        // Selection from any native context menu (raised via menus::show_context_menu)
+        // is reported back to JS via this single global event. The JS side filters
+        // on item id to dispatch the action.
+        .on_menu_event(|app, event| {
+            use tauri::Emitter;
+            let id = event.id().0.clone();
+            let _ = app.emit("menu:select", id);
+        })
+        .setup(|app| {
+            use tauri::Manager;
+            let handle = app.handle().clone();
+            let root = handle.path().app_data_dir().map_err(|e| e.to_string())?;
+
+            // One-shot migration creates "My Baobab" on fresh install.
+            let _ = migration::maybe_migrate(&root);
+
+            let file = profiles::load(&root).map_err(|e| e.to_string())?;
+            let count = file.profiles.len();
+            let any_locked = file.profiles.iter().any(|p| p.pin_hash.is_some());
+            let show_picker = any_locked || match count {
+                0 => false,
+                1 => file.picker_prefs.show_on_startup,
+                _ => true,
+            };
+
+            if show_picker {
+                tauri::async_runtime::block_on(windows::open_picker_window(handle.clone()))
+                    .map_err(|e| e.to_string())?;
+            } else if let Some(p) = file.profiles.first() {
+                tauri::async_runtime::block_on(windows::build_profile_window(&handle, &p.id))
+                    .map_err(|e| e.to_string())?;
+            } else {
+                tauri::async_runtime::block_on(windows::open_picker_window(handle.clone()))
+                    .map_err(|e| e.to_string())?;
+            }
+
+            #[cfg(debug_assertions)]
+            {
+                for (_label, win) in handle.webview_windows() {
+                    win.open_devtools();
+                }
+            }
+            Ok(())
+        })
+        .invoke_handler(tauri::generate_handler![
+            tabs::create_tab,
+            tabs::close_tab,
+            tabs::show_tab,
+            tabs::hide_tab,
+            tabs::hide_all_tabs,
+            tabs::navigate_tab,
+            tabs::list_tabs,
+            tabs::tab_go_back,
+            tabs::tab_go_forward,
+            tabs::tab_reload,
+            downloads::download_show_in_folder,
+            downloads::download_open_file,
+            profiles::cmd_list_profiles,
+            profiles::cmd_get_picker_prefs,
+            profiles::cmd_create_profile,
+            profiles::cmd_rename_profile,
+            profiles::cmd_update_profile_color,
+            profiles::cmd_delete_profile,
+            profiles::cmd_set_show_on_startup,
+            profiles::cmd_record_profile_used,
+            profiles::cmd_set_profile_pin,
+            profiles::cmd_remove_profile_pin,
+            windows::open_profile_window,
+            windows::open_picker_window,
+            windows::open_guest_window,
+            windows::current_profile_id,
+            adblock::cmd_adblock_get_state,
+            adblock::cmd_adblock_set_enabled,
+            adblock::cmd_adblock_refresh_lists,
+            menus::show_context_menu,
+            usage::record_tab_usage,
+            set_slow_mode,
+        ])
+        .run(tauri::generate_context!())
+        .expect("error while running Baobab");
+}

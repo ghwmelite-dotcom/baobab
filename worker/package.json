@@ -13,6 +13,7 @@
     "deploy:staging": "wrangler deploy --env staging"
   },
   "dependencies": {
+    "@sentry/cloudflare": "^8.40.0",
     "hono": "^4.6.0",
     "jose": "^5.9.0",
     "nanoid": "^5.0.0"

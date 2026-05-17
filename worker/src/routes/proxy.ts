@@ -1,15 +1,18 @@
 import { Hono } from 'hono'
-import { authMiddleware } from '../middleware/auth'
 import { rateLimit } from '../middleware/rate-limit'
 import { stripAds } from '../services/adblock'
-import { extractReadable, summarizeAndExtract } from '../services/reader'
+import { extractReadable, factorFor, summarizeAndExtract } from '../services/reader'
 import { newId, getUserById } from '../lib/db'
 import { pickModel } from '../services/ai'
 import type { AppContext } from '../types'
 
 export const proxy = new Hono<AppContext>()
 
-proxy.use('*', authMiddleware)
+// /api/proxy/fetch is intentionally public for Bundle B. reader.html runs in a
+// fresh JS context that doesn't carry the parent profile's auth.store; gating
+// it on auth would defeat the bundle thesis. Mirrors /api/ai/search.
+// rate-limit middleware naturally keys on CF-Connecting-IP when userId is null
+// (see middleware/rate-limit.ts:24–26).
 proxy.use('*', rateLimit({ requests: 30, windowSec: 60, keyPrefix: 'proxy' }))
 
 async function sha256(s: string): Promise<string> {
@@ -52,21 +55,24 @@ proxy.post('/fetch', async (c) => {
   const { html, ads_blocked, trackers_blocked } = stripAds(raw)
   const page = extractReadable(html)
 
-  await c.env.DB.prepare(
-    'INSERT INTO adblock_stats (id, user_id, url, ads_blocked, trackers_blocked, bytes_saved) VALUES (?, ?, ?, ?, ?, ?)'
-  ).bind(newId(), c.get('userId'), body.url, ads_blocked, trackers_blocked, raw.length - html.length).run()
+  const userId = c.get('userId')
+  if (userId) {
+    await c.env.DB.prepare(
+      'INSERT INTO adblock_stats (id, user_id, url, ads_blocked, trackers_blocked, bytes_saved) VALUES (?, ?, ?, ?, ?, ?)'
+    ).bind(newId(), userId, body.url, ads_blocked, trackers_blocked, raw.length - html.length).run()
+  }
 
   let ai_summary = ''
   let key_points: string[] = []
   if (!body.skip_ai && page.word_count > 50) {
-    const user = await getUserById(c.env.DB, c.get('userId')!)
+    const user = userId ? await getUserById(c.env.DB, userId) : null
     const model = pickModel(c.env, { lowBw: !!user?.low_bandwidth_mode, model: c.env.SUMMARIZE_MODEL })
     const x = await summarizeAndExtract(c.env, model, page)
     ai_summary = x.summary
     key_points = x.key_points
   }
 
-  const result = {
+  const responseBody = {
     title: page.title,
     cleaned_html: page.cleaned_html,
     text: page.text,
@@ -79,6 +85,15 @@ proxy.post('/fetch', async (c) => {
     cached: false,
   }
 
+  // Bytes-saved estimate. raw is the origin's HTML doc; the user, without
+  // Reader, would have fetched it plus typical sub-resources (images, JS,
+  // CSS). factorFor() scales raw by hostname tier. Conservative: clamp to >= 0.
+  const responseSize = JSON.stringify(responseBody).length
+  const fullPageEstimate = factorFor(parsed.hostname) * raw.length
+  const bytes_saved = Math.max(0, fullPageEstimate - responseSize)
+  const bytes_saved_adblock = Math.max(0, raw.length - html.length)
+
+  const result = { ...responseBody, bytes_saved, bytes_saved_adblock }
   await c.env.PAGE_CACHE.put(cacheKey, JSON.stringify(result), { expirationTtl: 1800 })
   return c.json(result)
 })

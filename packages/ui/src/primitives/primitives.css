@@ -1,0 +1,16 @@
+/* Token-driven focus indicators for primitives.
+   Inline styles can't express :focus-visible, so primitives set
+   className hooks that this stylesheet targets. */
+
+.baobab-button:focus-visible,
+.baobab-icon-button:focus-visible,
+.baobab-input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Subtle hover affordance on icon buttons */
+.baobab-icon-button:hover {
+  background-color: var(--surface-2);
+  color: var(--text-primary);
+}

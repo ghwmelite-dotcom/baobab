@@ -54,4 +54,38 @@ describe('POST /api/auth/login', () => {
     })
     expect(res.status).toBe(200)
   })
+
+  it('login via phone succeeds after phone signup', async () => {
+    const phone = `+23355502${String(Date.now()).slice(-4)}`
+    const signupRes = await SELF.fetch('http://baobab/api/auth/signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone, password: 'long-password-123' }),
+    })
+    expect(signupRes.status).toBe(200)
+    const res = await SELF.fetch('http://baobab/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone, password: 'long-password-123' }),
+    })
+    expect(res.status).toBe(200)
+    const body = await res.json() as { access: string; user: { phone: string } }
+    expect(body.user.phone).toBe(phone)
+    expect(body.access).toBeTruthy()
+  })
+
+  it('login via phone with wrong password (401)', async () => {
+    const phone = `+23355503${String(Date.now()).slice(-4)}`
+    await SELF.fetch('http://baobab/api/auth/signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone, password: 'long-password-123' }),
+    })
+    const res = await SELF.fetch('http://baobab/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone, password: 'wrong-password-xx' }),
+    })
+    expect(res.status).toBe(401)
+  })
 })

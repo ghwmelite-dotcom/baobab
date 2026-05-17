@@ -28,6 +28,7 @@ export interface Env {
   AUTH_SECRET: string
   ENCRYPTION_KEY: string
   ADMIN_API_KEY: string
+  SENTRY_DSN?: string
   OTP_AFRICASTALKING_KEY?: string
   OTP_AFRICASTALKING_USERNAME?: string
   OTP_TWILIO_SID?: string
@@ -35,6 +36,14 @@ export interface Env {
   OTP_TWILIO_FROM?: string
   OTP_TERMII_KEY?: string
   OTP_TERMII_FROM?: string
+
+  // Paystack (cards / bank / USSD / Mobile Money / QR / bank transfer).
+  // PUBLIC_KEY is safe to embed; SECRET_KEY must be set via
+  // `wrangler secret put PAYSTACK_SECRET_KEY`. BASE_URL defaults to
+  // 'https://api.paystack.co' but is overridable for tests + staging.
+  PAYSTACK_PUBLIC_KEY?: string
+  PAYSTACK_SECRET_KEY?: string
+  PAYSTACK_BASE_URL?: string
 }
 
 export type AppContext = {

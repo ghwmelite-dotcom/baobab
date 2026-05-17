@@ -1,0 +1,13 @@
+# Worker source files were created before Prettier was introduced.
+# A separate "style: prettier worker" commit must be made before any
+# functional change to worker/. Do not let prettier --write churn into
+# unrelated PRs. See plan: 2026-05-06-baobab-desktop-p0a.md Task 2.
+
+node_modules
+dist
+.turbo
+src-tauri/target
+package-lock.json
+worker/.wrangler
+worker/src/**/*.ts
+worker/test/**/*.ts

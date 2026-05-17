@@ -114,24 +114,47 @@ auth.post('/otp/verify', async (c) => {
 })
 
 auth.post('/signup', async (c) => {
-  const body = await readJson<{ email?: string; password?: string; display_name?: string }>(c.req)
-  const email = normalizeEmail(body.email)
+  const body = await readJson<{ email?: string; phone?: string; password?: string; display_name?: string }>(c.req)
+  const email = body.email !== undefined ? normalizeEmail(body.email) : null
+  const phone = body.phone !== undefined ? normalizePhoneE164(body.phone) : null
   const password = asString(body.password)
   const display_name = asString(body.display_name) ?? undefined
-  if (!email) return c.json({ error: 'invalid email' }, 400)
+
+  // Identifier validation: caller must supply at least one valid identifier.
+  // If they passed an identifier and it failed normalization, that's a 400
+  // with a precise error — otherwise the "missing identifier" path is taken.
+  if (body.email !== undefined && !email) return c.json({ error: 'invalid email' }, 400)
+  if (body.phone !== undefined && !phone) return c.json({ error: 'invalid phone' }, 400)
+  if (!email && !phone) return c.json({ error: 'email or phone required' }, 400)
   if (!password || password.length < 8) return c.json({ error: 'password too short' }, 400)
 
-  const existing = await getUserByEmail(c.env.DB, email)
-  if (existing) return c.json({ error: 'email already registered' }, 409)
+  // Uniqueness check across BOTH identifiers (a phone signup with a phone
+  // already in use 409s, same for email).
+  if (email) {
+    const existing = await getUserByEmail(c.env.DB, email)
+    if (existing) return c.json({ error: 'email already registered' }, 409)
+  }
+  if (phone) {
+    const existing = await getUserByPhone(c.env.DB, phone)
+    if (existing) return c.json({ error: 'phone already registered' }, 409)
+  }
 
   const id = newId()
   const password_hash = await hashPassword(password)
   try {
-    await insertUser(c.env.DB, { id, email, password_hash, display_name })
+    await insertUser(c.env.DB, {
+      id,
+      email: email ?? undefined,
+      phone: phone ?? undefined,
+      password_hash,
+      display_name,
+    })
   } catch (e) {
     if (isUniqueViolation(e, 'email')) {
-      // Race: lost the check-then-insert window to a concurrent signup.
       return c.json({ error: 'email already registered' }, 409)
+    }
+    if (isUniqueViolation(e, 'phone')) {
+      return c.json({ error: 'phone already registered' }, 409)
     }
     throw e
   }
@@ -139,21 +162,26 @@ auth.post('/signup', async (c) => {
   const tokens = await startSession(c.env, id)
   return c.json({
     ...tokens,
-    user: { id, email, display_name },
+    user: { id, email, phone, display_name },
   })
 })
 
 auth.post('/login', async (c) => {
-  const body = await readJson<{ email?: string; password?: string }>(c.req)
-  const email = normalizeEmail(body.email)
+  const body = await readJson<{ email?: string; phone?: string; password?: string }>(c.req)
+  const email = body.email !== undefined ? normalizeEmail(body.email) : null
+  const phone = body.phone !== undefined ? normalizePhoneE164(body.phone) : null
   const password = asString(body.password)
   // Uniform 401 message regardless of failure mode (no user enumeration).
-  if (!email || !password) return c.json({ error: 'invalid credentials' }, 401)
+  if ((!email && !phone) || !password) return c.json({ error: 'invalid credentials' }, 401)
 
-  const user = await getUserByEmail(c.env.DB, email)
+  const user = email
+    ? await getUserByEmail(c.env.DB, email)
+    : phone
+      ? await getUserByPhone(c.env.DB, phone)
+      : null
   if (!user || !user.password_hash) {
     // Burn comparable wall-clock time so attackers can't use response time to
-    // probe for valid emails.
+    // probe for valid identifiers.
     await hashPassword(password).catch(() => null)
     return c.json({ error: 'invalid credentials' }, 401)
   }
@@ -164,7 +192,7 @@ auth.post('/login', async (c) => {
   const tokens = await startSession(c.env, user.id)
   return c.json({
     ...tokens,
-    user: { id: user.id, email: user.email, display_name: user.display_name },
+    user: { id: user.id, email: user.email, phone: user.phone, display_name: user.display_name },
   })
 })
 
@@ -197,7 +225,9 @@ auth.post('/logout', authMiddleware, async (c) => {
 auth.get('/me', authMiddleware, async (c) => {
   const user = await getUserById(c.env.DB, c.get('userId')!)
   if (!user) return c.json({ error: 'not found' }, 404)
-  return c.json(user)
+  // Never leak password_hash to the client.
+  const { password_hash: _omit, ...safe } = user
+  return c.json(safe)
 })
 
 // Allowlisted fields for PUT /settings — explicitly excludes password_hash,

@@ -1,0 +1,109 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT@0,9..144,300..900,0..100;1,9..144,300..900,0..100&family=JetBrains+Mono:wght@400;500&display=swap');
+@import '@baobab/ui/src/theme/tokens.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Typography tokens ─────────────────────────────────────────────────
+   Baobab uses Bookman Old Style as the default UI font — a warm, sturdy
+   transitional serif that gives the browser an editorial, literary feel
+   (think Penguin Classics, The New Yorker). Windows users get the real
+   font bundled with Office; macOS/Linux fall through the stack. Fraunces
+   stays for the NTP hero only (its variable axes drive the gradient).
+   ───────────────────────────────────────────────────────────────────── */
+:root {
+  --font-default: 'Bookman Old Style', 'ITC Bookman', 'URW Bookman L',
+                  'TeX Gyre Bonum', Bookman, 'Source Serif 4', Georgia,
+                  'Times New Roman', serif;
+  --font-display: 'Fraunces', var(--font-default);
+  --font-mono: 'JetBrains Mono', Menlo, Consolas, monospace;
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root {
+  margin: 0;
+  height: 100vh;
+  width: 100vw;
+  /* `clip` instead of `hidden` — prevents BOTH user scrolling AND
+     programmatic scrollLeft. With `hidden` the document can still be
+     scrolled via JS or via focus-restore on an off-viewport element
+     (e.g. the Sidebar while it was translateX'd off-screen), which
+     left a stale scrollLeft that shifted the whole chrome layer to
+     the left even after the sidebar reopened. */
+  overflow: clip;
+  background: var(--canvas);
+  color: var(--text-primary);
+  font-family: var(--font-default);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+button { font: inherit; }
+
+/* Selection styling — keep accent restrained, not amber-everywhere */
+::selection {
+  background: var(--accent-dim);
+  color: var(--text-primary);
+}
+
+/* Subtle scrollbar — opt in via .baobab-scroll. Default WebKit scrollbar
+   is chunky on Windows; we want a slim translucent track that fades into
+   the canvas, only visible when the user actually scrolls. */
+.baobab-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+}
+.baobab-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
+.baobab-scroll::-webkit-scrollbar-track { background: transparent; }
+.baobab-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.10);
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+.baobab-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.22);
+  background-clip: padding-box;
+}
+
+/* Invisible-but-scrollable variant — used on the NewTabPage where the
+   scroll affordance is implied by the user (wheel/trackpad) and the
+   scrollbar would be visual noise on a landing page. */
+.baobab-scroll-hidden {
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.baobab-scroll-hidden::-webkit-scrollbar { display: none; width: 0; height: 0; }
+
+/* Animation keyframes used across the chrome. Respect prefers-reduced-motion
+   (tokens.css already disables all animation/transition durations under that
+   media query — these keyframes simply won't run). */
+@keyframes baobab-fade-in-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes baobab-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes baobab-draw-rule {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
+@keyframes baobab-tree-breathe {
+  0%,100% { transform: scale(1); opacity: 0.18; }
+  50%     { transform: scale(1.012); opacity: 0.22; }
+}
+
+@keyframes baobab-leaf-pulse {
+  0%,100% { transform: scale(1); opacity: 1; }
+  50%     { transform: scale(1.15); opacity: 0.85; }
+}

@@ -1,0 +1,249 @@
+{
+  "_meta": {
+    "language": "English",
+    "code": "en",
+    "status": "source",
+    "note": "Source language. All other locales fall back to these values."
+  },
+  "ntp": {
+    "greeting": {
+      "lateNight": "Late night reading",
+      "morning": "Good morning",
+      "afternoon": "Good afternoon",
+      "evening": "Good evening",
+      "lamplight": "Reading by lamplight"
+    },
+    "greetingFull": "{{greeting}}, {{name}}.",
+    "greetingAnon": "{{greeting}}, friend.",
+    "wordmark": "Baobab",
+    "tagline": "<0>The browser that </0><1>grew here.</1>",
+    "taglinePrefix": "The browser that ",
+    "taglineAccent": "grew here.",
+    "residency": {
+      "reaching": "Reaching the edge…",
+      "served": "Served from {{colo}} · {{label}}"
+    },
+    "capabilities": {
+      "summarize": {
+        "eyebrow": "AI · READING",
+        "title": "Summarize",
+        "body": "Give me the gist of any page.",
+        "starter": "Paste a link or open a page — I'll give you the gist plus the points that matter."
+      },
+      "translate": {
+        "eyebrow": "AI · LANGUAGE",
+        "title": "Translate",
+        "body": "Across Yoruba, Swahili, Hausa — and growing.",
+        "starter": "Tell me what to translate and into which language — Yoruba, Swahili, Hausa, Amharic, and more."
+      },
+      "research": {
+        "eyebrow": "AI · SEARCH",
+        "title": "Research",
+        "body": "Compare sources, African ones lifted first.",
+        "starter": "What are you researching? I'll cross-reference sources and lift African ones to the top."
+      },
+      "compare": {
+        "eyebrow": "AI · DECIDE",
+        "title": "Compare",
+        "body": "Lay options side by side.",
+        "starter": "List the options you're weighing — I'll lay them side by side on the dimensions that matter."
+      },
+      "code": {
+        "eyebrow": "AI · MAKER",
+        "title": "Explain Code",
+        "body": "Read or debug a code block out loud.",
+        "starter": "Paste a code block — I'll read it out loud, explain what it does, and flag anything suspicious."
+      },
+      "civic": {
+        "eyebrow": "NEAR HOME",
+        "title": "Civic",
+        "body": "Bills, courts, regional policy — kept close.",
+        "starter": "Ask about a bill, a court ruling, or regional policy — I'll pull it close to home."
+      }
+    },
+    "issue": "Issue {{number}} · {{location}}",
+    "issueLocationFallback": "The Edge",
+    "digest": {
+      "heading": "Today on the continent",
+      "readOn": "Read on {{source}}",
+      "loading": "Fetching today's stories…",
+      "empty": "Stories will surface here once we've checked the wires."
+    }
+  },
+  "auth": {
+    "title": "Sign in to {{app}}",
+    "ariaLabel": "Sign in to Baobab",
+    "subtitle": "Save bookmarks, history, and chats across devices. Otherwise, keep browsing — everything works without an account.",
+    "tab": {
+      "phone": "Phone",
+      "email": "Email"
+    },
+    "continueWithout": "Continue without an account",
+    "closeLabel": "Close sign-in"
+  },
+  "settings": {
+    "title": "Settings",
+    "closeLabel": "Close settings",
+    "signIn": "Sign in",
+    "signOut": "Sign out",
+    "general": {
+      "title": "General",
+      "defaultModel": "Default AI model"
+    },
+    "privacy": {
+      "title": "Privacy",
+      "mode": "Privacy mode",
+      "modeDescription": "Stop recording browsing history."
+    },
+    "ai": {
+      "title": "AI",
+      "lowBandwidth": "Low bandwidth mode",
+      "lowBandwidthDescription": "Use the 8B model and skip embeddings to save data."
+    },
+    "sovereignty": {
+      "title": "Sovereignty",
+      "currentRegion": "Current region",
+      "unknown": "Data residency unknown until first probe completes.",
+      "footer": "Cloudflare's African POPs serve all reads when available."
+    },
+    "language": {
+      "title": "Language",
+      "label": "Interface language",
+      "description": "Yoruba, Swahili, and Hausa locales are placeholders pending native translators.",
+      "options": {
+        "en": "English",
+        "yo": "Yoruba (stub)",
+        "sw": "Swahili (stub)",
+        "ha": "Hausa (stub)"
+      }
+    },
+    "legal": {
+      "title": "Legal",
+      "privacy": {
+        "title": "Privacy",
+        "body": "Baobab keeps your browsing local by default. Optional sync stores bookmarks, history, and chats on Cloudflare's African edge — D1 for structured data, R2 for content. We never sell your data, share it with third parties, or train models on it. Local mode keeps everything on this device; sync only activates when you sign in."
+      },
+      "terms": {
+        "title": "Terms of Use",
+        "body": "Baobab is alpha software released under the AGPL-3.0 license. It's provided as-is, without warranty. Source code lives at github.com/ghwmelite-dotcom/baobab. By using it you accept that things may break, data may move during the alpha, and we'll fix issues as we find them."
+      },
+      "licenses": {
+        "title": "Open-Source Licenses"
+      }
+    }
+  },
+  "omnibar": {
+    "placeholder": "Search the continent or type a URL",
+    "ariaLabel": "Address and search bar",
+    "back": "Back",
+    "forward": "Forward",
+    "reload": "Reload",
+    "secure": "Secure connection",
+    "notSecure": "Not secure",
+    "secureTitle": "Secure connection (HTTPS)",
+    "notSecureTitle": "Not a secure connection",
+    "readerMode": "Reader Mode",
+    "downloads": "Downloads",
+    "bookmarks": "Bookmarks",
+    "history": "History",
+    "saved": "Saved",
+    "openSidebar": "Open AI sidebar",
+    "hideSidebar": "Hide AI sidebar",
+    "settings": "Settings",
+    "translate": "Translate",
+    "searchingContinent": "Reaching across the continent…",
+    "searchFailed": "Search failed: {{error}}"
+  },
+  "translate": {
+    "title": "Translate",
+    "sourcePlaceholder": "Type or paste text to translate",
+    "translatedPlaceholder": "Translation will appear here",
+    "translateBtn": "Translate",
+    "translatingBtn": "Translating…",
+    "swap": "Swap languages",
+    "speak": "Speak it",
+    "close": "Close translate pad",
+    "languages": {
+      "auto": "Detect language",
+      "en": "English",
+      "yo": "Yoruba",
+      "sw": "Swahili",
+      "ha": "Hausa",
+      "am": "Amharic",
+      "wo": "Wolof",
+      "zu": "Zulu",
+      "fr": "French",
+      "ar": "Arabic"
+    }
+  },
+  "chat": {
+    "title": "Baobab AI",
+    "collapseLabel": "Collapse AI sidebar",
+    "placeholder": "Ask anything…",
+    "ariaInput": "Chat input",
+    "send": "Send",
+    "empty": "Reaching across the continent — say hi.",
+    "errorPrefix": "[error: {{error}}]",
+    "agentSelector": {
+      "default": "Default",
+      "bureaucracy": "Bureaucracy",
+      "ariaLabel": "Choose AI agent"
+    },
+    "bureaucracyHint": "Ask me about registering a business, getting a passport, KRA PIN, or other government processes in Ghana, Nigeria, Kenya, or South Africa."
+  },
+  "quickActions": {
+    "ariaLabel": "Quick actions",
+    "summarize": "Summarize",
+    "translate": "Translate",
+    "extract": "Extract",
+    "compare": "Compare",
+    "explain": "Explain Code",
+    "summarizeFailed": "Summarize failed: {{error}}"
+  },
+  "downloads": {
+    "title": "Downloads",
+    "closeLabel": "Close downloads drawer",
+    "clear": "Clear",
+    "empty": "No downloads yet.",
+    "open": "Open",
+    "showInFolder": "Show in folder",
+    "status": {
+      "downloading": "Downloading…",
+      "completed": "Completed",
+      "failed": "Failed"
+    }
+  },
+  "languages": {
+    "en": "English",
+    "yo": "Yoruba",
+    "sw": "Swahili",
+    "ha": "Hausa"
+  },
+  "sovereignty": {
+    "dashboardTitle": "Your sovereignty",
+    "dataLivesIn": "Your data lives in",
+    "openDashboard": "Open Sovereignty Dashboard",
+    "inventory": {
+      "bookmarks": "Bookmarks",
+      "history": "Sites visited",
+      "offlineArticles": "Saved articles",
+      "totalBytes": "Total storage"
+    },
+    "exportAll": "Export everything as JSON",
+    "footnote": "Your bookmarks, history, and saved articles live on Cloudflare's African edge — D1 for structured data, R2 for content. You can take everything with you any time."
+  },
+  "payments": {
+    "title": "Tip Baobab",
+    "subtitle": "Supporting the African AI browser via Paystack (cards, bank, USSD, Mobile Money, QR).",
+    "amount": "Amount",
+    "currency": "Currency",
+    "email": "Email",
+    "name": "Name (optional)",
+    "payNow": "Pay now",
+    "creating": "Creating checkout…",
+    "closeLabel": "Close payment widget",
+    "tipButton": "Tip Baobab a coffee",
+    "tipButtonDescription": "Pay with cards, bank, USSD, Mobile Money, or QR. Powered by Paystack.",
+    "unconfigured": "Payments are in beta — keys aren't live yet on the server. Coming very soon."
+  }
+}
