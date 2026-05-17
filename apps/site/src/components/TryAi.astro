@@ -1,0 +1,20 @@
+---
+import { AiDemo } from './AiDemo.tsx'
+---
+<section
+  id="try-ai"
+  style="
+    padding: var(--space-10) var(--space-5);
+    background: var(--canvas);
+    border-bottom: 1px solid var(--border);
+  "
+>
+  <header style="max-width: 720px; margin: 0 auto var(--space-6);">
+    <p style="font-family: var(--font-display); font-size: 12px; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; color: var(--accent); margin: 0 0 var(--space-3);">Try it</p>
+    <h2 style="font-family: var(--font-display); font-size: clamp(24px, 3.5vw, 36px); color: var(--text-primary); margin: 0 0 var(--space-3);">Ask before you install.</h2>
+    <p style="color: var(--text-secondary); font-size: 16px; margin: 0;">
+      The same AI search that powers Baobab in-browser. Rate-limited for the demo; install the desktop app for unlimited use.
+    </p>
+  </header>
+  <AiDemo client:visible />
+</section>
