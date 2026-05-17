@@ -1,0 +1,52 @@
+---
+import PersonaBand from './PersonaBand.astro'
+---
+<section
+  id="personas"
+  style="
+    padding: var(--space-10) var(--space-5);
+    background: var(--canvas);
+    border-bottom: 1px solid var(--border);
+  "
+>
+  <header style="max-width: 720px; margin: 0 auto var(--space-6);">
+    <p style="font-family: var(--font-display); font-size: 12px; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; color: var(--accent); margin: 0 0 var(--space-3);">For you if</p>
+    <h2 style="font-family: var(--font-display); font-size: clamp(24px, 3.5vw, 36px); color: var(--text-primary); margin: 0;">Find your slot.</h2>
+  </header>
+
+  <PersonaBand
+    id="metered"
+    accentVar="--persona-metered"
+    label="If your data plan is the bottleneck"
+    body="Baobab was built for you. The byte gauge, Reader mode, and Wi-Fi-only sync work together so 100 MB of mobile data goes further. Slow mode kicks in automatically; the daily budget is yours to set."
+    ctaHref="#feature-reader"
+    ctaLabel="See Reader Mode"
+  />
+
+  <PersonaBand
+    id="builder"
+    accentVar="--persona-builder"
+    label="If you're an engineer"
+    body="The worker is Hono on Cloudflare. The desktop is Tauri 2 + React 18. Most routes are public. The design specs live in the repo. Read the notes, fork what you want, file what doesn't work."
+    ctaHref="https://github.com/ghwmelite-dotcom/baobab"
+    ctaLabel="View the repo"
+  />
+
+  <PersonaBand
+    id="diaspora"
+    accentVar="--persona-diaspora"
+    label="If you're abroad and curious"
+    body="The manifesto above is the short version. The longer story is in the design docs and the source. Read about the choices we made and why — the why matters more than the what."
+    ctaHref="#why"
+    ctaLabel="Read the manifesto"
+  />
+
+  <PersonaBand
+    id="org"
+    accentVar="--persona-org"
+    label="If you run an organisation"
+    body="Multi-profile windows with real cookie isolation per profile. Sovereignty Dashboard surfaces your data residency for compliance review. Volume install via MSI is on the roadmap (Q3 2026)."
+    ctaHref="mailto:hello@baobab.askozzy.work?subject=Baobab%20for%20our%20org"
+    ctaLabel="Talk to us"
+  />
+</section>
