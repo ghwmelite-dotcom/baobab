@@ -1,0 +1,52 @@
+---
+// Sovereignty deep-dive. Full-bleed screenshot of SovereigntyDashboard
+// (captured in Task 14), 3 paragraphs of plain-English data residency.
+---
+<section
+  id="sovereignty"
+  style="
+    padding: var(--space-12) var(--space-5);
+    background: var(--surface-1);
+    border-bottom: 1px solid var(--border);
+  "
+>
+  <div style="max-width: 1080px; margin: 0 auto;">
+    <header style="max-width: 720px; margin: 0 auto var(--space-8);">
+      <p style="font-family: var(--font-display); font-size: 12px; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; color: var(--accent); margin: 0 0 var(--space-3);">Sovereignty</p>
+      <h2 style="font-family: var(--font-display); font-size: clamp(24px, 3.5vw, 36px); color: var(--text-primary); margin: 0;">Your data lives where you can see it.</h2>
+    </header>
+
+    <div
+      style="
+        aspect-ratio: 16 / 9;
+        background: linear-gradient(135deg, var(--surface-2), var(--surface-1));
+        border: 1px dashed var(--border);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-muted);
+        font-size: 13px;
+        margin-bottom: var(--space-8);
+      "
+      aria-hidden="true"
+    >
+      SovereigntyDashboard screenshot · captured in Task 14
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: var(--space-6); color: var(--text-secondary); font-size: 15px; line-height: 1.7;">
+      <div>
+        <h3 style="font-family: var(--font-display); font-size: 18px; color: var(--text-primary); margin: 0 0 var(--space-3);">What's stored where</h3>
+        <p>Your bookmarks, history, and chats sync to Cloudflare D1 (structured data) and R2 (content). Both are in the EU region today; we're moving to African regions when Cloudflare ships them. Auth tokens live in the OS keyring, encrypted at rest.</p>
+      </div>
+      <div>
+        <h3 style="font-family: var(--font-display); font-size: 18px; color: var(--text-primary); margin: 0 0 var(--space-3);">What we never do</h3>
+        <p>No third-party analytics. No model training on your data. No data sales. No tracking beacons embedded by us. Local mode disables sync entirely if you'd rather keep everything on this machine.</p>
+      </div>
+      <div>
+        <h3 style="font-family: var(--font-display); font-size: 18px; color: var(--text-primary); margin: 0 0 var(--space-3);">How you verify</h3>
+        <p>Settings → Sovereignty shows which Cloudflare colo served your last reads, and which regions hold your persisted data. Toggle sync off at any time; the local profile keeps working without it.</p>
+      </div>
+    </div>
+  </div>
+</section>
