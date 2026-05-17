@@ -12,6 +12,8 @@ import { ipcTabReload } from '~/ipc/tabs'
 import { showContextMenu, type NativeMenuItem } from '~/ipc/menus'
 import { useDragWindow } from './useDragWindow'
 import { NetworkChip } from './NetworkChip'
+import { shouldInterceptNavigation, buildReaderUrl, markUserOverride } from '~/reader/intercept'
+import { CountdownModal } from '~/reader/CountdownModal'
 
 const win = () => getCurrentWindow()
 
@@ -365,6 +367,8 @@ export function TabStrip() {
 
   const isMac = OS === 'macos'
 
+  const [pendingDup, setPendingDup] = useState<{ url: string; targetId: string } | null>(null)
+
   // Tab-strip scroll behaviour, branched by what changed:
   //   - Tab count grew → a new tab was appended at the rightmost end.
   //     Explicitly scroll the strip to its right edge so the user sees
@@ -416,7 +420,16 @@ export function TabStrip() {
     switch (selected) {
       case 'new_right':    void openTabAfter(tabId, 'about:blank'); break
       case 'reload':       void ipcTabReload(tabId); break
-      case 'duplicate':    void duplicateTab(tabId); break
+      case 'duplicate': {
+        const target = useTabsStore.getState().tabs.find((t) => t.id === tabId)
+        const targetUrl = target?.url ?? ''
+        if (shouldInterceptNavigation(targetUrl)) {
+          setPendingDup({ url: targetUrl, targetId: tabId })
+        } else {
+          void duplicateTab(tabId)
+        }
+        break
+      }
       case 'close':        void closeTab(tabId); break
       case 'close_others': void closeOthers(tabId); break
       case 'close_right':  void closeTabsRightOf(tabId); break
@@ -640,6 +653,22 @@ export function TabStrip() {
         )}
       </div>
 
+      {pendingDup && (
+        <CountdownModal
+          url={pendingDup.url}
+          onAccept={() => {
+            const p = pendingDup
+            setPendingDup(null)
+            void openTabAfter(p.targetId, buildReaderUrl(p.url))
+          }}
+          onCancel={() => {
+            const p = pendingDup
+            setPendingDup(null)
+            markUserOverride(p.url)
+            void duplicateTab(p.targetId)
+          }}
+        />
+      )}
     </header>
   )
 }
