@@ -1,6 +1,9 @@
 import { useEffect } from 'react'
 import { SearchHeader } from './SearchHeader'
 import { AnswerCard } from './AnswerCard'
+import { SiteCard } from './SiteCard'
+import { DiversityMeter } from './DiversityMeter'
+import { RefineBar } from './RefineBar'
 import { ResultList } from './ResultList'
 import { EmptyState } from './EmptyState'
 import { ErrorState } from './ErrorState'
@@ -18,8 +21,12 @@ function readQueryFromUrl(): string {
 export function SearchApp() {
   const status = useSearchData((s) => s.status)
   const query = useSearchData((s) => s.query)
+  const intent = useSearchData((s) => s.intent)
   const answer = useSearchData((s) => s.answer)
+  const citations = useSearchData((s) => s.citations)
   const results = useSearchData((s) => s.results)
+  const diversity = useSearchData((s) => s.diversity)
+  const siteCard = useSearchData((s) => s.siteCard)
   const error = useSearchData((s) => s.error)
   const errorDetail = useSearchData((s) => s.errorDetail)
   const runSearch = useSearchData((s) => s.runSearch)
@@ -72,11 +79,14 @@ export function SearchApp() {
 
       {status === 'success' && (
         <>
-          {answer && <AnswerCard answer={answer} citations={[]} />}
+          {intent === 'navigational' && siteCard && <SiteCard card={siteCard} />}
+          {intent === 'informational' && answer && <AnswerCard answer={answer} citations={citations} />}
+          {diversity && <DiversityMeter {...diversity} />}
           <ResultList
             results={results}
             emptySlot={!answer ? <EmptyState query={query} /> : null}
           />
+          <RefineBar />
         </>
       )}
     </div>
