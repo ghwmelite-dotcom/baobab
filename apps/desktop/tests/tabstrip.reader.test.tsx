@@ -37,7 +37,7 @@ beforeEach(() => {
   nextMenuResolve = null
   useConnectionStore.setState({
     effectiveType: '2g', type: 'cellular', isOffline: false, isSlow: true,
-    slowModeForced: false, downlinkMbps: 0, saveData: false,
+    slowModeOverride: 'auto', downlinkMbps: 0, saveData: false,
   })
 })
 

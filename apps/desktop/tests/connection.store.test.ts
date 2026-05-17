@@ -26,20 +26,42 @@ describe('connection.store', () => {
     expect(useConnectionStore.getState().isSlow).toBe(true)
   })
 
-  it('treats downlink < 1.5 as slow even if effectiveType is 4g', async () => {
+  it('does NOT treat 4g+saveData as slow — saveData is a preference, not a speed signal', async () => {
+    Object.defineProperty(navigator, 'connection', {
+      configurable: true,
+      value: { effectiveType: '4g', downlink: 10, saveData: true, addEventListener: vi.fn(), removeEventListener: vi.fn() },
+    })
+    const { useConnectionStore } = await import('~/state/connection.store')
+    useConnectionStore.getState().sync()
+    expect(useConnectionStore.getState().isSlow).toBe(false)
+  })
+
+  it('does NOT treat 4g + low downlink as slow — WebView2 reports downlink unreliably', async () => {
     Object.defineProperty(navigator, 'connection', {
       configurable: true,
       value: { effectiveType: '4g', downlink: 0.8, saveData: false, addEventListener: vi.fn(), removeEventListener: vi.fn() },
     })
     const { useConnectionStore } = await import('~/state/connection.store')
     useConnectionStore.getState().sync()
-    expect(useConnectionStore.getState().isSlow).toBe(true)
+    expect(useConnectionStore.getState().isSlow).toBe(false)
   })
 
-  it('forces slow when slowModeForced is true', async () => {
+  it('slowModeOverride="always" makes isSlowEffective true even on fast connection', async () => {
     const { useConnectionStore } = await import('~/state/connection.store')
     useConnectionStore.getState().sync()
-    useConnectionStore.setState({ slowModeForced: true })
+    useConnectionStore.setState({ slowModeOverride: 'always' })
     expect(useConnectionStore.getState().isSlowEffective()).toBe(true)
+  })
+
+  it('slowModeOverride="never" makes isSlowEffective false even when isSlow detection fires', async () => {
+    Object.defineProperty(navigator, 'connection', {
+      configurable: true,
+      value: { effectiveType: '2g', downlink: 0.1, saveData: false, addEventListener: vi.fn(), removeEventListener: vi.fn() },
+    })
+    const { useConnectionStore } = await import('~/state/connection.store')
+    useConnectionStore.getState().sync()
+    expect(useConnectionStore.getState().isSlow).toBe(true)
+    useConnectionStore.setState({ slowModeOverride: 'never' })
+    expect(useConnectionStore.getState().isSlowEffective()).toBe(false)
   })
 })

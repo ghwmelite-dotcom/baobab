@@ -20,11 +20,11 @@ export function DataToast() {
       setToast({ message: `${remainingMb} MB left today. Slow mode kicks in at 0.`, key: Date.now() })
     } else if (tier === 100 && lastTier.current < 100) {
       setToast({ message: 'Daily budget reached. Slow mode enabled.', key: Date.now() })
-      useConnectionStore.getState().setForced(true)
+      useConnectionStore.getState().setOverride('always')
       void dataApi.setSlowMode(true)
     } else if (tier === 0) {
-      // Day rollover: clear forced slow mode, no toast.
-      useConnectionStore.getState().setForced(false)
+      // Day rollover: drop back to automatic detection, no toast.
+      useConnectionStore.getState().setOverride('auto')
       void dataApi.setSlowMode(false)
     }
     lastTier.current = tier

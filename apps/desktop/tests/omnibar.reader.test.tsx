@@ -46,7 +46,7 @@ beforeEach(() => {
   __resetInterceptOverridesForTest()
   useConnectionStore.setState({
     effectiveType: '2g', type: 'cellular', isOffline: false, isSlow: true,
-    slowModeForced: false, downlinkMbps: 0, saveData: false,
+    slowModeOverride: 'auto', downlinkMbps: 0, saveData: false,
   })
   useTabsStore.setState({
     tabs: [{ id: 't1', url: 'about:blank', title: '', pinned: false, active: true, loading: false, lastVisitedAt: 0 }],

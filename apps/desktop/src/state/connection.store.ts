@@ -2,6 +2,8 @@ import { create } from 'zustand'
 
 export type EffectiveType = 'slow-2g' | '2g' | '3g' | '4g' | 'unknown'
 
+export type SlowModeOverride = 'auto' | 'always' | 'never'
+
 interface NavigatorConnectionLike {
   effectiveType?: EffectiveType
   downlink?: number
@@ -20,13 +22,13 @@ interface ConnectionState {
   effectiveType: EffectiveType
   downlinkMbps: number
   saveData: boolean
-  type: string                  // 'wifi' | 'ethernet' | 'cellular' | etc., or '' if unknown
+  type: string
   isOffline: boolean
   isSlow: boolean
-  slowModeForced: boolean
+  slowModeOverride: SlowModeOverride
   sync: () => void
   isSlowEffective: () => boolean
-  setForced: (forced: boolean) => void
+  setOverride: (override: SlowModeOverride) => void
 }
 
 function compute(c: NavigatorConnectionLike): { effectiveType: EffectiveType; downlinkMbps: number; saveData: boolean; type: string; isSlow: boolean } {
@@ -34,11 +36,9 @@ function compute(c: NavigatorConnectionLike): { effectiveType: EffectiveType; do
   const downlinkMbps = typeof c.downlink === 'number' ? c.downlink : 0
   const saveData = c.saveData === true
   const type = typeof c.type === 'string' ? c.type : ''
-  const isSlow =
-    effectiveType === 'slow-2g' ||
-    effectiveType === '2g' ||
-    (downlinkMbps > 0 && downlinkMbps < 1.5) ||
-    saveData
+  // WebView2 reports `saveData` and `downlink` unreliably vs Chrome. Trust only
+  // genuinely-slow effectiveType labels — the user can force on/off via Settings.
+  const isSlow = effectiveType === 'slow-2g' || effectiveType === '2g'
   return { effectiveType, downlinkMbps, saveData, type, isSlow }
 }
 
@@ -52,18 +52,20 @@ export const useConnectionStore = create<ConnectionState>()((set, get) => ({
   type: '',
   isOffline: initialIsOffline,
   isSlow: false,
-  slowModeForced: false,
+  slowModeOverride: 'auto',
 
   sync: () => {
     const next = compute(readConnection())
     set({ ...next, isOffline: !navigator.onLine })
   },
 
-  setForced: (forced) => set({ slowModeForced: forced }),
+  setOverride: (override) => set({ slowModeOverride: override }),
 
   isSlowEffective: () => {
     const s = get()
-    return s.isSlow || s.slowModeForced
+    if (s.slowModeOverride === 'always') return true
+    if (s.slowModeOverride === 'never') return false
+    return s.isSlow
   },
 }))
 

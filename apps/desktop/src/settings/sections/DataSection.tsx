@@ -14,8 +14,8 @@ export function DataSection() {
   const today = useDataStore((s) => s.today())
   const history = useDataStore((s) => s.history)
   const percent = useDataStore((s) => s.percentUsedToday())
-  const forced = useConnectionStore((s) => s.slowModeForced)
-  const setForced = useConnectionStore((s) => s.setForced)
+  const override = useConnectionStore((s) => s.slowModeOverride)
+  const setOverride = useConnectionStore((s) => s.setOverride)
 
   const [wifiOnly, setWifiOnlyLocal] = useStateBridged()
 
@@ -61,12 +61,20 @@ export function DataSection() {
         />
       </Row>
 
-      <Row label="Force slow mode" hint="Act as if connection is 2G regardless. Pages load lighter.">
-        <input
-          type="checkbox"
-          checked={forced}
-          onChange={(e) => { setForced(e.target.checked); void dataApi.setSlowMode(e.target.checked) }}
-        />
+      <Row label="Slow mode" hint="Automatic follows your connection. Always-off skips Reader interception entirely.">
+        <select
+          value={override}
+          onChange={(e) => {
+            const next = e.target.value as 'auto' | 'always' | 'never'
+            setOverride(next)
+            void dataApi.setSlowMode(next === 'always')
+          }}
+          style={{ background: 'var(--surface-1)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: 6, padding: '4px 8px', fontSize: 12 }}
+        >
+          <option value="auto">Automatic</option>
+          <option value="always">Always on</option>
+          <option value="never">Always off</option>
+        </select>
       </Row>
 
       <Sparkline history={history} />

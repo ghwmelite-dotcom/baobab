@@ -13,7 +13,7 @@ beforeEach(() => {
     type: 'cellular',
     isOffline: false,
     isSlow: true,
-    slowModeForced: false,
+    slowModeOverride: 'auto',
     downlinkMbps: 0,
     saveData: false,
   })
@@ -64,6 +64,16 @@ describe('shouldInterceptNavigation', () => {
     expect(shouldInterceptNavigation('https://example.com/other')).toBe(false)
     // Different host still intercepts
     expect(shouldInterceptNavigation('https://other.com/x')).toBe(true)
+  })
+
+  it('slowModeOverride="never" bypasses intercept even when isSlow detection fires', () => {
+    useConnectionStore.setState({ slowModeOverride: 'never' })
+    expect(shouldInterceptNavigation('https://example.com/article')).toBe(false)
+  })
+
+  it('slowModeOverride="always" intercepts even when connection is fast', () => {
+    useConnectionStore.setState({ isSlow: false, effectiveType: '4g', slowModeOverride: 'always' })
+    expect(shouldInterceptNavigation('https://example.com/article')).toBe(true)
   })
 
   it('intercept resumes after the override window elapses', () => {

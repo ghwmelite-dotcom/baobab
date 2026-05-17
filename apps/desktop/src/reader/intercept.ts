@@ -29,8 +29,10 @@ export function shouldInterceptNavigation(url: string): boolean {
 
   const s = useConnectionStore.getState()
   if (s.isOffline) return false
-  // isSlowEffective derives from isSlow OR slowModeForced
-  if (!s.isSlow && !s.slowModeForced) return false
+  // Explicit "never" override beats detection — escape hatch when WebView2 misreports.
+  if (s.slowModeOverride === 'never') return false
+  // Otherwise: only intercept when detection says slow OR user forced always-on.
+  if (s.slowModeOverride !== 'always' && !s.isSlow) return false
 
   const host = parsed.hostname.toLowerCase()
   if (SKIP_HOSTS.has(host)) return false

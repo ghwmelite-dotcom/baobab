@@ -5,7 +5,7 @@ export function NetworkChip() {
   const isOffline = useConnectionStore((s) => s.isOffline)
   const effectiveType = useConnectionStore((s) => s.effectiveType)
   const downlink = useConnectionStore((s) => s.downlinkMbps)
-  const forced = useConnectionStore((s) => s.slowModeForced)
+  const override = useConnectionStore((s) => s.slowModeOverride)
 
   if (effectiveType === 'unknown' && downlink === 0 && !isOffline) return null
 
@@ -16,10 +16,14 @@ export function NetworkChip() {
     label = 'Offline'
     dotColor = 'var(--text-muted)'
     title = 'No network detected.'
-  } else if (forced) {
+  } else if (override === 'always') {
     label = 'Slow mode'
     dotColor = 'var(--sovereignty-warn)'
     title = 'You enabled slow mode in Settings.'
+  } else if (override === 'never') {
+    label = downlink > 0 ? `Fast · ${Math.round(downlink)} Mbps` : 'Fast'
+    dotColor = 'var(--sovereignty-ok)'
+    title = 'Slow mode forced off in Settings.'
   } else if (isSlow) {
     const upper = effectiveType.toUpperCase()
     label = `Slow · ${upper}`
