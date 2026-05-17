@@ -24,10 +24,15 @@ export interface Env {
   TRANSLATE_MODEL: string
   EMBEDDING_MODEL: string
 
+  // Search KV — used by searchCache + searchQuota
+  KV: KVNamespace
+
   // secrets (set via wrangler secret put)
   AUTH_SECRET: string
   ENCRYPTION_KEY: string
   ADMIN_API_KEY: string
+  GOOGLE_PSE_API_KEY: string
+  GOOGLE_PSE_CX: string
   SENTRY_DSN?: string
   OTP_AFRICASTALKING_KEY?: string
   OTP_AFRICASTALKING_USERNAME?: string
