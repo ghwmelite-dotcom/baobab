@@ -19,7 +19,10 @@
     "test:worker": "cd worker && npm test",
     "deploy:worker": "cd worker && npm run deploy",
     "dev:desktop": "cd apps/desktop && npm run tauri dev",
-    "build:desktop": "cd apps/desktop && npm run tauri build"
+    "build:desktop": "cd apps/desktop && npm run tauri build",
+    "dev:site": "cd apps/site && npm run dev",
+    "build:site": "cd apps/site && npm run build",
+    "deploy:site": "cd apps/site && npm run deploy"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^7.18.0",
