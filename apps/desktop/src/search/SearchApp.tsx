@@ -72,7 +72,7 @@ export function SearchApp() {
 
       {status === 'success' && (
         <>
-          <AnswerCard answer={answer} />
+          {answer && <AnswerCard answer={answer} citations={[]} />}
           <ResultList
             results={results}
             emptySlot={!answer ? <EmptyState query={query} /> : null}
