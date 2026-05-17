@@ -1,0 +1,99 @@
+---
+import { GroveTree } from './GroveTree.tsx'
+import { SunDisc, Leaf, Hexagon, DotPair } from './Decorations.tsx'
+import { getLatestRelease } from '../lib/latest-release.ts'
+
+const release = await getLatestRelease()
+const ctaLabel = release.windowsSizeMb
+  ? `Download for Windows · ${release.windowsSizeMb}`
+  : 'Download for Windows'
+---
+
+<section
+  id="hero"
+  style="
+    position: relative;
+    padding: var(--space-12) var(--space-5) var(--space-10);
+    background: radial-gradient(ellipse at top, #2a1f15 0%, var(--canvas) 70%);
+    border-bottom: 1px solid var(--border);
+    overflow: hidden;
+  "
+>
+  <SunDisc style={{ position: 'absolute', top: '24px', right: '40px', opacity: 0.4 }} client:visible />
+  <Leaf style={{ position: 'absolute', bottom: '60px', left: '5%', opacity: 0.35 }} client:visible />
+  <Hexagon style={{ position: 'absolute', top: '40%', left: '8%', opacity: 0.3 }} client:visible />
+  <DotPair style={{ position: 'absolute', bottom: '20%', right: '10%', opacity: 0.4 }} client:visible />
+
+  <div style="max-width: 1080px; margin: 0 auto; display: grid; grid-template-columns: 1fr auto; gap: var(--space-8); align-items: center;">
+    <div>
+      <h1
+        style="
+          font-family: var(--font-display);
+          font-size: clamp(32px, 5vw, 56px);
+          font-weight: 600;
+          line-height: 1.1;
+          letter-spacing: -0.01em;
+          color: var(--text-primary);
+          margin: 0;
+        "
+      >
+        A browser that doesn't waste your data.
+      </h1>
+      <p
+        style="
+          margin-top: var(--space-4);
+          font-size: 18px;
+          line-height: 1.6;
+          color: var(--text-secondary);
+          max-width: 520px;
+        "
+      >
+        Reader mode auto-saves bandwidth on slow connections. Built on Cloudflare's African edge. Open in Yoruba, Swahili, Hausa.
+      </p>
+      <div style="margin-top: var(--space-6); display: flex; gap: var(--space-3); flex-wrap: wrap;">
+        <a
+          href={release.windowsAssetUrl}
+          style="
+            background: var(--accent);
+            color: var(--text-on-accent);
+            padding: 12px 22px;
+            border-radius: 999px;
+            font-weight: 600;
+            text-decoration: none;
+            font-size: 14px;
+            display: inline-flex;
+            align-items: center;
+          "
+        >{ctaLabel}</a>
+        <a
+          href="#features"
+          style="
+            color: var(--text-secondary);
+            padding: 12px 18px;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            text-decoration: none;
+            font-size: 14px;
+          "
+        >What's inside →</a>
+      </div>
+      <p style="margin-top: var(--space-3); font-size: 12px; color: var(--text-muted);">
+        Latest: <code>{release.tag}</code> · Linux AppImage + .deb also available
+      </p>
+    </div>
+    <div style="display: flex; justify-content: center;">
+      <GroveTree size={160} client:visible />
+    </div>
+  </div>
+</section>
+
+<style>
+  @media (max-width: 720px) {
+    section#hero > div {
+      grid-template-columns: 1fr;
+    }
+    section#hero > div > div:last-child {
+      order: -1;
+    }
+  }
+</style>
