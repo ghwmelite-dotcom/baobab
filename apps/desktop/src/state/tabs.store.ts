@@ -7,6 +7,7 @@ import {
   ipcNavigateTab,
   ipcTabGoBack,
   ipcTabGoForward,
+  ipcTabReload,
   onTabLoaded,
   type IpcTabLoaded,
 } from '~/ipc/tabs'
@@ -74,6 +75,7 @@ interface TabsState {
   closeTab: (id: string) => Promise<void>
   setActive: (id: string) => void
   navigate: (id: string, url: string) => Promise<void>
+  reload: (id: string) => Promise<void>
   goBack: (id: string) => Promise<void>
   goForward: (id: string) => Promise<void>
   canGoBack: (id: string) => boolean
@@ -275,6 +277,17 @@ export const useTabsStore = create<TabsState>()((set, get) => ({
     if (!isIncognito) {
       void useHistoryStore.getState().recordVisit(url)
     }
+  },
+
+  // Optimistic loading flip — without this, the chrome's loading indicators
+  // (spinner, progress bar, reload→stop swap) never fire on reload because
+  // there's no Rust-side "load started" event to listen for. The tab://loaded
+  // event still snaps loading=false when the page finishes.
+  reload: async (id) => {
+    set((s) => ({
+      tabs: s.tabs.map((t) => (t.id === id ? { ...t, loading: true } : t)),
+    }))
+    await ipcTabReload(id)
   },
 
   goBack: async (id) => {

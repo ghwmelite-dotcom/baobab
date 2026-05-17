@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 
 import { useTranslation } from 'react-i18next'
 import { parseOmnibarInput } from '@baobab/core'
 import type { HistoryItem } from '@baobab/cloud-client'
-import { ipcTabReload, ipcTabStop } from '~/ipc/tabs'
+import { ipcTabStop } from '~/ipc/tabs'
 import { useTabsStore } from '~/state/tabs.store'
 import { OS } from '~/platform/os'
 import { useAiStore } from '~/ai/ai.store'
@@ -212,7 +212,7 @@ export function Omnibar() {
 
   const reload = () => {
     if (activeId && activeTab?.url && activeTab.url !== 'about:blank') {
-      void ipcTabReload(activeId)
+      void useTabsStore.getState().reload(activeId)
     }
   }
 
