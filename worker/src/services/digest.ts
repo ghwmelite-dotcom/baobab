@@ -109,7 +109,7 @@ function parseRssItems(xml: string, source: DigestSource): RawItem[] {
 async function fetchSource(source: DigestSource): Promise<RawItem[]> {
   const res = await fetch(source.rssUrl, {
     headers: {
-      'User-Agent': 'BaobabBot/1.0 (+https://baobab.africa) DigestFetcher',
+      'User-Agent': 'BaobabBot/1.0 (+https://baobab.askozzy.work) DigestFetcher',
       Accept: 'application/rss+xml, application/atom+xml, application/xml;q=0.9, */*;q=0.8',
     },
   })

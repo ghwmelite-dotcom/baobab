@@ -129,7 +129,7 @@ ai.post('/summarize', authMiddleware, async (c) => {
   if (!rawHtml) {
     try {
       const fetched = await fetch(body.url, {
-        headers: { 'User-Agent': 'BaobabBot/1.0 (+https://baobab.africa)' },
+        headers: { 'User-Agent': 'BaobabBot/1.0 (+https://baobab.askozzy.work)' },
       })
       if (!fetched.ok) {
         return c.json({ error: 'failed_to_fetch_url', status: fetched.status }, 502)

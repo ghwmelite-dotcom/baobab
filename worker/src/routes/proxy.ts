@@ -43,7 +43,7 @@ proxy.post('/fetch', async (c) => {
   } else {
     const fetched = await fetch(body.url, {
       headers: {
-        'User-Agent': 'BaobabBot/1.0 (+https://baobab.africa)',
+        'User-Agent': 'BaobabBot/1.0 (+https://baobab.askozzy.work)',
         Accept: 'text/html',
       },
       redirect: 'follow',
