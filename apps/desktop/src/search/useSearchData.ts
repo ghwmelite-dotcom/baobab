@@ -1,78 +1,117 @@
 import { create } from 'zustand'
-import { aiClient } from '~/ai/api'
+import { BaobabClient, AiClient } from '@baobab/cloud-client'
+import type {
+  SearchRequest,
+  SearchResponse,
+  SearchCitation,
+  SearchResult,
+  SearchSiteCard,
+} from '@baobab/cloud-client'
 
-export interface SearchResult {
-  title: string
-  url: string
-}
+// Re-export types that downstream components import from this module.
+export type { SearchResult, SearchCitation, SearchSiteCard }
 
-type Status = 'idle' | 'loading' | 'success' | 'error'
-type ErrorKind = 'auth_required' | 'unavailable'
+const baseUrl =
+  (import.meta as { env?: Record<string, string> }).env?.VITE_BAOBAB_API_URL ??
+  'https://baobab-api.ohcsghana-main.workers.dev'
 
-interface SearchDataState {
+const client = new BaobabClient({ baseUrl })
+const ai = new AiClient(client)
+
+const MAX_CHAIN = 5
+
+export interface SearchState {
   query: string
-  status: Status
-  answer: string
+  status: 'idle' | 'loading' | 'success' | 'error'
+  intent: 'navigational' | 'informational' | null
+  answer: { en: string; bilingual?: { lang: string; text: string } } | null
+  citations: SearchCitation[]
   results: SearchResult[]
-  error: ErrorKind | null
-  errorDetail: string | null
-  requestId: number
+  diversity: { sourceCount: number; countryCount: number; africanVoicePercent: number } | null
+  siteCard: SearchSiteCard | null
+  contextChain: Array<{ query: string; answer: string }>
+  targetLanguage: string | null
+  error: 'auth_required' | 'unavailable' | 'quota_degraded' | null
+  errorDetail?: string
+  meta: SearchResponse['meta'] | null
+  setTargetLanguage: (lang: string | null) => void
   runSearch: (query: string) => Promise<void>
+  refine: (query: string) => Promise<void>
 }
 
-function classifyError(e: unknown): ErrorKind {
-  const status = (e as { status?: number } | null)?.status
-  if (status === 401) return 'auth_required'
-  return 'unavailable'
-}
+// Module-level counter used for stale-response guard.
+let requestCounter = 0
 
-export const useSearchData = create<SearchDataState>((set, get) => ({
+export const useSearchData = create<SearchState>()((set, get) => ({
   query: '',
   status: 'idle',
-  answer: '',
+  intent: null,
+  answer: null,
+  citations: [],
   results: [],
+  diversity: null,
+  siteCard: null,
+  contextChain: [],
+  targetLanguage: null,
   error: null,
-  errorDetail: null,
-  requestId: 0,
+  meta: null,
+
+  setTargetLanguage: (lang) => set({ targetLanguage: lang }),
 
   runSearch: async (rawQuery) => {
     const query = rawQuery.trim()
     if (!query) return
-    const nextId = get().requestId + 1
-    set({
-      query,
-      status: 'loading',
-      answer: '',
-      results: [],
-      error: null,
-      errorDetail: null,
-      requestId: nextId,
-    })
+
+    const myId = ++requestCounter
+    set({ query, status: 'loading', error: null, errorDetail: undefined })
+
     try {
-      const res = await aiClient.search({ query })
-      if (get().requestId !== nextId) return // a newer search superseded
+      const resp = await ai.search({
+        query,
+        context: get().contextChain,
+        ...(get().targetLanguage
+          ? { targetLanguage: get().targetLanguage as SearchRequest['targetLanguage'] }
+          : {}),
+      })
+
+      // Discard if a newer request has already started.
+      if (myId !== requestCounter) return
+
+      const isQuotaDegraded = resp.meta.fallbackMode === 'quota-degraded'
+
       set({
         status: 'success',
-        answer: res.answer ?? '',
-        results: Array.isArray(res.results) ? res.results : [],
-        error: null,
+        intent: resp.intent,
+        answer: resp.answer,
+        citations: resp.citations,
+        results: resp.results,
+        diversity: resp.diversity,
+        siteCard: resp.siteCard ?? null,
+        meta: resp.meta,
+        error: isQuotaDegraded ? 'quota_degraded' : null,
       })
     } catch (e) {
-      if (get().requestId !== nextId) return
-      console.error('[search] fetch failed:', e)
-      const detail =
-        e instanceof Error
-          ? `${e.name}: ${e.message}`
-          : typeof e === 'string'
-            ? e
-            : 'unknown error'
+      if (myId !== requestCounter) return
+
+      const msg = e instanceof Error ? e.message : String(e)
+      const isAuth = /401|auth/i.test(msg)
+
       set({
         status: 'error',
-        answer: '',
-        results: [],
-        error: classifyError(e),
-        errorDetail: detail,
+        error: isAuth ? 'auth_required' : 'unavailable',
+        errorDetail: msg,
       })
     }
+  },
+
+  refine: async (query) => {
+    const current = get()
+    // Push the current answer into the chain before running the next search.
+    const nextChain = current.answer
+      ? [...current.contextChain, { query: current.query, answer: current.answer.en }].slice(-MAX_CHAIN)
+      : current.contextChain
+
+    set({ contextChain: nextChain })
+    await get().runSearch(query)
   },
 }))
