@@ -9,6 +9,7 @@ import { EmptyState } from './EmptyState'
 import { ErrorState } from './ErrorState'
 import { LoadingState } from './LoadingState'
 import { useSearchData } from './useSearchData'
+import { useAuthStore } from '~/auth/auth.store'
 
 function readQueryFromUrl(): string {
   try {
@@ -30,6 +31,13 @@ export function SearchApp() {
   const error = useSearchData((s) => s.error)
   const errorDetail = useSearchData((s) => s.errorDetail)
   const runSearch = useSearchData((s) => s.runSearch)
+  const setTargetLanguage = useSearchData((s) => s.setTargetLanguage)
+  const heritage = useAuthStore((s) => s.heritageLanguage)
+
+  // Sync heritage language setting into the search store whenever it changes.
+  useEffect(() => {
+    setTargetLanguage(heritage ?? null)
+  }, [heritage, setTargetLanguage])
 
   // Initial load: read ?q= and run the search.
   useEffect(() => {

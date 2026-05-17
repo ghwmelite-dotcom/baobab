@@ -9,6 +9,11 @@ const { mockSearch } = vi.hoisted(() => ({ mockSearch: vi.fn() }))
 vi.mock('@baobab/cloud-client', () => ({
   BaobabClient: vi.fn(() => ({})),
   AiClient: vi.fn(() => ({ search: mockSearch })),
+  AuthClient: vi.fn(() => ({
+    me: vi.fn(async () => ({ id: 'u', email: 'a@b.com', phone: null, display_name: null, privacy_mode: 0, low_bandwidth_mode: 0, default_model: 'x' })),
+    loginEmail: vi.fn(async () => ({ access: 'a', refresh: 'r' })),
+    logout: vi.fn(async () => ({ ok: true })),
+  })),
 }))
 
 import { SearchApp } from '~/search/SearchApp'

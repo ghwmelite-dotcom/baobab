@@ -6,6 +6,8 @@ import { profileScoped } from '~/state/persistence'
 type Status = 'idle' | 'authing' | 'authed' | 'error'
 type Scoped = ReturnType<typeof profileScoped>
 
+export type HeritageLanguage = 'yo' | 'sw' | 'ha' | 'ig' | 'am' | 'zu' | 'xh' | 'wo' | 'ak'
+
 interface AuthState {
   accessToken: string | null
   refreshToken: string | null
@@ -13,6 +15,7 @@ interface AuthState {
   status: Status
   error: string | null
   signInOverlayOpen: boolean
+  heritageLanguage: HeritageLanguage | null
   setProfileId: (profileId: string) => void
   hydrate: () => Promise<void>
   signupEmail: (email: string, password: string) => Promise<void>
@@ -24,6 +27,7 @@ interface AuthState {
   logout: () => Promise<void>
   openSignIn: () => void
   closeSignIn: () => void
+  setHeritageLanguage: (lang: HeritageLanguage | null) => void
 }
 
 let currentScope: Scoped | null = null
@@ -48,6 +52,12 @@ export async function persistAccessTokenScoped(token: string): Promise<void> {
   await scope().set('auth.accessToken', token)
 }
 
+const VALID_HERITAGE: readonly HeritageLanguage[] = ['yo', 'sw', 'ha', 'ig', 'am', 'zu', 'xh', 'wo', 'ak']
+
+function isHeritageLanguage(v: unknown): v is HeritageLanguage {
+  return typeof v === 'string' && (VALID_HERITAGE as readonly string[]).includes(v)
+}
+
 export const useAuthStore = create<AuthState>()((set) => ({
   accessToken: null,
   refreshToken: null,
@@ -55,6 +65,7 @@ export const useAuthStore = create<AuthState>()((set) => ({
   status: 'idle',
   error: null,
   signInOverlayOpen: false,
+  heritageLanguage: null,
 
   setProfileId: (profileId) => {
     currentScope = profileScoped(profileId)
@@ -63,9 +74,16 @@ export const useAuthStore = create<AuthState>()((set) => ({
   openSignIn: () => set({ signInOverlayOpen: true }),
   closeSignIn: () => set({ signInOverlayOpen: false }),
 
+  setHeritageLanguage: (lang) => {
+    set({ heritageLanguage: lang })
+    if (currentScope) void currentScope.set('settings.heritageLanguage', lang)
+  },
+
   hydrate: async () => {
     const a = await scope().get<string>('auth.accessToken')
     const r = await scope().get<string>('auth.refreshToken')
+    const rawHeritage = await scope().get<unknown>('settings.heritageLanguage')
+    set({ heritageLanguage: isHeritageLanguage(rawHeritage) ? rawHeritage : null })
     if (a && r) {
       client.setAccessToken(a)
       try {
