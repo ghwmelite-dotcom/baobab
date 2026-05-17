@@ -16,6 +16,14 @@ import { useTranslateStore } from '~/translate/translate.store'
 import { suggest } from '~/history/omnibar-autocomplete'
 import { BookmarkButton } from '~/bookmarks/BookmarkButton'
 import { useDragWindow } from './useDragWindow'
+import {
+  shouldInterceptNavigation,
+  markUserOverride,
+  buildReaderUrl,
+  parseReaderUrl,
+} from '~/reader/intercept'
+import { CountdownModal } from '~/reader/CountdownModal'
+import { ReaderPill } from '~/reader/ReaderPill'
 
 // XSS / local-FS exfiltration guard for omnibar-initiated navigation.
 const NAVIGATION_SCHEME_ALLOWLIST = new Set(['http:', 'https:', 'about:'])
@@ -43,6 +51,8 @@ const SEARCH_URL_RE =
 function displayValueForTabUrl(url: string | undefined): string {
   if (!url) return ''
   if (url === 'about:blank') return ''
+  const reader = parseReaderUrl(url)
+  if (reader) return reader
   const m = url.match(SEARCH_URL_RE)
   if (m && m[1] !== undefined) {
     try { return decodeURIComponent(m[1]) } catch { return m[1] }
@@ -149,6 +159,9 @@ export function Omnibar() {
   const [value, setValue] = useState(activeTab?.url ?? '')
   const [suggestions, setSuggestions] = useState<HistoryItem[]>([])
   const [focused, setFocused] = useState(false)
+  const [pendingCountdown, setPendingCountdown] = useState<string | null>(null)
+
+  const readerOriginal = activeTab ? parseReaderUrl(activeTab.url) : null
 
   useEffect(() => {
     setValue(displayValueForTabUrl(activeTab?.url))
@@ -182,6 +195,10 @@ export function Omnibar() {
         const searchUrl = `${SEARCH_BASE_URL}?q=${encodeURIComponent(value)}`
         if (activeId) void navigate(activeId, searchUrl)
         else void openTab(searchUrl)
+        return
+      }
+      if (shouldInterceptNavigation(parsed.url)) {
+        setPendingCountdown(parsed.url)
         return
       }
       if (activeId) void navigate(activeId, parsed.url)
@@ -310,6 +327,15 @@ export function Omnibar() {
             </span>
           )}
 
+          {readerOriginal && (
+            <ReaderPill
+              onLoadFullPage={() => {
+                markUserOverride(readerOriginal)
+                if (activeId) void navigate(activeId, readerOriginal)
+              }}
+            />
+          )}
+
           <input
             ref={ref}
             value={value}
@@ -425,15 +451,17 @@ export function Omnibar() {
 
       {/* Right-side action cluster */}
       <div data-tauri-drag-region="false" style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}>
-        <NavBtn
-          label={t('omnibar.readerMode')}
-          onClick={() => activeTab?.url && activeTab.url !== 'about:blank' && void openReader(activeTab.url)}
-          disabled={!activeTab?.url || activeTab.url === 'about:blank'}
-        >
-          <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden>
-            <path d="M2 3 H14 V13 H2 Z M4 5 H12 M4 8 H12 M4 11 H8" stroke="currentColor" strokeWidth="1.2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </NavBtn>
+        {!readerOriginal && (
+          <NavBtn
+            label={t('omnibar.readerMode')}
+            onClick={() => activeTab?.url && activeTab.url !== 'about:blank' && void openReader(activeTab.url)}
+            disabled={!activeTab?.url || activeTab.url === 'about:blank'}
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden>
+              <path d="M2 3 H14 V13 H2 Z M4 5 H12 M4 8 H12 M4 11 H8" stroke="currentColor" strokeWidth="1.2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </NavBtn>
+        )}
 
         {/* Translate — slide-down translation pad. Icon: "A → Aa" — Latin "A"
             handing off to a Yoruba-style "Aa" with a tonal mark, visualising
@@ -488,6 +516,23 @@ export function Omnibar() {
           </svg>
         </NavBtn>
       </div>
+
+      {pendingCountdown && (
+        <CountdownModal
+          url={pendingCountdown}
+          onAccept={() => {
+            const url = pendingCountdown
+            setPendingCountdown(null)
+            if (activeId) void navigate(activeId, buildReaderUrl(url))
+          }}
+          onCancel={() => {
+            const url = pendingCountdown
+            setPendingCountdown(null)
+            markUserOverride(url)
+            if (activeId) void navigate(activeId, url)
+          }}
+        />
+      )}
     </div>
   )
 }
