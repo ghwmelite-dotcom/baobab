@@ -24,5 +24,8 @@ assets.get('/:key{.+}', async (c) => {
   const obj = await c.env.ASSETS.get(key)
   if (!obj) return c.json({ error: 'not found' }, 404)
   const ct = obj.httpMetadata?.contentType ?? 'application/octet-stream'
-  return new Response(obj.body, { headers: { 'Content-Type': ct } })
+  // obj.body's type comes from @cloudflare/workers-types' ReadableStream, which
+  // doesn't satisfy lib.dom's BodyInit constraint despite being runtime-compatible
+  // (the worker's actual Response uses the worker's types). Cast through BodyInit.
+  return new Response(obj.body as BodyInit, { headers: { 'Content-Type': ct } })
 })
