@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 800" role="img" aria-label="Baobab Search results page with AI answer and African-source ranking">
+  <defs>
+    <linearGradient id="searchBg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fbe9c4"/>
+      <stop offset="1" stop-color="#f6efe0"/>
+    </linearGradient>
+  </defs>
+  <rect width="1280" height="800" fill="url(#searchBg)"/>
+  <!-- header -->
+  <rect x="0" y="0" width="1280" height="64" fill="rgba(246,239,224,0.95)"/>
+  <rect x="0" y="63" width="1280" height="1" fill="#d9c8a3"/>
+  <g transform="translate(64, 24)">
+    <circle cx="0" cy="8" r="10" fill="#4a7048"/>
+    <text x="20" y="14" fill="#2a1f15" font-family="Georgia, serif" font-size="16" font-weight="700">baobab</text>
+  </g>
+  <rect x="180" y="14" width="900" height="36" rx="18" fill="#fff7e6" stroke="#d9c8a3"/>
+  <text x="208" y="36" fill="#2a1f15" font-family="Georgia, serif" font-size="14">best universities in nigeria</text>
+  <!-- answer card -->
+  <rect x="200" y="100" width="880" height="200" rx="14" fill="#fff7e6" stroke="#d9c8a3"/>
+  <text x="232" y="132" fill="#7a5c3c" font-family="Georgia, serif" font-size="11" font-weight="700" letter-spacing="2">FROM THE GROVE</text>
+  <text x="232" y="166" fill="#2a1f15" font-family="Georgia, serif" font-size="18" font-weight="700">Top Nigerian universities span both federal and private institutions.</text>
+  <text x="232" y="196" fill="#2a1f15" font-family="Georgia, serif" font-size="14">The University of Ibadan, established 1948, is the oldest. Lagos and OAU lead</text>
+  <text x="232" y="214" fill="#2a1f15" font-family="Georgia, serif" font-size="14">research output. Covenant and Babcock dominate the private rankings; ABU Zaria</text>
+  <text x="232" y="232" fill="#2a1f15" font-family="Georgia, serif" font-size="14">remains the largest by enrolment.</text>
+  <text x="232" y="270" fill="#7a5c3c" font-family="Georgia, serif" font-size="11">Powered by Workers AI · Llama-3.1-8b · 1.4s</text>
+  <!-- result list -->
+  <g transform="translate(200, 340)">
+    <text x="0" y="0" fill="#7a5c3c" font-family="Georgia, serif" font-size="11" font-weight="700" letter-spacing="2">RESULTS · AFRICAN SOURCES LIFTED</text>
+    <g transform="translate(0, 36)">
+      <text x="0" y="0" fill="#2a1f15" font-family="Georgia, serif" font-size="15" font-weight="700">University of Ibadan — Africa's first university</text>
+      <text x="0" y="22" fill="#7a5c3c" font-family="Consolas, monospace" font-size="12">ui.edu.ng/about</text>
+      <text x="0" y="42" fill="#3a2f24" font-family="Georgia, serif" font-size="13">Premier Nigerian federal university, established 1948 in Ibadan. Strong in medicine,</text>
+      <text x="0" y="58" fill="#3a2f24" font-family="Georgia, serif" font-size="13">humanities and African studies.</text>
+    </g>
+    <g transform="translate(0, 130)">
+      <text x="0" y="0" fill="#2a1f15" font-family="Georgia, serif" font-size="15" font-weight="700">University of Lagos — research output leader</text>
+      <text x="0" y="22" fill="#7a5c3c" font-family="Consolas, monospace" font-size="12">unilag.edu.ng</text>
+      <text x="0" y="42" fill="#3a2f24" font-family="Georgia, serif" font-size="13">Located in Akoka, Lagos. Top engineering, law and business programmes; high citation</text>
+      <text x="0" y="58" fill="#3a2f24" font-family="Georgia, serif" font-size="13">counts per faculty.</text>
+    </g>
+    <g transform="translate(0, 224)">
+      <text x="0" y="0" fill="#2a1f15" font-family="Georgia, serif" font-size="15" font-weight="700">Covenant University — private leader</text>
+      <text x="0" y="22" fill="#7a5c3c" font-family="Consolas, monospace" font-size="12">covenantuniversity.edu.ng</text>
+      <text x="0" y="42" fill="#3a2f24" font-family="Georgia, serif" font-size="13">Ota, Ogun State. Top private university by international rankings since 2018.</text>
+    </g>
+    <g transform="translate(0, 304)">
+      <text x="0" y="0" fill="#2a1f15" font-family="Georgia, serif" font-size="15" font-weight="700">Obafemi Awolowo University (OAU) — research depth</text>
+      <text x="0" y="22" fill="#7a5c3c" font-family="Consolas, monospace" font-size="12">oauife.edu.ng</text>
+    </g>
+  </g>
+</svg>

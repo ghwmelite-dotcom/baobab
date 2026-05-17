@@ -1,0 +1,43 @@
+---
+// Footer. Four columns desktop, stacked mobile via auto-fit grid.
+---
+<footer
+  style="
+    background: var(--surface-1);
+    border-top: 1px solid var(--border);
+    padding: var(--space-8) var(--space-5);
+    color: var(--text-muted);
+    font-size: 12px;
+  "
+>
+  <div style="max-width: 1080px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--space-6);">
+    <div>
+      <div style="font-family: var(--font-display); font-size: 18px; color: var(--text-primary); font-weight: 600;">baobab</div>
+      <p style="margin-top: var(--space-2); line-height: 1.6;">An African AI browser, built sovereign-by-design on Cloudflare's African edge.</p>
+    </div>
+    <div>
+      <div style="color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; font-size: 11px; margin-bottom: var(--space-2);">Product</div>
+      <ul style="list-style: none; padding: 0; margin: 0; line-height: 1.9;">
+        <li><a href="#features" style="color: var(--text-muted); text-decoration: none;">Features</a></li>
+        <li><a href="#why" style="color: var(--text-muted); text-decoration: none;">Why</a></li>
+        <li><a href="#download" style="color: var(--text-muted); text-decoration: none;">Download</a></li>
+        <li><a href="https://github.com/ghwmelite-dotcom/baobab/releases" style="color: var(--text-muted); text-decoration: none;">Releases</a></li>
+      </ul>
+    </div>
+    <div>
+      <div style="color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; font-size: 11px; margin-bottom: var(--space-2);">Resources</div>
+      <ul style="list-style: none; padding: 0; margin: 0; line-height: 1.9;">
+        <li><a href="https://github.com/ghwmelite-dotcom/baobab" style="color: var(--text-muted); text-decoration: none;">Source</a></li>
+        <li><a href="https://github.com/ghwmelite-dotcom/baobab/tree/main/docs" style="color: var(--text-muted); text-decoration: none;">Design notes</a></li>
+      </ul>
+    </div>
+    <div>
+      <div style="color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; font-size: 11px; margin-bottom: var(--space-2);">Legal</div>
+      <ul style="list-style: none; padding: 0; margin: 0; line-height: 1.9;">
+        <li>AGPL-3.0</li>
+        <li>Built on Cloudflare</li>
+        <li>Made in Africa</li>
+      </ul>
+    </div>
+  </div>
+</footer>

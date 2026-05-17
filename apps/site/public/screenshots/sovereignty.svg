@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 800" role="img" aria-label="Baobab Sovereignty Dashboard - where your data lives">
+  <defs>
+    <linearGradient id="sovBg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1c1814"/>
+      <stop offset="1" stop-color="#15110d"/>
+    </linearGradient>
+  </defs>
+  <rect width="1280" height="800" fill="url(#sovBg)"/>
+  <!-- chrome -->
+  <rect x="0" y="0" width="1280" height="48" fill="#15110d"/>
+  <rect x="0" y="47" width="1280" height="1" fill="#3a3127"/>
+  <text x="24" y="29" fill="#f0e9dc" font-family="Georgia, serif" font-size="14" font-weight="700">baobab</text>
+  <text x="120" y="29" fill="#b8ad9a" font-family="Georgia, serif" font-size="12">Settings · Sovereignty</text>
+  <!-- residency chip -->
+  <rect x="1080" y="14" width="180" height="22" rx="11" fill="rgba(168,199,154,0.12)"/>
+  <circle cx="1096" cy="25" r="5" fill="#a8c79a"/>
+  <text x="1108" y="29" fill="#a8c79a" font-family="Georgia, serif" font-size="11">Home · LOS · CF Lagos</text>
+  <!-- main panel -->
+  <text x="64" y="120" fill="#f0e9dc" font-family="Georgia, serif" font-size="28" font-weight="700">Your data lives in…</text>
+  <text x="64" y="148" fill="#b8ad9a" font-family="Georgia, serif" font-size="14">Last refreshed 14 seconds ago · Tap a region to see what's stored there.</text>
+  <!-- map (stylised) -->
+  <g transform="translate(64, 200)">
+    <rect x="0" y="0" width="780" height="500" rx="12" fill="#1c1814" stroke="#3a3127"/>
+    <!-- africa silhouette (very rough) -->
+    <path d="M 380 50 Q 460 60 500 130 Q 540 200 530 300 Q 520 380 470 440 Q 420 470 360 450 Q 310 430 290 360 Q 280 290 300 230 Q 310 160 350 100 Q 365 70 380 50 Z"
+          fill="#221a14" stroke="#3a3127" stroke-width="1.5"/>
+    <!-- Lagos pin -->
+    <circle cx="356" cy="220" r="14" fill="#d97706" opacity="0.35"/>
+    <circle cx="356" cy="220" r="6" fill="#d97706"/>
+    <text x="378" y="222" fill="#f0e9dc" font-family="Georgia, serif" font-size="12" font-weight="700">LOS · serving you now</text>
+    <text x="378" y="240" fill="#b8ad9a" font-family="Georgia, serif" font-size="11">Cloudflare African POP · 14ms RTT</text>
+    <!-- Nairobi pin -->
+    <circle cx="486" cy="276" r="10" fill="#a8c79a" opacity="0.4"/>
+    <circle cx="486" cy="276" r="4" fill="#a8c79a"/>
+    <text x="504" y="280" fill="#b8ad9a" font-family="Georgia, serif" font-size="11">NBO · standby</text>
+    <!-- Johannesburg pin -->
+    <circle cx="466" cy="396" r="10" fill="#a8c79a" opacity="0.4"/>
+    <circle cx="466" cy="396" r="4" fill="#a8c79a"/>
+    <text x="484" y="400" fill="#b8ad9a" font-family="Georgia, serif" font-size="11">JNB · standby</text>
+    <!-- EU pin (stopgap) -->
+    <circle cx="370" cy="80" r="12" fill="#c89876" opacity="0.4"/>
+    <circle cx="370" cy="80" r="5" fill="#c89876"/>
+    <text x="386" y="84" fill="#b8ad9a" font-family="Georgia, serif" font-size="11">EU · D1 + R2 (stopgap)</text>
+    <!-- legend -->
+    <g transform="translate(20, 460)">
+      <circle cx="0" cy="0" r="4" fill="#d97706"/>
+      <text x="12" y="4" fill="#b8ad9a" font-family="Georgia, serif" font-size="11">active POP</text>
+      <circle cx="100" cy="0" r="4" fill="#a8c79a"/>
+      <text x="112" y="4" fill="#b8ad9a" font-family="Georgia, serif" font-size="11">standby</text>
+      <circle cx="200" cy="0" r="4" fill="#c89876"/>
+      <text x="212" y="4" fill="#b8ad9a" font-family="Georgia, serif" font-size="11">persistent (EU)</text>
+    </g>
+  </g>
+  <!-- side panel -->
+  <g transform="translate(880, 200)">
+    <rect x="0" y="0" width="336" height="500" rx="12" fill="#1c1814" stroke="#3a3127"/>
+    <text x="24" y="40" fill="#7a7060" font-family="Georgia, serif" font-size="11" font-weight="700" letter-spacing="2">WHAT'S STORED WHERE</text>
+    <g transform="translate(24, 80)">
+      <circle cx="6" cy="6" r="4" fill="#a8c79a"/>
+      <text x="20" y="10" fill="#f0e9dc" font-family="Georgia, serif" font-size="13" font-weight="700">Browsing history</text>
+      <text x="20" y="28" fill="#b8ad9a" font-family="Georgia, serif" font-size="11">D1 · EU region · 4.2 MB</text>
+    </g>
+    <g transform="translate(24, 130)">
+      <circle cx="6" cy="6" r="4" fill="#a8c79a"/>
+      <text x="20" y="10" fill="#f0e9dc" font-family="Georgia, serif" font-size="13" font-weight="700">Bookmarks</text>
+      <text x="20" y="28" fill="#b8ad9a" font-family="Georgia, serif" font-size="11">D1 · EU region · 18 KB</text>
+    </g>
+    <g transform="translate(24, 180)">
+      <circle cx="6" cy="6" r="4" fill="#a8c79a"/>
+      <text x="20" y="10" fill="#f0e9dc" font-family="Georgia, serif" font-size="13" font-weight="700">AI conversations</text>
+      <text x="20" y="28" fill="#b8ad9a" font-family="Georgia, serif" font-size="11">D1 · EU region · 1.6 MB</text>
+    </g>
+    <g transform="translate(24, 230)">
+      <circle cx="6" cy="6" r="4" fill="#a8c79a"/>
+      <text x="20" y="10" fill="#f0e9dc" font-family="Georgia, serif" font-size="13" font-weight="700">Saved offline articles</text>
+      <text x="20" y="28" fill="#b8ad9a" font-family="Georgia, serif" font-size="11">R2 · EU region · 12.9 MB</text>
+    </g>
+    <g transform="translate(24, 280)">
+      <circle cx="6" cy="6" r="4" fill="#d97706"/>
+      <text x="20" y="10" fill="#f0e9dc" font-family="Georgia, serif" font-size="13" font-weight="700">Auth tokens</text>
+      <text x="20" y="28" fill="#b8ad9a" font-family="Georgia, serif" font-size="11">Local · OS keyring · encrypted</text>
+    </g>
+    <line x1="24" y1="350" x2="312" y2="350" stroke="#3a3127"/>
+    <text x="24" y="384" fill="#7a7060" font-family="Georgia, serif" font-size="11" font-weight="700" letter-spacing="2">PROMISES</text>
+    <text x="24" y="410" fill="#b8ad9a" font-family="Georgia, serif" font-size="12">✓ No third-party analytics</text>
+    <text x="24" y="432" fill="#b8ad9a" font-family="Georgia, serif" font-size="12">✓ No model training on your data</text>
+    <text x="24" y="454" fill="#b8ad9a" font-family="Georgia, serif" font-size="12">✓ No data sale</text>
+    <rect x="24" y="466" width="180" height="28" rx="14" fill="rgba(217,119,6,0.15)" stroke="#d97706"/>
+    <text x="114" y="484" text-anchor="middle" fill="#d97706" font-family="Georgia, serif" font-size="12" font-weight="700">Disable sync entirely</text>
+  </g>
+</svg>

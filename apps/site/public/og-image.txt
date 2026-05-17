@@ -1,0 +1,14 @@
+# OG Image Placeholder
+
+This is a temporary placeholder. The real 1200×630 OG image should be:
+- Background: Sahel radial gradient (#2a1f15 → #15110d)
+- Headline (Fraunces/Georgia Bold, 48px): "A browser that doesn't waste your data."
+- Subhead (sans-serif, 24px): "Built on Cloudflare's African edge"
+- Sidebar: Simplified GroveTree illustration
+
+To compose this, use:
+- Figma (export as PNG)
+- Adobe Photoshop (2800×1260px @ 100%, export at 1200×630)
+- node-canvas + canvas-text in build step
+
+This is a Task 14 (human) item — not yet automated.

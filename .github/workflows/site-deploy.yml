@@ -1,0 +1,41 @@
+name: Site preview + Lighthouse
+
+on:
+  pull_request:
+    paths:
+      - 'apps/site/**'
+      - '.github/workflows/site-deploy.yml'
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  lighthouse:
+    name: Lighthouse on Pages preview
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      # Cloudflare Pages auto-builds a preview deployment on every PR via the
+      # GH integration (set up manually in the dashboard — see apps/site/DEPLOY.md).
+      # Wait for that build, then run Lighthouse against the preview URL.
+      - name: Wait for Cloudflare Pages preview
+        id: pages
+        uses: WalshyDev/cf-pages-await@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: f4f236a6cd8fbddf397c6e9de17d8113
+          project: baobab-site
+
+      - name: Lighthouse CI
+        uses: treosh/lighthouse-ci-action@v11
+        with:
+          urls: ${{ steps.pages.outputs.url }}
+          uploadArtifacts: true
+          temporaryPublicStorage: true
+          runs: 1

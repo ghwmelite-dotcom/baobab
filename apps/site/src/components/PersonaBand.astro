@@ -1,0 +1,48 @@
+---
+interface Props {
+  id: string
+  accentVar: string  // CSS var name e.g. --persona-metered
+  label: string
+  body: string
+  ctaHref: string
+  ctaLabel: string
+}
+const { id, accentVar, label, body, ctaHref, ctaLabel } = Astro.props
+---
+<article
+  id={`persona-${id}`}
+  style={`
+    background: var(--surface-1);
+    border-left: 3px solid var(${accentVar});
+    padding: var(--space-6) var(--space-5);
+    margin-bottom: var(--space-3);
+    max-width: 720px;
+    margin-inline: auto;
+    border-radius: 0 8px 8px 0;
+  `}
+>
+  <div
+    style={`
+      font-family: var(--font-display);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(${accentVar});
+      margin-bottom: var(--space-2);
+    `}
+  >{label}</div>
+  <p style="color: var(--text-secondary); font-size: 16px; line-height: 1.65; margin: 0 0 var(--space-3);">{body}</p>
+  <a
+    href={ctaHref}
+    style={`
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      color: var(${accentVar});
+      font-size: 14px;
+      font-weight: 600;
+      text-decoration: none;
+    `}
+  >{ctaLabel} →</a>
+</article>
