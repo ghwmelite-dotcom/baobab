@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 800" role="img" aria-label="Baobab Settings - Data section with gauge, sparkline and daily budget">
+  <defs>
+    <linearGradient id="dataBg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1c1814"/>
+      <stop offset="1" stop-color="#15110d"/>
+    </linearGradient>
+  </defs>
+  <rect width="1280" height="800" fill="url(#dataBg)"/>
+  <!-- chrome -->
+  <rect x="0" y="0" width="1280" height="48" fill="#15110d"/>
+  <rect x="0" y="47" width="1280" height="1" fill="#3a3127"/>
+  <text x="24" y="29" fill="#f0e9dc" font-family="Georgia, serif" font-size="14" font-weight="700">baobab</text>
+  <text x="120" y="29" fill="#b8ad9a" font-family="Georgia, serif" font-size="12">Settings · Data</text>
+  <!-- NetworkChip indicator -->
+  <rect x="1108" y="14" width="148" height="22" rx="11" fill="rgba(168,199,154,0.12)"/>
+  <circle cx="1124" cy="25" r="5" fill="#a8c79a"/>
+  <text x="1136" y="29" fill="#a8c79a" font-family="Georgia, serif" font-size="11">Fast · 24 Mbps</text>
+  <!-- sidebar -->
+  <rect x="0" y="48" width="240" height="752" fill="#1c1814"/>
+  <rect x="240" y="48" width="1" height="752" fill="#3a3127"/>
+  <g font-family="Georgia, serif" font-size="13" fill="#b8ad9a">
+    <text x="24" y="92">Profile</text>
+    <text x="24" y="122">Privacy</text>
+  </g>
+  <rect x="0" y="140" width="240" height="36" fill="rgba(217,119,6,0.1)"/>
+  <rect x="0" y="140" width="3" height="36" fill="#d97706"/>
+  <text x="24" y="162" fill="#d97706" font-family="Georgia, serif" font-size="13" font-weight="700">Data</text>
+  <g font-family="Georgia, serif" font-size="13" fill="#b8ad9a">
+    <text x="24" y="202">Sovereignty</text>
+    <text x="24" y="232">Ad-blocker</text>
+    <text x="24" y="262">AI sidebar</text>
+    <text x="24" y="292">Reader</text>
+  </g>
+  <!-- main panel -->
+  <text x="288" y="100" fill="#f0e9dc" font-family="Georgia, serif" font-size="26" font-weight="700">Data savings</text>
+  <text x="288" y="128" fill="#b8ad9a" font-family="Georgia, serif" font-size="14">Daily byte budget · Reader + ad-block savings count.</text>
+  <!-- gauge -->
+  <g transform="translate(288, 168)">
+    <rect x="0" y="0" width="380" height="240" rx="12" fill="#1c1814" stroke="#3a3127"/>
+    <g transform="translate(190, 130)">
+      <!-- ring -->
+      <circle cx="0" cy="0" r="86" fill="none" stroke="#3a3127" stroke-width="12"/>
+      <path d="M0,-86 A86,86 0 0,1 81,-29" fill="none" stroke="#d97706" stroke-width="12" stroke-linecap="round"/>
+      <text x="0" y="-2" text-anchor="middle" fill="#f0e9dc" font-family="Georgia, serif" font-size="34" font-weight="700">247</text>
+      <text x="0" y="20" text-anchor="middle" fill="#7a7060" font-family="Georgia, serif" font-size="11">MB of 500 MB</text>
+      <text x="0" y="38" text-anchor="middle" fill="#a8c79a" font-family="Georgia, serif" font-size="12" font-weight="700">49% used</text>
+    </g>
+  </g>
+  <!-- saved -->
+  <g transform="translate(688, 168)">
+    <rect x="0" y="0" width="540" height="116" rx="12" fill="#1c1814" stroke="#3a3127"/>
+    <text x="24" y="36" fill="#7a7060" font-family="Georgia, serif" font-size="11" font-weight="700" letter-spacing="2">SAVED TODAY</text>
+    <text x="24" y="84" fill="#a8c79a" font-family="Georgia, serif" font-size="36" font-weight="700">89.4 MB</text>
+    <text x="252" y="84" fill="#7a7060" font-family="Georgia, serif" font-size="12">via Reader + Ad-block + Lazy-load</text>
+  </g>
+  <!-- sparkline -->
+  <g transform="translate(688, 292)">
+    <rect x="0" y="0" width="540" height="116" rx="12" fill="#1c1814" stroke="#3a3127"/>
+    <text x="24" y="32" fill="#7a7060" font-family="Georgia, serif" font-size="11" font-weight="700" letter-spacing="2">LAST 7 DAYS · USED MB</text>
+    <g transform="translate(24, 92)">
+      <rect x="0" y="-32" width="32" height="32" fill="#d97706" rx="2"/>
+      <rect x="48" y="-48" width="32" height="48" fill="#d97706" rx="2"/>
+      <rect x="96" y="-26" width="32" height="26" fill="#d97706" rx="2"/>
+      <rect x="144" y="-58" width="32" height="58" fill="#d97706" rx="2"/>
+      <rect x="192" y="-40" width="32" height="40" fill="#d97706" rx="2"/>
+      <rect x="240" y="-22" width="32" height="22" fill="#d97706" rx="2"/>
+      <rect x="288" y="-30" width="32" height="30" fill="#a8c79a" rx="2"/>
+      <text x="304" y="-36" text-anchor="middle" fill="#a8c79a" font-family="Georgia, serif" font-size="10" font-weight="700">today</text>
+    </g>
+  </g>
+  <!-- budget slider -->
+  <text x="288" y="464" fill="#7a7060" font-family="Georgia, serif" font-size="11" font-weight="700" letter-spacing="2">DAILY BUDGET</text>
+  <rect x="288" y="488" width="940" height="6" rx="3" fill="#3a3127"/>
+  <rect x="288" y="488" width="290" height="6" rx="3" fill="#d97706"/>
+  <circle cx="578" cy="491" r="9" fill="#f0e9dc"/>
+  <text x="288" y="520" fill="#b8ad9a" font-family="Georgia, serif" font-size="12">50 MB</text>
+  <text x="568" y="520" fill="#f0e9dc" font-family="Georgia, serif" font-size="13" font-weight="700">500 MB</text>
+  <text x="1228" y="520" text-anchor="end" fill="#b8ad9a" font-family="Georgia, serif" font-size="12">2 GB</text>
+  <!-- toggles -->
+  <g transform="translate(288, 560)">
+    <text x="0" y="0" fill="#f0e9dc" font-family="Georgia, serif" font-size="14">Only sync on Wi-Fi</text>
+    <rect x="900" y="-14" width="40" height="20" rx="10" fill="#d97706"/>
+    <circle cx="930" cy="-4" r="8" fill="#15110d"/>
+  </g>
+  <g transform="translate(288, 600)">
+    <text x="0" y="0" fill="#f0e9dc" font-family="Georgia, serif" font-size="14">Force slow mode</text>
+    <rect x="900" y="-14" width="40" height="20" rx="10" fill="#3a3127"/>
+    <circle cx="910" cy="-4" r="8" fill="#7a7060"/>
+  </g>
+</svg>

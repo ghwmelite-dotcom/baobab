@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 800" role="img" aria-label="The Baobab Grove profile picker with fruit-color tiles and animated tree">
+  <defs>
+    <radialGradient id="groveBg" cx="50%" cy="0%" r="100%">
+      <stop offset="0" stop-color="#2a1f15"/>
+      <stop offset="1" stop-color="#15110d"/>
+    </radialGradient>
+  </defs>
+  <rect width="1280" height="800" fill="url(#groveBg)"/>
+  <!-- decoration motifs -->
+  <circle cx="120" cy="80" r="22" fill="#d97706" opacity="0.5"/>
+  <circle cx="1180" cy="120" r="16" fill="#a8c79a" opacity="0.45"/>
+  <polygon points="1150,650 1180,665 1180,695 1150,710 1120,695 1120,665" fill="#c89876" opacity="0.4"/>
+  <circle cx="140" cy="640" r="6" fill="#f0e9dc" opacity="0.5"/>
+  <circle cx="170" cy="650" r="6" fill="#f0e9dc" opacity="0.4"/>
+  <!-- hero tree -->
+  <g transform="translate(540, 90)">
+    <ellipse cx="100" cy="80" rx="78" ry="50" fill="#3a5c3a"/>
+    <ellipse cx="65" cy="70" rx="30" ry="20" fill="#4a7048" opacity="0.85"/>
+    <ellipse cx="138" cy="76" rx="28" ry="20" fill="#4a7048" opacity="0.85"/>
+    <circle cx="78" cy="78" r="6" fill="#d97706"/>
+    <circle cx="120" cy="84" r="6" fill="#c89876"/>
+    <circle cx="100" cy="62" r="5" fill="#e8c089"/>
+    <rect x="94" y="120" width="12" height="48" fill="#4a3526"/>
+    <ellipse cx="100" cy="172" rx="46" ry="6" fill="#000" opacity="0.3"/>
+  </g>
+  <!-- wordmark -->
+  <text x="640" y="310" text-anchor="middle" fill="#f0e9dc" font-family="Georgia, serif" font-size="44" font-weight="700">baobab</text>
+  <text x="640" y="340" text-anchor="middle" fill="#b8ad9a" font-family="Georgia, serif" font-size="14">Pick a profile to begin</text>
+  <!-- profile tiles -->
+  <g transform="translate(290, 400)">
+    <!-- mango -->
+    <g>
+      <rect x="0" y="0" width="160" height="160" rx="14" fill="#1c1814" stroke="#3a3127"/>
+      <circle cx="80" cy="60" r="30" fill="#d97706"/>
+      <text x="80" y="115" text-anchor="middle" fill="#f0e9dc" font-family="Georgia, serif" font-size="15">Personal</text>
+      <text x="80" y="135" text-anchor="middle" fill="#7a7060" font-family="Georgia, serif" font-size="11">3 tabs · synced</text>
+    </g>
+    <!-- baobab -->
+    <g transform="translate(190, 0)">
+      <rect x="0" y="0" width="160" height="160" rx="14" fill="#1c1814" stroke="#3a3127"/>
+      <circle cx="80" cy="60" r="30" fill="#a8c79a"/>
+      <rect x="74" y="44" width="12" height="6" fill="#4a3526" rx="2"/>
+      <text x="80" y="115" text-anchor="middle" fill="#f0e9dc" font-family="Georgia, serif" font-size="15">Work</text>
+      <text x="80" y="135" text-anchor="middle" fill="#7a7060" font-family="Georgia, serif" font-size="11">PIN locked · 12 tabs</text>
+    </g>
+    <!-- hibiscus -->
+    <g transform="translate(380, 0)">
+      <rect x="0" y="0" width="160" height="160" rx="14" fill="#1c1814" stroke="#3a3127"/>
+      <circle cx="80" cy="60" r="30" fill="#c89876"/>
+      <text x="80" y="115" text-anchor="middle" fill="#f0e9dc" font-family="Georgia, serif" font-size="15">Research</text>
+      <text x="80" y="135" text-anchor="middle" fill="#7a7060" font-family="Georgia, serif" font-size="11">7 tabs · synced</text>
+    </g>
+    <!-- new + -->
+    <g transform="translate(570, 0)">
+      <rect x="0" y="0" width="160" height="160" rx="14" fill="rgba(217,119,6,0.05)" stroke="#3a3127" stroke-dasharray="4 4"/>
+      <text x="80" y="90" text-anchor="middle" fill="#d97706" font-family="Georgia, serif" font-size="44" font-weight="300">+</text>
+      <text x="80" y="115" text-anchor="middle" fill="#b8ad9a" font-family="Georgia, serif" font-size="13">New profile</text>
+    </g>
+  </g>
+  <!-- guest pill -->
+  <g transform="translate(40, 740)">
+    <rect x="0" y="0" width="120" height="32" rx="16" fill="rgba(168,199,154,0.12)" stroke="#3a3127"/>
+    <text x="60" y="20" text-anchor="middle" fill="#a8c79a" font-family="Georgia, serif" font-size="12">Guest mode →</text>
+  </g>
+  <!-- show on startup -->
+  <text x="1240" y="752" text-anchor="end" fill="#7a7060" font-family="Georgia, serif" font-size="11">☑ Show on startup</text>
+</svg>
