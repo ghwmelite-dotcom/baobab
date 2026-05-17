@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://baobab.askozzy.work/sitemap.xml
