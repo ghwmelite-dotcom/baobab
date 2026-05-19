@@ -18,7 +18,7 @@ describe('/api/ai/search backward compat', () => {
     const mockKv = { get: vi.fn(async () => null), put: vi.fn(), delete: vi.fn() } as unknown as KVNamespace
     const env = {
       BRAVE_API_KEY: 'test-token',
-      KV: mockKv,
+      PAGE_CACHE: mockKv,
       RATE_LIMITS: mockKv,
       AI: { run: vi.fn(async () => ({ response: JSON.stringify({ answer: 'ans', citations: [] }) })) },
     }

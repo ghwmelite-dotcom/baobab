@@ -24,9 +24,6 @@ export interface Env {
   TRANSLATE_MODEL: string
   EMBEDDING_MODEL: string
 
-  // Search KV — used by searchCache + searchQuota
-  KV: KVNamespace
-
   // secrets (set via wrangler secret put)
   AUTH_SECRET: string
   ENCRYPTION_KEY: string

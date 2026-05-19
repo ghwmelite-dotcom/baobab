@@ -28,14 +28,14 @@ search.post('/', async (c) => {
 
   // 1. Cache lookup
   const key = await cacheKey(query, targetLanguage, contextChain)
-  const cached = await cacheGet<Record<string, unknown>>(c.env.KV, key)
+  const cached = await cacheGet<Record<string, unknown>>(c.env.PAGE_CACHE, key)
   if (cached) {
     const meta = (cached.meta as Record<string, unknown>) ?? {}
     return c.json({ ...cached, meta: { ...meta, cached: true } })
   }
 
   // 2. Quota check
-  const quota = await consume(c.env.KV)
+  const quota = await consume(c.env.PAGE_CACHE)
 
   // 3. Brave search (skip if hard-cap hit)
   let webResults = [] as Awaited<ReturnType<typeof searchBrave>>
@@ -110,7 +110,7 @@ search.post('/', async (c) => {
   }
 
   // 10. Cache (24h)
-  await cacheSet(c.env.KV, key, response, 86400)
+  await cacheSet(c.env.PAGE_CACHE, key, response, 86400)
 
   return c.json(response)
 })

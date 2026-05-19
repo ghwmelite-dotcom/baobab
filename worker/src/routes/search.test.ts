@@ -18,7 +18,7 @@ afterEach(() => { vi.unstubAllGlobals() })
 function buildEnv(aiResponse: string) {
   return {
     BRAVE_API_KEY: 'test-token',
-    KV: mockKV(),
+    PAGE_CACHE: mockKV(),
     AI: { run: vi.fn(async () => ({ response: aiResponse })) },
   }
 }
