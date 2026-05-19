@@ -51,8 +51,8 @@ describe('POST /api/search', () => {
     expect(resp.status).toBe(200)
     const body = await resp.json() as { intent: string; results: { source: string }[]; answer: { en: string }; diversity: { africanVoicePercent: number }; meta: { cached: boolean } }
     expect(body.intent).toBe('informational')
-    expect(body.results[0].source).toBe('history.za')
-    expect(body.results[1].source).toBe('cnn.com')
+    expect(body.results[0]!.source).toBe('history.za')
+    expect(body.results[1]!.source).toBe('cnn.com')
     expect(body.answer.en).toContain('Mansa Musa')
     expect(body.diversity.africanVoicePercent).toBe(50)
     expect(body.meta.cached).toBe(false)

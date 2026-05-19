@@ -56,7 +56,7 @@ describe('answerSynthesis.synthesize', () => {
     const result = await synthesize(ai as never, 'q', sample, [])
     expect(result.answer).toContain('Mansa Musa')
     expect(result.citations).toHaveLength(2)
-    expect(result.citations[0].name).toBe('Souleymane Sidibé')
+    expect(result.citations[0]!.name).toBe('Souleymane Sidibé')
   })
 
   it('drops citations whose url is not in the result set', async () => {
@@ -69,7 +69,7 @@ describe('answerSynthesis.synthesize', () => {
     }))
     const result = await synthesize(ai as never, 'q', sample, [])
     expect(result.citations).toHaveLength(1)
-    expect(result.citations[0].name).toBe('Real')
+    expect(result.citations[0]!.name).toBe('Real')
   })
 
   it('returns empty citations when parse fails', async () => {

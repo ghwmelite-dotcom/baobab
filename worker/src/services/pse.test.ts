@@ -20,15 +20,15 @@ describe('searchGoogle', () => {
     }), { status: 200 }))
     const results = await searchGoogle(env, 'test query', 10)
     expect(results).toHaveLength(2)
-    expect(results[0].title).toBe('A')
-    expect(results[0].displayLink).toBe('a.com')
-    expect(results[1].snippet).toBe('bar')
+    expect(results[0]!.title).toBe('A')
+    expect(results[0]!.displayLink).toBe('a.com')
+    expect(results[1]!.snippet).toBe('bar')
   })
 
   it('passes query, num, key, cx to the URL', async () => {
     fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ items: [] }), { status: 200 }))
     await searchGoogle(env, 'paystack', 10)
-    const url = fetchMock.mock.calls[0][0] as string
+    const url = fetchMock.mock.calls[0]![0] as string
     expect(url).toContain('q=paystack')
     expect(url).toContain('num=10')
     expect(url).toContain('key=test-key')
@@ -48,10 +48,10 @@ describe('searchGoogle', () => {
   it('clamps num to 1..10', async () => {
     fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ items: [] }), { status: 200 }))
     await searchGoogle(env, 'q', 25)
-    expect(fetchMock.mock.calls[0][0]).toContain('num=10')
+    expect(fetchMock.mock.calls[0]![0]).toContain('num=10')
 
     fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ items: [] }), { status: 200 }))
     await searchGoogle(env, 'q', 0)
-    expect(fetchMock.mock.calls[1][0]).toContain('num=1')
+    expect(fetchMock.mock.calls[1]![0]).toContain('num=1')
   })
 })

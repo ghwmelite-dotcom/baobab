@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import type { KVNamespace } from '@cloudflare/workers-types'
 import { consume } from './searchQuota'
 
 const mockKV = (initial = 0) => {
@@ -39,7 +40,7 @@ describe('searchQuota.consume', () => {
   it('uses today date in the KV key', async () => {
     const kv = mockKV(0)
     await consume(kv)
-    expect((kv.put as unknown as { mock: { calls: unknown[][] } }).mock.calls[0][0])
+    expect((kv.put as unknown as { mock: { calls: unknown[][] } }).mock.calls[0]![0])
       .toBe('pse:quota:2026-05-17')
   })
 })

@@ -57,7 +57,7 @@ export function extractSiteCard(result: PseRawResult): SiteCard | null {
   const name =
     meta['og:site_name'] ||
     meta['application-name'] ||
-    result.title.split(/[-—|·]/)[0].trim() ||
+    result.title.split(/[-—|·]/)[0]?.trim() ||
     result.displayLink
 
   const description =

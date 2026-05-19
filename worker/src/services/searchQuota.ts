@@ -1,3 +1,5 @@
+import type { KVNamespace } from '@cloudflare/workers-types'
+
 const SOFT_CAP = 9500
 const HARD_CAP = 10000
 

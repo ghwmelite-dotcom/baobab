@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
+import type { KVNamespace } from '@cloudflare/workers-types'
 import { cacheKey, cacheGet, cacheSet } from './searchCache'
 
 const mockKV = () => {
@@ -50,7 +51,7 @@ describe('searchCache.cacheGet/Set', () => {
   it('passes ttl as expirationTtl', async () => {
     const kv = mockKV() as unknown as KVNamespace
     await cacheSet(kv, 'k', { x: 1 }, 3600)
-    expect((kv.put as unknown as { mock: { calls: unknown[][] } }).mock.calls[0][2])
+    expect((kv.put as unknown as { mock: { calls: unknown[][] } }).mock.calls[0]![2])
       .toEqual({ expirationTtl: 3600 })
   })
 })

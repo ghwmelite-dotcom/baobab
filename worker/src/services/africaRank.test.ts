@@ -13,11 +13,11 @@ describe('africaRank.rerank', () => {
       r('C', 'https://bbc.com/z', 'bbc.com'),
     ]
     const out = rerank(input)
-    expect(out[0].source).toBe('vanguardngr.com')
-    expect(out[0].isAfrican).toBe(true)
-    expect(out[0].country).toBe('NG')
-    expect(out[1].source).toBe('cnn.com')
-    expect(out[1].isAfrican).toBe(false)
+    expect(out[0]!.source).toBe('vanguardngr.com')
+    expect(out[0]!.isAfrican).toBe(true)
+    expect(out[0]!.country).toBe('NG')
+    expect(out[1]!.source).toBe('cnn.com')
+    expect(out[1]!.isAfrican).toBe(false)
   })
 
   it('preserves PSE order within each bucket (stable sort)', () => {
@@ -42,7 +42,7 @@ describe('africaRank.rerank', () => {
 
   it('marks all non-African results as isAfrican=false with null country', () => {
     const out = rerank([r('x', 'https://cnn.com/a', 'cnn.com')])
-    expect(out[0].isAfrican).toBe(false)
-    expect(out[0].country).toBeNull()
+    expect(out[0]!.isAfrican).toBe(false)
+    expect(out[0]!.country).toBeNull()
   })
 })
