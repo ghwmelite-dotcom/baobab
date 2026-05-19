@@ -19,6 +19,14 @@ import { profileScoped } from '~/state/persistence'
 type Scoped = ReturnType<typeof profileScoped>
 
 let tabsScope: Scoped | null = null
+let tabsScopeId: string | null = null
+// Re-entry guard for hydrate(): React StrictMode in dev fires effects twice,
+// and App.tsx's `useEffect(..., [profile?.id])` invokes hydrate() each time.
+// Without this guard the second invocation appends the snapshot's tabs a
+// second time — and since the debounced save fires after both runs, the
+// snapshot is persisted at 2× size. Across launches that doubles
+// exponentially (one user hit 160 dup tabs from a single original).
+let hydratedForId: string | null = null
 
 function scope(): Scoped {
   if (!tabsScope) throw new Error('tabs.store: setProfileId() must be called before accessing profile-scoped storage')
@@ -135,6 +143,7 @@ export const useTabsStore = create<TabsState>()((set, get) => ({
 
   setProfileId: (id) => {
     tabsScope = profileScoped(id)
+    tabsScopeId = id
   },
 
   openTab: async (url, opts) => {
@@ -381,6 +390,12 @@ export const useTabsStore = create<TabsState>()((set, get) => ({
   },
 
   hydrate: async () => {
+    // Synchronous re-entry guard — runs BEFORE the first await so StrictMode's
+    // second invocation hits the early return. Keyed on profile id so a real
+    // profile switch (different id) still re-hydrates.
+    if (!tabsScopeId) return
+    if (hydratedForId === tabsScopeId) return
+    hydratedForId = tabsScopeId
     hydrating = true
     try {
       const snap = await scope().get<TabsSnapshot>(SNAPSHOT_KEY)
