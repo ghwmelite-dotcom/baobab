@@ -13,6 +13,11 @@ export interface IpcTabLoaded {
   title: string | null
 }
 
+export interface IpcTabTitle {
+  id: string
+  title: string
+}
+
 export const ipcCreateTab = (
   id: string,
   url: string,
@@ -58,3 +63,10 @@ export const ipcTabStop = (tabId: string): Promise<void> =>
 export const onTabLoaded = (
   cb: (payload: IpcTabLoaded) => void,
 ): Promise<UnlistenFn> => listen<IpcTabLoaded>('tab://loaded', (e) => cb(e.payload))
+
+// Title-only updates emitted by Rust's `on_document_title_changed`. This
+// event fires mid-navigation, so handlers must NOT touch `loading` state —
+// only the title field of the matching tab.
+export const onTabTitle = (
+  cb: (payload: IpcTabTitle) => void,
+): Promise<UnlistenFn> => listen<IpcTabTitle>('tab://title', (e) => cb(e.payload))

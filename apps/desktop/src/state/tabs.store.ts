@@ -9,7 +9,9 @@ import {
   ipcTabGoForward,
   ipcTabReload,
   onTabLoaded,
+  onTabTitle,
   type IpcTabLoaded,
+  type IpcTabTitle,
 } from '~/ipc/tabs'
 import { useHistoryStore } from '~/history/history.store'
 import { profileScoped } from '~/state/persistence'
@@ -85,7 +87,9 @@ interface TabsState {
   hydrate: () => Promise<void>
   /** Apply a `tab://loaded` event payload to the matching tab. */
   handleTabLoaded: (payload: IpcTabLoaded) => void
-  /** Idempotently subscribe to `tab://loaded` events from the backend. */
+  /** Apply a `tab://title` event payload — updates title only, never touches loading. */
+  handleTabTitle: (payload: IpcTabTitle) => void
+  /** Idempotently subscribe to `tab://loaded` and `tab://title` events from the backend. */
   initListeners: () => Promise<void>
 }
 
@@ -262,7 +266,15 @@ export const useTabsStore = create<TabsState>()((set, get) => ({
   },
 
   navigate: async (id, url) => {
-    await ipcNavigateTab(id, url)
+    // State mutations MUST happen before `await ipcNavigateTab`. The Rust
+    // side fires `tab://loaded` (loading=false) as soon as WebView2 finishes
+    // navigating — sometimes before the IPC promise even resolves on cached
+    // pages. If we set `loading: true` after the await, the loaded event
+    // wins the race and the spinner gets permanently stuck at true. By
+    // ordering it this way, the loading flip is monotonic:
+    //   set(loading=true) → IPC → tab://loaded(loading=false)
+    // …regardless of how the network latency, cache state, and event-loop
+    // scheduling interleave.
     const isIncognito = get().tabs.find((t) => t.id === id)?.incognito === true
     set((s) => {
       const cur = s.history[id] ?? { depth: 0, max: 0 }
@@ -274,6 +286,18 @@ export const useTabsStore = create<TabsState>()((set, get) => ({
         history: { ...s.history, [id]: { depth: nextDepth, max: nextDepth } },
       }
     })
+    try {
+      await ipcNavigateTab(id, url)
+    } catch {
+      // Navigate failed (WebView2 error, webview missing, parse failure).
+      // Reset loading so the spinner doesn't hang on this dead tab.
+      // `navigate_tab` returns Err when the webview is absent — without this
+      // catch the loading flag would be stuck at true forever.
+      set((s) => ({
+        tabs: s.tabs.map((t) => (t.id === id ? { ...t, loading: false } : t)),
+      }))
+      return
+    }
     if (!isIncognito) {
       void useHistoryStore.getState().recordVisit(url)
     }
@@ -421,9 +445,32 @@ export const useTabsStore = create<TabsState>()((set, get) => ({
     })
   },
 
+  // Title-only handler. MUST NOT touch `loading` — `on_document_title_changed`
+  // can fire mid-navigation and would race the `navigate()` action's
+  // optimistic `loading: true` mutation. Only `handleTabLoaded` (called from
+  // `on_page_load(Finished)`) is allowed to flip loading=false.
+  handleTabTitle: (payload) => {
+    const trimmed = payload.title?.trim() ?? ''
+    if (trimmed.length === 0) return
+    set((s) => {
+      const idx = s.tabs.findIndex((t) => t.id === payload.id)
+      if (idx === -1) return s
+      const current = s.tabs[idx]
+      if (!current) return s
+      if (current.title === trimmed) return s
+      const tabs = [
+        ...s.tabs.slice(0, idx),
+        { ...current, title: trimmed },
+        ...s.tabs.slice(idx + 1),
+      ]
+      return { tabs }
+    })
+  },
+
   initListeners: async () => {
     if (get().tabLoadedListening) return
     set({ tabLoadedListening: true })
     await onTabLoaded((p) => get().handleTabLoaded(p))
+    await onTabTitle((p) => get().handleTabTitle(p))
   },
 }))

@@ -70,6 +70,28 @@ fn emit_tab_loaded<R: tauri::Runtime>(
     let _ = emitter.emit("tab://loaded", payload);
 }
 
+// `tab://title` carries title-only updates from `on_document_title_changed`,
+// which can fire mid-navigation. This MUST NOT touch the tab's `loading`
+// flag on the JS side — only `tab://loaded` (emitted by
+// `on_page_load(Finished)`) is allowed to flip loading=false. Otherwise the
+// title event races the JS `navigate()` action and the spinner gets stuck.
+#[derive(Debug, Clone, Serialize)]
+struct TabTitlePayload {
+    id: String,
+    title: String,
+}
+
+fn emit_tab_title<R: tauri::Runtime>(emitter: &impl Emitter<R>, label: &str, title: String) {
+    let Some(id) = label.strip_prefix("tab-") else {
+        return;
+    };
+    let payload = TabTitlePayload {
+        id: id.to_string(),
+        title,
+    };
+    let _ = emitter.emit("tab://title", payload);
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TabInfo {
     pub id: String,
@@ -143,21 +165,21 @@ pub async fn create_tab(
         builder = builder.initialization_script(&script);
     }
     let builder = downloads::attach(builder, app.clone());
-    // Capture the latest <title> reported by the engine so we can ship it
-    // with the next `tab://loaded` event. The renderer sets the document
-    // title asynchronously, so this hook may fire multiple times per nav.
+    // Capture the latest <title> reported by the engine. The renderer sets
+    // the document title asynchronously, so this hook may fire multiple
+    // times per nav — and crucially, it fires *during* navigation (before
+    // the page has finished loading). It MUST NOT emit `tab://loaded` here;
+    // that event flips the JS-side `loading` flag to false and would race
+    // the `navigate()` action's own `loading: true` mutation, leaving the
+    // spinner permanently stuck. Emit the lighter `tab://title` instead —
+    // it carries title updates only and never touches loading state.
     let builder = builder.on_document_title_changed(|webview, title| {
         let label = webview.label().to_string();
-        if !title.is_empty() {
-            cache_title(&label, &title);
+        if title.is_empty() {
+            return;
         }
-        let url = webview.url().map(|u| u.to_string()).unwrap_or_default();
-        emit_tab_loaded(
-            &webview,
-            &label,
-            url,
-            if title.is_empty() { None } else { Some(title) },
-        );
+        cache_title(&label, &title);
+        emit_tab_title(&webview, &label, title);
     });
     // Emit `tab://loaded` when the page finishes loading. Title may not be
     // available yet (engines fire `document_title_changed` separately) — in
@@ -224,9 +246,15 @@ pub async fn show_tab(app: AppHandle, window_label: String, id: String) -> Resul
 pub async fn navigate_tab(app: AppHandle, id: String, url: String) -> Result<(), String> {
     let label = tab_label(&id);
     let parsed = url.parse().map_err(|e: url::ParseError| e.to_string())?;
-    if let Some(wv) = app.get_webview(&label) {
-        wv.navigate(parsed).map_err(|e| e.to_string())?;
-    }
+    // Return an error (not a silent Ok) when the webview is missing. Without
+    // this, the JS store would set `loading=true` and never receive a
+    // matching `tab://loaded` event — the spinner would hang forever. The
+    // JS `navigate()` action's try/catch now resets `loading=false` on this
+    // error path.
+    let wv = app
+        .get_webview(&label)
+        .ok_or_else(|| format!("webview {label} not found"))?;
+    wv.navigate(parsed).map_err(|e| e.to_string())?;
     Ok(())
 }
 

@@ -19,6 +19,7 @@ vi.mock('~/ipc/tabs', () => ({
       return () => undefined
     },
   ),
+  onTabTitle: vi.fn(async () => () => undefined),
 }))
 
 vi.mock('~/state/persistence', () => {
