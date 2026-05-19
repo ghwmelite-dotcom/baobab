@@ -57,7 +57,7 @@ new_sqlite_classes = ["ReaderQueue"]
 ENVIRONMENT = "development"
 APP_NAME = "Baobab"
 APP_VERSION = "0.0.1"
-CORS_ORIGIN = "http://localhost:5173,http://localhost:8080,http://localhost:1420,tauri://localhost"
+CORS_ORIGIN = "http://localhost:5173,http://localhost:8080,http://localhost:1420,tauri://localhost,http://tauri.localhost"
 SENTRY_DSN = ""
 DEFAULT_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
 LOWBW_MODEL = "@cf/meta/llama-3.1-8b-instruct"
@@ -89,7 +89,7 @@ routes = [{ pattern = "api.baobab.africa/*", zone_name = "baobab.africa" }]
 
 [env.production.vars]
 ENVIRONMENT = "production"
-CORS_ORIGIN = "https://baobab.africa,https://app.baobab.africa,tauri://localhost"
+CORS_ORIGIN = "https://baobab.africa,https://app.baobab.africa,tauri://localhost,http://tauri.localhost"
 APP_NAME = "Baobab"
 APP_VERSION = "1.0.0"
 DEFAULT_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
