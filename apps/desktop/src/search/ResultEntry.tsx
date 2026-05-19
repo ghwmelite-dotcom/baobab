@@ -1,3 +1,4 @@
+import DOMPurify from 'dompurify'
 import type { SearchResult } from '@baobab/cloud-client'
 
 const COUNTRY_FLAG: Record<string, string> = {
@@ -28,7 +29,15 @@ export function ResultEntry({ result }: { result: SearchResult }) {
         fontSize: 16, color: '#1a4480', fontWeight: 500,
         textDecoration: 'none', display: 'block', marginBottom: 4,
       }}>{result.title}</a>
-      <div style={{ fontSize: 13, lineHeight: 1.5, color: '#4a3520' }}>{result.snippet}</div>
+      <div
+        style={{ fontSize: 13, lineHeight: 1.5, color: '#4a3520' }}
+        dangerouslySetInnerHTML={{
+          __html: DOMPurify.sanitize(result.snippet, {
+            ALLOWED_TAGS: ['strong', 'em', 'b', 'i'],
+            ALLOWED_ATTR: [],
+          }),
+        }}
+      />
     </div>
   )
 }
