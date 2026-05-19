@@ -102,7 +102,7 @@ fn tab_label(id: &str) -> String {
     format!("tab-{id}")
 }
 
-fn data_dir_for_window(app: &AppHandle, window_label: &str) -> Option<std::path::PathBuf> {
+pub fn data_dir_for_window(app: &AppHandle, window_label: &str) -> Option<std::path::PathBuf> {
     let profile_id = windows::profile_id_from_label(window_label)?;
     if profile_id == "guest" {
         return Some(std::env::temp_dir().join(format!("baobab-guest-{window_label}")));
@@ -164,6 +164,10 @@ pub async fn create_tab(
         let script = crate::adblock::build_init_script(&payload, slow_mode);
         builder = builder.initialization_script(&script);
     }
+    // window.open() bridge — routes popups to real Tauri windows so flows
+    // like Gmail's "Add Account" can complete. Always inject (even on guest
+    // profiles) because popup gating is a UX feature, not a security one.
+    builder = builder.initialization_script(include_str!("popup-opener.js"));
     let builder = downloads::attach(builder, app.clone());
     // Capture the latest <title> reported by the engine. The renderer sets
     // the document title asynchronously, so this hook may fire multiple

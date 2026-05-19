@@ -4,6 +4,7 @@ mod menus;
 mod migration;
 mod pin;
 mod pin_attempts;
+mod popups;
 mod profiles;
 mod tabs;
 mod usage;
@@ -27,6 +28,7 @@ pub fn run() {
         .plugin(tauri_plugin_process::init())
         .manage(crate::pin_attempts::PinAttempts::new())
         .manage(crate::usage::UsageState::default())
+        .manage(crate::popups::PopupRegistry::default())
         .manage(SlowModeFlag(AtomicBool::new(false)))
         // Selection from any native context menu (raised via menus::show_context_menu)
         // is reported back to JS via this single global event. The JS side filters
@@ -105,6 +107,11 @@ pub fn run() {
             adblock::cmd_adblock_refresh_lists,
             menus::show_context_menu,
             usage::record_tab_usage,
+            popups::open_popup,
+            popups::close_popup,
+            popups::popup_location,
+            popups::popup_post_to_popup,
+            popups::popup_post_to_opener,
             set_slow_mode,
         ])
         .run(tauri::generate_context!())
