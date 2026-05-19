@@ -7,6 +7,30 @@ import type {
   SearchResult,
   SearchSiteCard,
 } from '@baobab/cloud-client'
+import { invoke } from '@tauri-apps/api/core'
+import { profileScoped } from '~/state/persistence'
+
+const VALID_HERITAGE = new Set(['yo', 'sw', 'ha', 'ig', 'am', 'zu', 'xh', 'wo', 'ak'])
+
+// Heritage lives in the chrome window's settings store. The search tab runs
+// in its own WebView2 child, so its in-memory copy goes stale the moment
+// Settings is edited elsewhere. v2.x: switch to Tauri Store onKeyChange for
+// live cross-window sync. For now, read fresh from disk per search.
+// Active profile id is owned by Rust (current_profile_id command) — there is
+// no `picker.lastUsedProfileId` key in the plugin-store on this codepath.
+async function readHeritageFromDisk(): Promise<SearchRequest['targetLanguage'] | null> {
+  try {
+    const profileId = await invoke<string | null>('current_profile_id')
+    if (!profileId) return null
+    const h = await profileScoped(profileId).get<unknown>('settings.heritageLanguage')
+    if (typeof h === 'string' && VALID_HERITAGE.has(h)) {
+      return h as SearchRequest['targetLanguage']
+    }
+    return null
+  } catch {
+    return null
+  }
+}
 
 // Re-export types that downstream components import from this module.
 export type { SearchResult, SearchCitation, SearchSiteCard }
@@ -65,13 +89,15 @@ export const useSearchData = create<SearchState>()((set, get) => ({
     const myId = ++requestCounter
     set({ query, status: 'loading', error: null, errorDetail: undefined })
 
+    const targetLanguage = await readHeritageFromDisk()
+    if (myId !== requestCounter) return
+    if (targetLanguage !== get().targetLanguage) set({ targetLanguage })
+
     try {
       const resp = await ai.search({
         query,
         context: get().contextChain,
-        ...(get().targetLanguage
-          ? { targetLanguage: get().targetLanguage as SearchRequest['targetLanguage'] }
-          : {}),
+        ...(targetLanguage ? { targetLanguage } : {}),
       })
 
       // Discard if a newer request has already started.
