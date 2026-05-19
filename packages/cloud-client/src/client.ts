@@ -25,7 +25,11 @@ export class BaobabClient {
   private readonly defaultTimeoutMs: number
 
   constructor(private readonly opts: ClientOptions) {
-    this.fetchFn = opts.fetch ?? globalThis.fetch
+    // Bind to globalThis: holding fetch as an instance property and calling
+    // `this.fetchFn(...)` would otherwise bind `this` to BaobabClient, which
+    // browsers reject with "Illegal invocation". Same pattern as the adblock
+    // engine.js fix.
+    this.fetchFn = opts.fetch ?? globalThis.fetch.bind(globalThis)
     this.defaultTimeoutMs = opts.timeoutMs ?? 15_000
   }
 

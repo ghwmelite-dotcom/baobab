@@ -76,28 +76,37 @@ export function SearchApp() {
     >
       <SearchHeader query={query} onRefine={handleRefine} />
 
-      {status === 'loading' && <LoadingState />}
+      <main
+        style={{
+          maxWidth: 760,
+          margin: '0 auto',
+          padding: '0 24px 96px',
+          boxSizing: 'border-box',
+        }}
+      >
+        {status === 'loading' && <LoadingState />}
 
-      {status === 'error' && error === 'auth_required' && (
-        <ErrorState variant="auth_required" detail={errorDetail} />
-      )}
+        {status === 'error' && error === 'auth_required' && (
+          <ErrorState variant="auth_required" detail={errorDetail} />
+        )}
 
-      {status === 'error' && error === 'unavailable' && (
-        <ErrorState variant="unavailable" onRetry={handleRetry} detail={errorDetail} />
-      )}
+        {status === 'error' && error === 'unavailable' && (
+          <ErrorState variant="unavailable" onRetry={handleRetry} detail={errorDetail} />
+        )}
 
-      {status === 'success' && (
-        <>
-          {intent === 'navigational' && siteCard && <SiteCard card={siteCard} />}
-          {intent === 'informational' && answer && <AnswerCard answer={answer} citations={citations} />}
-          {diversity && <DiversityMeter {...diversity} />}
-          <ResultList
-            results={results}
-            emptySlot={!answer ? <EmptyState query={query} /> : null}
-          />
-          <RefineBar />
-        </>
-      )}
+        {status === 'success' && (
+          <>
+            {intent === 'navigational' && siteCard && <SiteCard card={siteCard} />}
+            {intent === 'informational' && answer && <AnswerCard answer={answer} citations={citations} />}
+            {diversity && <DiversityMeter {...diversity} />}
+            <ResultList
+              results={results}
+              emptySlot={!answer ? <EmptyState query={query} /> : null}
+            />
+            <RefineBar />
+          </>
+        )}
+      </main>
     </div>
   )
 }

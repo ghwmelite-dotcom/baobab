@@ -21,14 +21,13 @@ export function AnswerCard({ answer, citations }: Props) {
   return (
     <section
       style={{
-        margin: '24px 24px 16px',
+        margin: '24px 0 16px',
         background: '#fffaf2',
         border: '1px solid rgba(196,136,31,0.35)',
         borderLeft: '4px solid #c4881f',
         borderRadius: 12,
         padding: '28px 32px',
         boxShadow: '0 4px 24px rgba(60,24,16,0.06)',
-        marginBottom: 16,
       }}
     >
       <div
