@@ -41,6 +41,6 @@ describe('searchQuota.consume', () => {
     const kv = mockKV(0)
     await consume(kv)
     expect((kv.put as unknown as { mock: { calls: unknown[][] } }).mock.calls[0]![0])
-      .toBe('pse:quota:2026-05-17')
+      .toBe('search:quota:2026-05-17')
   })
 })

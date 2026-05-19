@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest'
-import { detectIntent, extractSiteCard, type PseRawResult } from './intent'
+import { detectIntent, extractSiteCard, type BraveRawResult } from './intent'
 
 describe('intent.detectIntent', () => {
-  const top = (url: string, title = 'Title'): PseRawResult => ({
-    title, link: url, snippet: '', displayLink: new URL(url).hostname,
+  const top = (url: string, title = 'Title'): BraveRawResult => ({
+    title, url, description: '', meta_url: { hostname: new URL(url).hostname },
   })
 
   it('short brand match → navigational', () => {
@@ -31,19 +31,23 @@ describe('intent.detectIntent', () => {
   it('handles empty / null topResult', () => {
     expect(detectIntent('anything', null)).toBe('informational')
   })
+
+  it('falls back to URL hostname when meta_url.hostname missing', () => {
+    const result: BraveRawResult = {
+      title: 'Paystack', url: 'https://paystack.com/', description: '',
+    }
+    expect(detectIntent('paystack', result)).toBe('navigational')
+  })
 })
 
 describe('intent.extractSiteCard', () => {
-  it('extracts basic site card from PSE pagemap', () => {
-    const result: PseRawResult = {
+  it('extracts basic site card from Brave profile + meta_url', () => {
+    const result: BraveRawResult = {
       title: 'Paystack - Modern online and offline payments',
-      link: 'https://paystack.com/',
-      displayLink: 'paystack.com',
-      snippet: 'Accept payments online and in-person.',
-      pagemap: {
-        metatags: [{ 'og:site_name': 'Paystack', 'og:description': 'Modern payments for Africa' }],
-        cse_image: [{ src: 'https://paystack.com/logo.png' }],
-      },
+      url: 'https://paystack.com/',
+      description: 'Modern payments for Africa',
+      meta_url: { hostname: 'paystack.com' },
+      profile: { name: 'Paystack', long_name: 'Paystack', img: 'https://paystack.com/logo.png' },
     }
     const card = extractSiteCard(result)
     expect(card).not.toBeNull()
@@ -53,12 +57,12 @@ describe('intent.extractSiteCard', () => {
     expect(card!.logoUrl).toBe('https://paystack.com/logo.png')
   })
 
-  it('falls back to title-without-suffix when og:site_name missing', () => {
-    const result: PseRawResult = {
+  it('falls back to title-without-suffix when profile missing', () => {
+    const result: BraveRawResult = {
       title: 'Paystack - Modern online payments',
-      link: 'https://paystack.com/',
-      displayLink: 'paystack.com',
-      snippet: 'fallback snippet',
+      url: 'https://paystack.com/',
+      description: 'fallback snippet',
+      meta_url: { hostname: 'paystack.com' },
     }
     const card = extractSiteCard(result)
     expect(card!.name).toBe('Paystack')

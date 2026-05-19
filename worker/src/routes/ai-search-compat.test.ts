@@ -8,12 +8,16 @@ afterEach(() => { vi.unstubAllGlobals() })
 describe('/api/ai/search backward compat', () => {
   it('still returns the v1 shape { answer, results: [{title, url}] }', async () => {
     fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({
-      items: [{ title: 'T', link: 'https://a.com', displayLink: 'a.com', snippet: 's' }],
+      web: {
+        results: [
+          { title: 'T', url: 'https://a.com', description: 's', meta_url: { hostname: 'a.com' } },
+        ],
+      },
     }), { status: 200 }))
 
     const mockKv = { get: vi.fn(async () => null), put: vi.fn(), delete: vi.fn() } as unknown as KVNamespace
     const env = {
-      GOOGLE_PSE_API_KEY: 'k', GOOGLE_PSE_CX: 'cx',
+      BRAVE_API_KEY: 'test-token',
       KV: mockKv,
       RATE_LIMITS: mockKv,
       AI: { run: vi.fn(async () => ({ response: JSON.stringify({ answer: 'ans', citations: [] }) })) },

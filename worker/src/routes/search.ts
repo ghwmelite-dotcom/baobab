@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 import type { AppContext } from '../types'
-import { searchGoogle } from '../services/pse'
+import { searchBrave } from '../services/brave'
 import { rerank } from '../services/africaRank'
 import { detectIntent, extractSiteCard } from '../services/intent'
 import { synthesize, type ContextChainEntry, type SourceContext } from '../services/answerSynthesis'
@@ -37,28 +37,33 @@ search.post('/', async (c) => {
   // 2. Quota check
   const quota = await consume(c.env.KV)
 
-  // 3. PSE call (skip if hard-cap hit)
-  let pseResults = [] as Awaited<ReturnType<typeof searchGoogle>>
+  // 3. Brave search (skip if hard-cap hit)
+  let webResults = [] as Awaited<ReturnType<typeof searchBrave>>
   if (quota.allowed) {
     try {
-      pseResults = await searchGoogle(
-        { GOOGLE_PSE_API_KEY: c.env.GOOGLE_PSE_API_KEY, GOOGLE_PSE_CX: c.env.GOOGLE_PSE_CX },
+      webResults = await searchBrave(
+        { BRAVE_API_KEY: c.env.BRAVE_API_KEY },
         query, 10,
       )
     } catch {
-      pseResults = []
+      webResults = []
     }
   }
 
   // 4. Re-rank
-  const ranked = rerank(pseResults.map((p) => ({
-    title: p.title, url: p.link, snippet: p.snippet, source: p.displayLink,
+  const ranked = rerank(webResults.map((p) => ({
+    title: p.title,
+    url: p.url,
+    snippet: p.description,
+    source: p.meta_url?.hostname ?? (() => {
+      try { return new URL(p.url).hostname.replace(/^www\./, '') } catch { return '' }
+    })(),
   })))
 
   // 5. Intent
-  const intent = detectIntent(query, pseResults[0] ?? null)
-  const siteCard = intent === 'navigational' && pseResults[0]
-    ? extractSiteCard(pseResults[0])
+  const intent = detectIntent(query, webResults[0] ?? null)
+  const siteCard = intent === 'navigational' && webResults[0]
+    ? extractSiteCard(webResults[0])
     : undefined
 
   // 6. AI answer + citations

@@ -31,8 +31,7 @@ export interface Env {
   AUTH_SECRET: string
   ENCRYPTION_KEY: string
   ADMIN_API_KEY: string
-  GOOGLE_PSE_API_KEY: string
-  GOOGLE_PSE_CX: string
+  BRAVE_API_KEY: string
   SENTRY_DSN?: string
   OTP_AFRICASTALKING_KEY?: string
   OTP_AFRICASTALKING_USERNAME?: string

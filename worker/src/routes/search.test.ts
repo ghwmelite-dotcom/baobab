@@ -17,7 +17,7 @@ afterEach(() => { vi.unstubAllGlobals() })
 
 function buildEnv(aiResponse: string) {
   return {
-    GOOGLE_PSE_API_KEY: 'k', GOOGLE_PSE_CX: 'cx',
+    BRAVE_API_KEY: 'test-token',
     KV: mockKV(),
     AI: { run: vi.fn(async () => ({ response: aiResponse })) },
   }
@@ -32,10 +32,12 @@ function appWithSearch(env: ReturnType<typeof buildEnv>) {
 describe('POST /api/search', () => {
   it('informational query returns answer + ranked results + diversity meter', async () => {
     fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({
-      items: [
-        { title: 'CNN piece', link: 'https://cnn.com/x', displayLink: 'cnn.com', snippet: 's1' },
-        { title: 'Mali source', link: 'https://history.za/y', displayLink: 'history.za', snippet: 's2' },
-      ],
+      web: {
+        results: [
+          { title: 'CNN piece', url: 'https://cnn.com/x', description: 's1', meta_url: { hostname: 'cnn.com' } },
+          { title: 'Mali source', url: 'https://history.za/y', description: 's2', meta_url: { hostname: 'history.za' } },
+        ],
+      },
     }), { status: 200 }))
     const { app, env } = appWithSearch(buildEnv(JSON.stringify({
       answer: 'Mansa Musa ruled Mali...',
@@ -60,9 +62,17 @@ describe('POST /api/search', () => {
 
   it('navigational query returns site card', async () => {
     fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({
-      items: [
-        { title: 'Paystack - Modern payments', link: 'https://paystack.com/', displayLink: 'paystack.com', snippet: 'Modern payments', pagemap: { metatags: [{ 'og:site_name': 'Paystack', 'og:description': 'Payments for Africa' }] } },
-      ],
+      web: {
+        results: [
+          {
+            title: 'Paystack - Modern payments',
+            url: 'https://paystack.com/',
+            description: 'Payments for Africa',
+            meta_url: { hostname: 'paystack.com' },
+            profile: { name: 'Paystack', long_name: 'Paystack' },
+          },
+        ],
+      },
     }), { status: 200 }))
     const { app, env } = appWithSearch(buildEnv(JSON.stringify({ answer: '', citations: [] })))
 
@@ -76,11 +86,11 @@ describe('POST /api/search', () => {
     expect(body.siteCard?.name).toBe('Paystack')
   })
 
-  it('cache hit returns immediately without PSE call', async () => {
+  it('cache hit returns immediately without Brave call', async () => {
     const env = buildEnv(JSON.stringify({ answer: '', citations: [] }))
     const { app } = appWithSearch(env)
 
-    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ items: [] }), { status: 200 }))
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ web: { results: [] } }), { status: 200 }))
     await app.request('/api/search', {
       method: 'POST', headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ query: 'cached' }),
